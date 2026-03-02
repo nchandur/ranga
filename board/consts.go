@@ -160,3 +160,6 @@ const (
 	BKSide
 	BQSide
 )
+
+var Sq120to64 []uint8
+var Sq64to120 []uint8

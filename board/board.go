@@ -30,3 +30,7 @@ type Undo struct {
 	FiftyMove          int
 	PositionKey        uint64
 }
+
+func (b *Board) String() string {
+	return ""
+}
