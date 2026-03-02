@@ -3,7 +3,7 @@ package board
 type Board struct {
 	Pieces     []int8    // element represents the square on 8x8 board which is embedded in a 12x10 board
 	Pawns      [3]uint64 // for white, black and both. bit will be set to 1 if a piece of that color exists on that square
-	KingSq     [2]int    // square the kings are on (black and white)
+	KingSq     [2]Square // square the kings are on (black and white)
 	SideToMove Color
 	EnPass     Square // target square of en passant
 	FiftyMove  int    // fifty move counter
@@ -62,6 +62,45 @@ func (b *Board) GenPositionKey() uint64 {
 	res ^= CastleKeys[b.CastlingPermission]
 
 	return res
+}
+
+func (b *Board) Reset() {
+
+	// make all squares off-board
+	for i := range 120 {
+		b.Pieces[i] = 120
+	}
+
+	// reset all 8x8 squares to empty
+	for i := range 64 {
+		b.Pieces[Sq64to120[i]] = int8(Empty)
+	}
+
+	for i := range 3 {
+		b.BigPieces[i] = 0
+		b.MajorPieces[i] = 0
+		b.MinorPieces[i] = 0
+		b.Pawns[i] = uint64(0)
+	}
+
+	for i := range 13 {
+		b.PieceNumber[i] = 0
+	}
+
+	b.KingSq[0] = NoSquare
+	b.KingSq[1] = NoSquare
+
+	b.SideToMove = Both
+	b.EnPass = NoSquare
+	b.FiftyMove = 0
+
+	b.Ply = 0
+	b.HistPly = 0
+	b.CastlingPermission = 0
+	b.PositionKey = uint64(0)
+
+	b.History = nil
+
 }
 
 func (b *Board) String() string {
