@@ -1,7 +1,7 @@
 package board
 
 type Board struct {
-	Pieces     []int8    // element represents the square on 8x8 board which is embedded in a 12x10 board
+	Pieces     []Piece   // element represents the square on 8x8 board which is embedded in a 12x10 board
 	Pawns      [3]uint64 // for white, black and both. bit will be set to 1 if a piece of that color exists on that square
 	KingSq     [2]Square // square the kings are on (black and white)
 	SideToMove Color
@@ -73,7 +73,7 @@ func (b *Board) Reset() {
 
 	// reset all 8x8 squares to empty
 	for i := range 64 {
-		b.Pieces[Sq64to120[i]] = int8(Empty)
+		b.Pieces[Sq64to120[i]] = Empty
 	}
 
 	for i := range 3 {
