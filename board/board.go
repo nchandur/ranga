@@ -13,8 +13,8 @@ type Board struct {
 
 	PositionKey uint64 // unique key generated for position
 
-	CastlingPermission uint8   // stores integer that tells which side castling is permitted during the course of the game
-	PieceNumber        [13]int // how many of each piece are on that board
+	CastlingPermission Castling // stores integer that tells which side castling is permitted during the course of the game
+	PieceNumber        [13]int  // how many of each piece are on that board
 
 	BigPieces   [3]int // any piece that isn't a pawn
 	MajorPieces [3]int // rooks and queens
