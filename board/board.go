@@ -61,3 +61,42 @@ func NewBoard() Board {
 
 	return b
 }
+
+func (b *Board) Reset() {
+
+	// make all squares off-board
+	for i := range 120 {
+		b.Pieces[i] = 120
+	}
+
+	// reset all 8x8 squares to empty
+	for i := range 64 {
+		b.Pieces[Fr64To120(uint8(i))] = Empty
+	}
+
+	for i := range 3 {
+		b.BigPieces[i] = 0
+		b.MajorPieces[i] = 0
+		b.MinorPieces[i] = 0
+		b.Pawns[i] = uint64(0)
+	}
+
+	for i := range 13 {
+		b.PieceNumber[i] = 0
+	}
+
+	b.KingSq[0] = NoSquare
+	b.KingSq[1] = NoSquare
+
+	b.SideToMove = Both
+	b.EnPass = NoSquare
+	b.FiftyMove = 0
+
+	b.Ply = 0
+	b.HistPly = 0
+	b.CastlingPermission = 0
+	b.PositionKey = uint64(0)
+
+	b.History = nil
+
+}
