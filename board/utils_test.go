@@ -45,3 +45,24 @@ func TestFr120To64(t *testing.T) {
 	}
 
 }
+
+func TestFr64To120(t *testing.T) {
+	tests := []struct {
+		idx      uint8
+		expected uint8
+	}{
+		{idx: 0, expected: 21},
+		{idx: 63, expected: 98},
+		{idx: 20, expected: 45},
+		{idx: 65, expected: 120},
+	}
+
+	for _, test := range tests {
+		output := Fr64To120(test.idx)
+
+		if output != test.expected {
+			t.Errorf("expected: %d, output: %d", test.expected, output)
+		}
+	}
+
+}
