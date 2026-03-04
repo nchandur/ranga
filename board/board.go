@@ -21,6 +21,7 @@ type Board struct {
 	BigPieces   []int // any piece that isn't a pawn
 	MajorPieces []int // rooks and queens
 	MinorPieces []int // bishops and knights
+	Material    []int
 
 	History []Undo // at whatever move number, what is possible
 
@@ -51,9 +52,10 @@ func NewBoard() Board {
 	b.CastlingPermission = Castling(0)
 	b.PieceNumber = make([]int, 13)
 
-	b.BigPieces = make([]int, 3)
-	b.MajorPieces = make([]int, 3)
-	b.MinorPieces = make([]int, 3)
+	b.BigPieces = make([]int, 2)
+	b.MajorPieces = make([]int, 2)
+	b.MinorPieces = make([]int, 2)
+	b.Material = make([]int, 2)
 
 	b.PieceList = make([][]int, 13)
 
@@ -62,6 +64,56 @@ func NewBoard() Board {
 	}
 
 	return b
+}
+
+// update piece list on board
+func (b *Board) UpdatePieceList() {
+
+	// all non-pawn and non-empty pieces ".PNBRQKpnbrqk"
+	pieceBig := []bool{false, false, true, true, true, true, true, false, true, true, true, true, true}
+
+	// all major pieces (rooks and queens and kings)
+	pieceMaj := []bool{false, false, false, false, true, true, true, false, false, false, true, true, true}
+
+	// all minor pieces (knights and bishops)
+	pieceMin := []bool{false, false, true, true, false, false, false, false, true, true, false, false, false}
+
+	// numerical value of each piece
+	pieceValue := []int{0, 100, 300, 300, 500, 1000, 50000, 100, 300, 300, 500, 1000, 50000}
+
+	// color of each piece
+	pieceColor := []Color{Both, White, White, White, White, White, White, Black, Black, Black, Black, Black, Black}
+
+	for idx := range 120 {
+		piece := b.Pieces[idx]
+
+		if piece != 120 && piece != Empty {
+			color := pieceColor[piece]
+
+			// increment the big pieces
+			if pieceBig[piece] {
+				b.BigPieces[color]++
+			}
+
+			// increment major pieces
+			if pieceMaj[piece] {
+				b.MajorPieces[color]++
+			}
+
+			// increment minor pieces
+			if pieceMin[piece] {
+				b.MinorPieces[color]++
+			}
+
+			b.Material[color] += pieceValue[piece]
+
+			b.PieceList[piece][b.PieceNumber[piece]] = idx
+			b.PieceNumber[piece]++
+
+		}
+
+	}
+
 }
 
 // generates unique position key for the board
