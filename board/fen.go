@@ -20,7 +20,7 @@ func (b *Board) ParseFEN(fen string) error {
 		rank := Eight
 		file := One
 
-		for i := range len(positions) {
+		for i := range positions {
 
 			count := 1
 			piece := Empty
@@ -131,12 +131,12 @@ func (b *Board) ParseFEN(fen string) error {
 			return nil
 		}
 
-		if len(enpassant) >= 2 {
+		if len(enpassant) > 2 {
 			return fmt.Errorf("failed to parse enpassant square")
 		}
 
 		file = File(enpassant[0] - 'a')
-		rank = Rank(enpassant[1] - '0')
+		rank = Rank(enpassant[1] - '1')
 
 		if file < A || file > H || rank < One || rank > Eight {
 			return fmt.Errorf("failed to parse enpassant square")
@@ -161,6 +161,8 @@ func (b *Board) ParseFEN(fen string) error {
 	if err := parseEnPassant(fenSlice[3]); err != nil {
 		return err
 	}
+
+	b.PositionKey = b.GenPositionKey()
 
 	return nil
 }

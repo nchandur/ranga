@@ -64,6 +64,36 @@ func NewBoard() Board {
 	return b
 }
 
+// generates unique position key for the board
+func (b *Board) GenPositionKey() uint64 {
+
+	var key uint64
+
+	// pieces
+	for sq := range 120 {
+		piece := b.Pieces[sq]
+		if piece != Empty && piece != 120 {
+			key ^= PieceKeys[piece][sq]
+		}
+	}
+
+	// side to move
+	if b.SideToMove == White {
+		key ^= SideKey
+	}
+
+	// en passant
+	if b.EnPass != NoSquare {
+		key ^= EnPassKeys[b.EnPass]
+	}
+
+	// castling rights
+	key ^= CastleKeys[b.CastlingPermission]
+
+	return key
+
+}
+
 func (b *Board) Reset() {
 
 	// make all squares off-board
@@ -131,8 +161,8 @@ func (b *Board) Print() {
 
 	fmt.Println()
 	fmt.Printf("Side: %c\n", side[b.SideToMove])
-	fmt.Printf("En Passant Square: %d\n", Fr120To64(int(b.EnPass)))
-	fmt.Printf("Castle: %b%b%b%b\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
+	fmt.Printf("En Passant Square: %s\n", Fr120ToFR(int(b.EnPass)))
+	fmt.Printf("Castle: %x%x%x%x\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
 	fmt.Printf("Position Key: %x\n", b.PositionKey)
 
 }
