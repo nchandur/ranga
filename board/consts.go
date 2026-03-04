@@ -1,10 +1,6 @@
 package board
 
-<<<<<<< HEAD
-type Piece uint8
-=======
 type Piece int
->>>>>>> e528a5c51ad87cc43b2e048ab4951aa31cb0500f
 
 // w -> white b -> black
 // P -> Pawn
