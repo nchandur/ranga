@@ -7,4 +7,4 @@ run: build
 	./bin/main
 
 test:
-	go test ./square/
+	go test ./board/

@@ -40,14 +40,14 @@ func (b BitBoard) CountBits() int {
 
 // clear bit in square
 func (b *BitBoard) ClearBit(square Square) {
-	idx := Sq120to64[square]
+	idx := Fr120To64(int(square))
 
 	*b &= BitBoard(ClearMask[idx])
 }
 
 // set bitin square
 func (b *BitBoard) SetBit(square Square) {
-	idx := Sq120to64[square]
+	idx := Fr120To64(int(square))
 	*b |= BitBoard(SetMask[idx])
 }
 
@@ -58,7 +58,7 @@ func (b BitBoard) Print() {
 	for i := One; i <= Eight; i++ {
 		for j := A; j <= H; j++ {
 			sq := FRToSq(File(j), Rank(i))
-			sq64 := Sq120to64[sq]
+			sq64 := Fr120To64(int(sq))
 
 			if (shifter<<uint64(sq64))&uint64(b) != 0 {
 				fmt.Printf("%5s", "X")

@@ -1,6 +1,10 @@
 package board
 
+<<<<<<< HEAD
 type Piece uint8
+=======
+type Piece int
+>>>>>>> e528a5c51ad87cc43b2e048ab4951aa31cb0500f
 
 // w -> white b -> black
 // P -> Pawn
@@ -25,7 +29,7 @@ const (
 	bK
 )
 
-type File uint8
+type File int
 
 const (
 	A File = iota
@@ -39,7 +43,7 @@ const (
 	FNone
 )
 
-type Rank uint8
+type Rank int
 
 const (
 	One Rank = iota
@@ -53,7 +57,7 @@ const (
 	RNone
 )
 
-type Color uint8
+type Color int
 
 const (
 	White Color = iota
@@ -61,7 +65,7 @@ const (
 	Both
 )
 
-type Square uint8
+type Square int
 
 const (
 	A1 Square = 21 + iota
@@ -160,6 +164,3 @@ const (
 	BKSide
 	BQSide
 )
-
-var Sq120to64 []uint8
-var Sq64to120 []uint8

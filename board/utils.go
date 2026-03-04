@@ -1,35 +1,57 @@
 package board
 
+import "fmt"
+
 // returns 12x10 equivalent index from rank, file
 func FRToSq(file File, rank Rank) Square {
-	var res uint8
+	var res int
 	// 21st square in the 12x10 corresponds to A1 in the 8x8
-	res = uint8(21+file) + uint8(rank*10)
+	res = int(21+file) + int(rank*10)
 	return Square(res)
 }
 
-// assigns index values to 8x8 and 12x10 boards
-func Init120to64() {
-	Sq120to64 = make([]uint8, 120)
-	Sq64to120 = make([]uint8, 64)
+// returns file and rank from 64-based index
+func Fr64ToFR(idx int) string {
 
-	for i := range Sq120to64 {
-		Sq120to64[i] = 65
+	file := idx % 8
+	rank := idx / 8
+
+	return fmt.Sprintf("%c%d", rune('a'+file), rank)
+
+}
+
+// returns file and tank from 120-based index
+func Fr120ToFR(idx int) string {
+	file := (idx % 10) - 1
+	rank := (idx / 10) - 1
+
+	return fmt.Sprintf("%c%d", rune('a'+file), rank)
+
+}
+
+// returns 64-based index for a given 120-based index
+func Fr120To64(idx int) int {
+
+	r := idx / 10
+	f := idx % 10
+
+	if f < 1 || f > 8 || r < 2 || r > 9 {
+		return 65
 	}
 
-	for i := range Sq64to120 {
-		Sq64to120[i] = 120
+	return ((r - 2) * 8) + (f - 1)
+
+}
+
+// return 120-based index for a given 64-based index
+func Fr64To120(idx int) int {
+
+	if idx < 0 || idx >= 64 {
+		return 120
 	}
 
-	var sq64 uint8
+	r := idx / 8
+	f := idx % 8
 
-	for i := One; i <= Eight; i++ {
-		for j := A; j <= H; j++ {
-			sq := FRToSq(File(j), Rank(i))
-			Sq64to120[sq64] = uint8(sq)
-			Sq120to64[sq] = sq64
-			sq64++
-		}
-	}
-
+	return ((r + 2) * 10) + (f + 1)
 }

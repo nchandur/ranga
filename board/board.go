@@ -64,34 +64,34 @@ func NewBoard() Board {
 	return b
 }
 
+// generates unique position key for the board
 func (b *Board) GenPositionKey() uint64 {
-	var res uint64
 
-	piece := Empty
+	var key uint64
 
-	// encoding the piece positions
+	// pieces
 	for sq := range 120 {
-		piece = Piece(b.Pieces[sq])
-		if piece != Empty {
-			res ^= PieceKeys[piece][sq]
+		piece := b.Pieces[sq]
+		if piece != Empty && piece != 120 {
+			key ^= PieceKeys[piece][sq]
 		}
-
 	}
 
-	// encoding side to move
+	// side to move
 	if b.SideToMove == White {
-		res ^= SideKey
+		key ^= SideKey
 	}
 
-	// encoding en passant square
+	// en passant
 	if b.EnPass != NoSquare {
-		res ^= PieceKeys[Empty][b.EnPass]
+		key ^= EnPassKeys[b.EnPass]
 	}
 
-	// encoding castling permissions
-	res ^= CastleKeys[b.CastlingPermission]
+	// castling rights
+	key ^= CastleKeys[b.CastlingPermission]
 
-	return res
+	return key
+
 }
 
 func (b *Board) Reset() {
@@ -103,7 +103,7 @@ func (b *Board) Reset() {
 
 	// reset all 8x8 squares to empty
 	for i := range 64 {
-		b.Pieces[Sq64to120[i]] = Empty
+		b.Pieces[Fr64To120(i)] = Empty
 	}
 
 	for i := range 3 {
@@ -133,16 +133,17 @@ func (b *Board) Reset() {
 
 }
 
+// print board
 func (b *Board) Print() {
 
 	pieces := ".PNBRQKpnbrqk"
 	side := "wb-"
 
-	fmt.Println("Game Board")
+	fmt.Printf("\n===========Board===========\n\n")
 
-	for rank := Eight; rank >= One; rank-- {
+	for rank := int(Eight); rank >= int(One); rank-- {
 		fmt.Printf("%d ", rank+1)
-		for file := A; file >= H; file++ {
+		for file := A; file <= H; file++ {
 			sq := FRToSq(File(file), Rank(rank))
 			piece := b.Pieces[sq]
 			fmt.Printf("%3c", pieces[piece])
@@ -151,15 +152,17 @@ func (b *Board) Print() {
 		fmt.Println()
 	}
 
-	fmt.Printf("\n   ")
+	fmt.Printf("\n  ")
 	for file := A; file <= H; file++ {
 		fmt.Printf("%3c", 'a'+file)
 	}
 
+	fmt.Printf("\n===========================\n\n")
+
 	fmt.Println()
 	fmt.Printf("Side: %c\n", side[b.SideToMove])
-	fmt.Printf("En Passant Square: %d\n", Sq120to64[b.EnPass])
-	fmt.Printf("Castle: %c%c%c%c\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
+	fmt.Printf("En Passant Square: %s\n", Fr120ToFR(int(b.EnPass)))
+	fmt.Printf("Castle: %x%x%x%x\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
 	fmt.Printf("Position Key: %x\n", b.PositionKey)
 
 }
