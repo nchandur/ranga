@@ -128,6 +128,7 @@ func (b *Board) ParseFEN(fen string) error {
 
 		// no en passant square
 		if enpassant == "-" {
+			b.EnPass = 0
 			return nil
 		}
 

@@ -3,9 +3,9 @@ package board
 import "fmt"
 
 type Board struct {
-	Pieces     []Piece  // element represents the square on 8x8 board which is embedded in a 12x10 board
-	Pawns      []uint64 // for white, black and both. bit will be set to 1 if a piece of that color exists on that square
-	KingSq     []Square // square the kings are on (black and white)
+	Pieces     []Piece    // element represents the square on 8x8 board which is embedded in a 12x10 board
+	Pawns      []BitBoard // for white, black and both. bit will be set to 1 if a piece of that color exists on that square
+	KingSq     []Square   // square the kings are on (black and white)
 	SideToMove Color
 	EnPass     Square // target square of en passant
 	FiftyMove  int    // fifty move counter
@@ -41,7 +41,7 @@ func NewBoard() Board {
 	b := Board{}
 
 	b.Pieces = make([]Piece, 120)
-	b.Pawns = make([]uint64, 3)
+	b.Pawns = make([]BitBoard, 3)
 	b.KingSq = make([]Square, 2)
 	b.SideToMove = Both
 	b.EnPass = NoSquare
@@ -110,6 +110,15 @@ func (b *Board) UpdatePieceList() {
 			b.PieceList[piece][b.PieceNumber[piece]] = idx
 			b.PieceNumber[piece]++
 
+			switch piece {
+			case wP:
+				b.Pawns[White].SetBit(Square(idx))
+				b.Pawns[Both].SetBit(Square(idx))
+			case bP:
+				b.Pawns[Black].SetBit(Square(idx))
+				b.Pawns[Both].SetBit(Square(idx))
+			}
+
 		}
 
 	}
@@ -158,11 +167,11 @@ func (b *Board) Reset() {
 		b.Pieces[Fr64To120(i)] = Empty
 	}
 
-	for i := range 3 {
+	for i := range 2 {
 		b.BigPieces[i] = 0
 		b.MajorPieces[i] = 0
 		b.MinorPieces[i] = 0
-		b.Pawns[i] = uint64(0)
+		b.Pawns[i] = BitBoard(0)
 	}
 
 	for i := range 13 {
