@@ -2,14 +2,14 @@ package board
 
 // returns 12x10 equivalent index from rank, file
 func FRToSq(file File, rank Rank) Square {
-	var res uint8
+	var res int
 	// 21st square in the 12x10 corresponds to A1 in the 8x8
-	res = uint8(21+file) + uint8(rank*10)
+	res = int(21+file) + int(rank*10)
 	return Square(res)
 }
 
 // returns 64-based index for a given 120-based index
-func Fr120To64(idx uint8) uint8 {
+func Fr120To64(idx int) int {
 
 	r := idx / 10
 	f := idx % 10
@@ -23,15 +23,14 @@ func Fr120To64(idx uint8) uint8 {
 }
 
 // return 120-based index for a given 64-based index
-func Fr64To120(idx uint8) uint8 {
+func Fr64To120(idx int) int {
+
+	if idx < 0 || idx >= 64 {
+		return 120
+	}
 
 	r := idx / 8
 	f := idx % 8
 
-	if r < uint8(A) || r > uint8(H) || f < uint8(One) || f > uint8(Eight) {
-		return 120
-	}
-
 	return ((r + 2) * 10) + (f + 1)
-
 }

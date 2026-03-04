@@ -27,8 +27,8 @@ func TestFRToSq(t *testing.T) {
 
 func TestFr120To64(t *testing.T) {
 	tests := []struct {
-		idx      uint8
-		expected uint8
+		idx      int
+		expected int
 	}{
 		{idx: 21, expected: 0},
 		{idx: 98, expected: 63},
@@ -48,8 +48,8 @@ func TestFr120To64(t *testing.T) {
 
 func TestFr64To120(t *testing.T) {
 	tests := []struct {
-		idx      uint8
-		expected uint8
+		idx      int
+		expected int
 	}{
 		{idx: 0, expected: 21},
 		{idx: 63, expected: 98},

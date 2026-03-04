@@ -1,5 +1,7 @@
 package board
 
+import "fmt"
+
 type Board struct {
 	Pieces     []Piece  // element represents the square on 8x8 board which is embedded in a 12x10 board
 	Pawns      []uint64 // for white, black and both. bit will be set to 1 if a piece of that color exists on that square
@@ -71,7 +73,7 @@ func (b *Board) Reset() {
 
 	// reset all 8x8 squares to empty
 	for i := range 64 {
-		b.Pieces[Fr64To120(uint8(i))] = Empty
+		b.Pieces[Fr64To120(i)] = Empty
 	}
 
 	for i := range 3 {
@@ -98,5 +100,39 @@ func (b *Board) Reset() {
 	b.PositionKey = uint64(0)
 
 	b.History = nil
+
+}
+
+// print board
+func (b *Board) Print() {
+
+	pieces := ".PNBRQKpnbrqk"
+	side := "wb-"
+
+	fmt.Printf("\n===========Board===========\n\n")
+
+	for rank := int(Eight); rank >= int(One); rank-- {
+		fmt.Printf("%d ", rank+1)
+		for file := A; file <= H; file++ {
+			sq := FRToSq(File(file), Rank(rank))
+			piece := b.Pieces[sq]
+			fmt.Printf("%3c", pieces[piece])
+
+		}
+		fmt.Println()
+	}
+
+	fmt.Printf("\n  ")
+	for file := A; file <= H; file++ {
+		fmt.Printf("%3c", 'a'+file)
+	}
+
+	fmt.Printf("\n===========================\n\n")
+
+	fmt.Println()
+	fmt.Printf("Side: %c\n", side[b.SideToMove])
+	fmt.Printf("En Passant Square: %d\n", Fr120To64(int(b.EnPass)))
+	fmt.Printf("Castle: %b%b%b%b\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
+	fmt.Printf("Position Key: %x\n", b.PositionKey)
 
 }
