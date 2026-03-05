@@ -2,6 +2,23 @@ package board
 
 import "fmt"
 
+var (
+	// all non-pawn and non-empty pieces ".PNBRQKpnbrqk"
+	pieceBig = []bool{false, false, true, true, true, true, true, false, true, true, true, true, true}
+
+	// all major pieces (rooks and queens and kings)
+	pieceMaj = []bool{false, false, false, false, true, true, true, false, false, false, true, true, true}
+
+	// all minor pieces (knights and bishops)
+	pieceMin = []bool{false, false, true, true, false, false, false, false, true, true, false, false, false}
+
+	// numerical value of each piece
+	pieceValue = []int{0, 100, 300, 300, 500, 1000, 50000, 100, 300, 300, 500, 1000, 50000}
+
+	// color of each piece
+	pieceColor = []Color{Both, White, White, White, White, White, White, Black, Black, Black, Black, Black, Black}
+)
+
 type Board struct {
 	Pieces     []Piece    // element represents the square on 8x8 board which is embedded in a 12x10 board
 	Pawns      []BitBoard // for white, black and both. bit will be set to 1 if a piece of that color exists on that square
@@ -68,21 +85,6 @@ func NewBoard() Board {
 
 // update piece list on board
 func (b *Board) UpdatePieceList() {
-
-	// all non-pawn and non-empty pieces ".PNBRQKpnbrqk"
-	pieceBig := []bool{false, false, true, true, true, true, true, false, true, true, true, true, true}
-
-	// all major pieces (rooks and queens and kings)
-	pieceMaj := []bool{false, false, false, false, true, true, true, false, false, false, true, true, true}
-
-	// all minor pieces (knights and bishops)
-	pieceMin := []bool{false, false, true, true, false, false, false, false, true, true, false, false, false}
-
-	// numerical value of each piece
-	pieceValue := []int{0, 100, 300, 300, 500, 1000, 50000, 100, 300, 300, 500, 1000, 50000}
-
-	// color of each piece
-	pieceColor := []Color{Both, White, White, White, White, White, White, Black, Black, Black, Black, Black, Black}
 
 	for idx := range 120 {
 		piece := b.Pieces[idx]
@@ -192,6 +194,118 @@ func (b *Board) Reset() {
 
 	b.History = nil
 
+}
+
+// check if board is valid
+func (b *Board) Check() bool {
+	tempPieceNum := make([]int, 13)
+	tempBigPiece := make([]int, 2)
+	tempMajPiece := make([]int, 2)
+	tempMinPiece := make([]int, 2)
+	tempMaterial := make([]int, 2)
+
+	tempPawns := b.Pawns
+
+	// check if piece lists align
+	for piece := wP; piece <= bK; piece++ {
+		for num := range b.PieceNumber[piece] {
+			sq := b.PieceList[piece][num]
+
+			if b.Pieces[sq] != piece {
+				fmt.Println("piece list failed")
+				return false
+			}
+		}
+	}
+
+	for sq := range 64 {
+		sq120 := Fr64To120(sq)
+		piece := b.Pieces[sq120]
+
+		if piece != Empty && piece != 120 {
+
+			tempPieceNum[piece]++
+			color := pieceColor[piece]
+
+			if pieceBig[piece] {
+				tempBigPiece[color]++
+			}
+
+			if pieceMaj[piece] {
+				tempMajPiece[color]++
+			}
+
+			if pieceMin[piece] {
+				tempMinPiece[color]++
+			}
+
+			tempMaterial[color] += pieceValue[piece]
+		}
+
+	}
+
+	// check if piece number align
+	for piece := wP; piece <= bK; piece++ {
+		if tempPieceNum[piece] != b.PieceNumber[piece] {
+			fmt.Println("piece number check failed")
+			return false
+		}
+	}
+
+	// check pawn bitboards
+	pCount := tempPawns[White].CountBits()
+
+	if pCount != b.PieceNumber[wP] {
+		fmt.Println("white pawn count failed")
+		return false
+	}
+
+	pCount = tempPawns[Black].CountBits()
+
+	if pCount != b.PieceNumber[bP] {
+		fmt.Println("black pawn count failed")
+		return false
+	}
+
+	pCount = tempPawns[Both].CountBits()
+
+	if pCount != (b.PieceNumber[wP] + b.PieceNumber[bP]) {
+		fmt.Println("both pawn count failed")
+		return false
+	}
+
+	// other sanity checks
+	if (tempMaterial[White] != b.Material[White]) || (tempMaterial[Black] != b.Material[Black]) {
+		fmt.Println("material check failed")
+		return false
+	}
+
+	if (tempMajPiece[White] != b.MajorPieces[White]) || (tempMajPiece[Black] != b.MajorPieces[Black]) {
+		fmt.Println("major piece check failed")
+		return false
+	}
+
+	if (tempMinPiece[White] != b.MinorPieces[White]) || (tempMinPiece[Black] != b.MinorPieces[Black]) {
+		fmt.Println("minor piece check failed")
+		return false
+	}
+
+	if (tempBigPiece[White] != b.BigPieces[White]) || (tempBigPiece[Black] != b.BigPieces[Black]) {
+		fmt.Println("big piece check failed")
+		return false
+	}
+
+	if (b.SideToMove != White) && (b.SideToMove != Black) {
+		fmt.Println("side to move check failed")
+		return false
+	}
+
+	if b.GenPositionKey() != b.PositionKey {
+		fmt.Println("position key check failed")
+		return false
+	}
+
+	return true
 }
 
 // print board
