@@ -62,13 +62,14 @@ func Fr64ToFR(idx int) string {
 
 // returns file and tank from 120-based index
 func Fr120ToFR(idx int) string {
-	file := (idx % 10) - 1
-	rank := (idx / 10) - 1
 
-	if file < 1 || file > 8 || rank < 2 || rank > 9 {
+	file := (idx % 10) - 1
+	rank := (idx / 10) - 2
+
+	if file < 0 || file > 7 || rank < 0 || rank > 7 {
 		return "-"
 	}
 
-	return fmt.Sprintf("%c%d", rune('a'+file), rank)
+	return fmt.Sprintf("%c%d", rune('a'+file), rank+1)
 
 }
