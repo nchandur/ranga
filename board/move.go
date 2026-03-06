@@ -1,12 +1,14 @@
 package board
 
+import "fmt"
+
 type Move struct {
 	move  int
 	score int
 }
 
-// 0000 0000 0000 0000 0000 0111 1111 -> From Square (7 bits) 0x3F
-// 0000 0000 0000 0011 1111 1000 0000 -> To Square (7 bits) >> 7, 0x3F
+// 0000 0000 0000 0000 0000 0111 1111 -> From Square (7 bits) 0x7F
+// 0000 0000 0000 0011 1111 1000 0000 -> To Square (7 bits) >> 7, 0x7F
 // 0000 0000 0011 1100 0000 0000 0000 -> Captured piece (4 bits) >> 14, 0xF
 // 0000 0000 0100 0000 0000 0000 0000 -> Enpassant move (1 bit) 0x40000
 // 0000 0000 1000 0000 0000 0000 0000 -> Pawn start (1 bit) 0x80000
@@ -39,7 +41,7 @@ func (m *Move) SetEnPassant() {
 }
 
 // set pawn start
-func (m *Move)SetPawnStart() {
+func (m *Move) SetPawnStart() {
 	m.move |= 0x80000
 }
 
@@ -50,12 +52,12 @@ func (m *Move) SetCapture() {
 
 // returns 120-based index for from square
 func (m *Move) FromSq() int {
-	return m.move & 0x3F
+	return m.move & 0x7F
 }
 
 // returns 120-based index for to square
 func (m *Move) ToSq() int {
-	return (m.move >> 7) & 0x3F
+	return (m.move >> 7) & 0x7F
 }
 
 // returns the piece that was captured
@@ -91,4 +93,34 @@ func (m *Move) IsCapture() bool {
 // returns if promotion
 func (m *Move) IsPromotion() bool {
 	return m.move&0xF00000 == 1
+}
+
+func (m *Move) String() string {
+
+	from := m.FromSq()
+	to := m.ToSq()
+
+	promoted := m.PromotedPiece()
+
+	if promoted != 1 {
+
+		pieceChar := 'q'
+
+		if isKnight(Piece(promoted)) {
+			pieceChar = 'n'
+		}
+
+		if isBishop(Piece(promoted)) {
+			pieceChar = 'b'
+		}
+
+		if isRook(Piece(promoted)) {
+			pieceChar = 'r'
+		}
+		return fmt.Sprintf("%s%s%c", Fr120ToFR(from), Fr120ToFR(to), pieceChar)
+
+	}
+
+	return fmt.Sprintf("%s%s", Fr120ToFR(from), Fr120ToFR(to))
+
 }
