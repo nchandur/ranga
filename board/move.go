@@ -126,7 +126,7 @@ func (m *Move) String() string {
 
 	promoted := Piece(m.PromotedPiece())
 
-	if promoted != int(Empty) {
+	if promoted != Empty {
 
 		pieceChar := 'q'
 
