@@ -19,7 +19,7 @@ func Fr120ToFile(idx int) File {
 
 // from 120-based index to rank
 func Fr120ToRank(idx int) Rank {
-	rank := (idx / 10)
+	rank := (idx / 10) - 2
 	return Rank(rank)
 }
 
