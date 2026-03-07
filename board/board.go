@@ -336,7 +336,7 @@ func (b *Board) Print() {
 
 	fmt.Println()
 	fmt.Printf("Side: %c\n", side[b.SideToMove])
-	fmt.Printf("En Passant Square: %s\n", Fr120ToFR(int(b.EnPass)))
+	fmt.Printf("En Passant Square: %s\n", b.EnPass.String())
 	fmt.Printf("Castle: %x%x%x%x\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
 	fmt.Printf("Position Key: %x\n", b.PositionKey)
 
