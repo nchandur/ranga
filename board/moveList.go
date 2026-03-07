@@ -5,7 +5,26 @@ import (
 	"strings"
 )
 
-const maxMoves = 256
+var pieceDirection = [][]int{
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{-8, -19, -21, -12, 8, 19, 21, 12},
+	{-9, -11, 11, 9, 0, 0, 0, 0},
+	{-1, -10, 1, 10, 0, 0, 0, 0},
+	{-1, -10, 1, 10, -9, -11, 11, 9},
+	{-1, -10, 1, 10, -9, -11, 11, 9},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{-8, -19, -21, -12, 8, 19, 21, 12},
+	{-9, -11, 11, 9, 0, 0, 0, 0},
+	{-1, -10, 1, 10, 0, 0, 0, 0},
+	{-1, -10, 1, 10, -9, -11, 11, 9},
+	{-1, -10, 1, 10, -9, -11, 11, 9},
+}
+
+// number of times to loop through in that direction
+var numDirection = []int{
+	0, 0, 8, 4, 4, 8, 8, 0, 8, 4, 4, 8, 8,
+}
 
 type MoveList struct {
 	moves []Move
@@ -14,7 +33,7 @@ type MoveList struct {
 
 func NewMoveList() MoveList {
 	ml := MoveList{}
-	ml.moves = make([]Move, maxMoves)
+	ml.moves = make([]Move, 256)
 	return ml
 }
 
@@ -25,12 +44,6 @@ func (m *MoveList) addQuietMove(move int) {
 }
 
 func (m *MoveList) addCaptureMove(move int) {
-	m.moves[m.count].move = move
-	m.moves[m.count].score = 0
-	m.count++
-}
-
-func (m *MoveList) addEnPassantMove(move int) {
 	m.moves[m.count].move = move
 	m.moves[m.count].score = 0
 	m.count++
@@ -154,6 +167,131 @@ func (m *MoveList) pawnMoveGeneration(board *Board) {
 
 }
 
+func (m *MoveList) slidingPieceMoveGeneration(board *Board) {
+	slidePiece := []Piece{wB, wR, wQ, Empty, bB, bR, bQ, Empty}
+	slideIdx := []int{0, 4}
+
+	pieceIdx := slideIdx[board.SideToMove]
+	piece := slidePiece[pieceIdx]
+	pieceIdx++
+
+	for piece != Empty {
+
+		for pieceNum := range board.PieceNumber[piece] {
+			sq := Square(board.PieceList[piece][pieceNum])
+
+			for idx := range numDirection[piece] {
+				dir := pieceDirection[piece][idx]
+				tempSq := Square(int(sq) + dir)
+
+				// if square is offboard
+				for board.Pieces[tempSq] != 120 {
+					// if square is a capture
+					if board.Pieces[tempSq] != Empty {
+						if pieceColor[board.Pieces[tempSq]] == board.SideToMove^1 {
+							m.addCaptureMove(NewMove(sq, tempSq, board.Pieces[tempSq], Empty, false, false).move)
+						}
+						break
+					}
+
+					m.addQuietMove(NewMove(sq, tempSq, Empty, Empty, false, false).move)
+					tempSq = Square(int(tempSq) + dir)
+				}
+
+			}
+
+		}
+
+		piece = slidePiece[pieceIdx]
+		pieceIdx++
+	}
+
+}
+
+func (m *MoveList) nonSlidingPieceMoveGeneration(board *Board) {
+	nonSlidePiece := []Piece{wN, wK, Empty, bN, bK, Empty}
+	nonSlideIdx := []int{0, 3}
+
+	pieceIdx := nonSlideIdx[board.SideToMove]
+	piece := nonSlidePiece[pieceIdx]
+	pieceIdx++
+
+	for piece != Empty {
+
+		for pieceNum := range board.PieceNumber[piece] {
+			sq := Square(board.PieceList[piece][pieceNum])
+			for idx := range numDirection[piece] {
+				dir := pieceDirection[piece][idx]
+				tempSq := Square(int(sq) + dir)
+
+				// if square is offboard
+				if board.Pieces[tempSq] == 120 {
+					continue
+				}
+
+				// if square is a capture
+				if board.Pieces[tempSq] != Empty {
+					if pieceColor[board.Pieces[tempSq]] == board.SideToMove^1 {
+						m.addCaptureMove(NewMove(sq, tempSq, board.Pieces[tempSq], Empty, false, false).move)
+					}
+					continue
+				}
+
+				m.addQuietMove(NewMove(sq, tempSq, Empty, Empty, false, false).move)
+
+			}
+
+		}
+
+		piece = nonSlidePiece[pieceIdx]
+		pieceIdx++
+
+	}
+
+}
+
+func (m *MoveList) castlingMoveGeneration(board *Board) {
+
+	switch board.SideToMove {
+	case White:
+		if board.CastlingPermission&WKSide != 0 {
+			if board.Pieces[F1] == Empty && board.Pieces[G1] == Empty {
+				if !board.IsAttacked(E1, Black) && !board.IsAttacked(F1, Black) {
+					m.addQuietMove(NewMove(E1, G1, Empty, Empty, false, false).move)
+				}
+			}
+		}
+
+		if board.CastlingPermission&WQSide != 0 {
+			if board.Pieces[D1] == Empty && board.Pieces[C1] == Empty && board.Pieces[B1] == Empty {
+				if !board.IsAttacked(E1, Black) && !board.IsAttacked(D1, Black) {
+					m.addQuietMove(NewMove(E1, C1, Empty, Empty, false, false).move)
+				}
+			}
+		}
+
+	case Black:
+
+		if board.CastlingPermission&BKSide != 0 {
+			if board.Pieces[F8] == Empty && board.Pieces[G8] == Empty {
+				if !board.IsAttacked(E8, White) && !board.IsAttacked(F8, White) {
+					m.addQuietMove(NewMove(E8, G8, Empty, Empty, false, false).move)
+				}
+			}
+		}
+
+		if board.CastlingPermission&BQSide != 0 {
+			if board.Pieces[D8] == Empty && board.Pieces[C8] == Empty && board.Pieces[B8] == Empty {
+				if !board.IsAttacked(E8, White) && !board.IsAttacked(D8, White) {
+					m.addQuietMove(NewMove(E8, C8, Empty, Empty, false, false).move)
+				}
+			}
+		}
+
+	}
+
+}
+
 func (m *MoveList) Generate(board *Board) {
 
 	if !board.Check() {
@@ -161,6 +299,9 @@ func (m *MoveList) Generate(board *Board) {
 	}
 
 	m.pawnMoveGeneration(board)
+	m.slidingPieceMoveGeneration(board)
+	m.nonSlidingPieceMoveGeneration(board)
+	m.castlingMoveGeneration(board)
 
 }
 
