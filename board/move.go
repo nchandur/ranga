@@ -95,32 +95,56 @@ func (m *Move) IsPromotion() bool {
 	return m.move&0xF00000 == 1
 }
 
+func NewMove(from, to Square, captured, promoted Piece, isEnPass, isPawnStart bool) Move {
+
+	m := Move{}
+
+	m.SetFromSq(from)
+	m.SetToSq(to)
+	m.SetCapturedPiece(captured)
+	m.SetPromotedPiece(promoted)
+
+	if m.CapturedPiece() != int(Empty) {
+		m.SetCapture()
+	}
+
+	if isEnPass {
+		m.SetEnPassant()
+	}
+
+	if isPawnStart {
+		m.SetPawnStart()
+	}
+
+	return m
+}
+
 func (m *Move) String() string {
 
-	from := m.FromSq()
-	to := m.ToSq()
+	from := Square(m.FromSq())
+	to := Square(m.ToSq())
 
-	promoted := m.PromotedPiece()
+	promoted := Piece(m.PromotedPiece())
 
-	if promoted != 1 {
+	if promoted != Empty {
 
 		pieceChar := 'q'
 
-		if isKnight(Piece(promoted)) {
+		if promoted.isKnight() {
 			pieceChar = 'n'
 		}
 
-		if isBishop(Piece(promoted)) {
+		if promoted.isBishop() {
 			pieceChar = 'b'
 		}
 
-		if isRook(Piece(promoted)) {
+		if promoted.isRook() {
 			pieceChar = 'r'
 		}
-		return fmt.Sprintf("%s%s%c", Fr120ToFR(from), Fr120ToFR(to), pieceChar)
+		return fmt.Sprintf("%s%s%c", from.String(), to.String(), pieceChar)
 
 	}
 
-	return fmt.Sprintf("%s%s", Fr120ToFR(from), Fr120ToFR(to))
+	return fmt.Sprintf("%s%s", from.String(), to.String())
 
 }

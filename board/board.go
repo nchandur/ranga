@@ -17,6 +17,9 @@ var (
 
 	// color of each piece
 	pieceColor = []Color{Both, White, White, White, White, White, White, Black, Black, Black, Black, Black, Black}
+
+	// does the piece slide
+	pieceSlide = []bool{false, false, false, true, true, true, false, false, false, true, true, true, false}
 )
 
 type Board struct {
@@ -174,6 +177,7 @@ func (b *Board) Reset() {
 		b.MajorPieces[i] = 0
 		b.MinorPieces[i] = 0
 		b.Pawns[i] = BitBoard(0)
+		b.Material[i] = 0
 	}
 
 	for i := range 13 {
@@ -336,7 +340,7 @@ func (b *Board) Print() {
 
 	fmt.Println()
 	fmt.Printf("Side: %c\n", side[b.SideToMove])
-	fmt.Printf("En Passant Square: %s\n", Fr120ToFR(int(b.EnPass)))
+	fmt.Printf("En Passant Square: %s\n", b.EnPass.String())
 	fmt.Printf("Castle: %x%x%x%x\n", b.CastlingPermission&WKSide, b.CastlingPermission&WQSide, b.CastlingPermission&BKSide, b.CastlingPermission&BQSide)
 	fmt.Printf("Position Key: %x\n", b.PositionKey)
 
