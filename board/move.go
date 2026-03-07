@@ -95,6 +95,30 @@ func (m *Move) IsPromotion() bool {
 	return m.move&0xF00000 == 1
 }
 
+func NewMove(from, to Square, captured, promoted Piece, isEnPass, isPawnStart bool) Move {
+
+	m := Move{}
+
+	m.SetFromSq(from)
+	m.SetToSq(to)
+	m.SetCapturedPiece(captured)
+	m.SetPromotedPiece(promoted)
+
+	if m.CapturedPiece() != int(Empty) {
+		m.SetCapture()
+	}
+
+	if isEnPass {
+		m.SetEnPassant()
+	}
+
+	if isPawnStart {
+		m.SetPawnStart()
+	}
+
+	return m
+}
+
 func (m *Move) String() string {
 
 	from := Square(m.FromSq())
@@ -102,7 +126,8 @@ func (m *Move) String() string {
 
 	promoted := Piece(m.PromotedPiece())
 
-	if promoted != 1 {
+	if promoted != int(Empty) {
+
 		pieceChar := 'q'
 
 		if promoted.isKnight() {
