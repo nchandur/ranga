@@ -94,5 +94,10 @@ const (
 )
 
 func (s *Square) String() string {
+
+	if *s == Square(Empty) || *s == 120 {
+		return "-"
+	}
+
 	return fmt.Sprintf("%c%d", 'a'+Fr120ToFile(int(*s)), Fr120ToRank(int(*s))+1)
 }

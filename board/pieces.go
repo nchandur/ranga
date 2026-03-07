@@ -26,31 +26,31 @@ const (
 )
 
 // checks if a given piece is a knight
-func (piece *Piece) isKnight() bool {
-	return *piece == wN || *piece == bN
+func (p *Piece) isKnight() bool {
+	return *p == wN || *p == bN
 }
 
 // check if a given piece is a bishop
-func (piece *Piece) isBishop() bool {
-	return *piece == wB || *piece == bB
+func (p *Piece) isBishop() bool {
+	return *p == wB || *p == bB
 }
 
 // check if a given piece is a rook
-func (piece *Piece) isRook() bool {
-	return *piece == wR || *piece == bR
+func (p *Piece) isRook() bool {
+	return *p == wR || *p == bR
 }
 
 // check if a given piece is a queen
-func (piece *Piece) isQueen() bool {
-	return *piece == wQ || *piece == bQ
+func (p *Piece) isQueen() bool {
+	return *p == wQ || *p == bQ
 }
 
 // check if a given piece is a king
-func (piece *Piece) isKing() bool {
-	return *piece == wK || *piece == bK
+func (p *Piece) isKing() bool {
+	return *p == wK || *p == bK
 }
 
 // check if a given piece is a pawn
-func (piece *Piece) isPawn() bool {
-	return *piece == wP || *piece == bP
+func (p *Piece) isPawn() bool {
+	return *p == wP || *p == bP
 }
