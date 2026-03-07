@@ -1,7 +1,5 @@
 package board
 
-import "fmt"
-
 type Move struct {
 	move  int
 	score int
@@ -93,34 +91,4 @@ func (m *Move) IsCapture() bool {
 // returns if promotion
 func (m *Move) IsPromotion() bool {
 	return m.move&0xF00000 == 1
-}
-
-func (m *Move) String() string {
-
-	from := m.FromSq()
-	to := m.ToSq()
-
-	promoted := m.PromotedPiece()
-
-	if promoted != 1 {
-
-		pieceChar := 'q'
-
-		if isKnight(Piece(promoted)) {
-			pieceChar = 'n'
-		}
-
-		if isBishop(Piece(promoted)) {
-			pieceChar = 'b'
-		}
-
-		if isRook(Piece(promoted)) {
-			pieceChar = 'r'
-		}
-		return fmt.Sprintf("%s%s%c", Fr120ToFR(from), Fr120ToFR(to), pieceChar)
-
-	}
-
-	return fmt.Sprintf("%s%s", Fr120ToFR(from), Fr120ToFR(to))
-
 }

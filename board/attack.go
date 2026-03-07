@@ -25,7 +25,7 @@ func (b *Board) isAttackedByKnight(square Square, side Color) bool {
 	for _, dir := range direction {
 		piece := b.Pieces[square+Square(dir)]
 
-		if isKnight(piece) && pieceColor[piece] == side {
+		if piece.isKnight() && pieceColor[piece] == side {
 			return true
 		}
 
@@ -49,7 +49,7 @@ func (b *Board) isAttackedByRookOrQueen(square Square, side Color) bool {
 
 			// if there is a piece on square
 			if piece != Empty {
-				if (isRook(piece) || isQueen(piece)) && pieceColor[piece] == side {
+				if (piece.isRook() || piece.isQueen()) && pieceColor[piece] == side {
 					return true
 				}
 				break
@@ -80,7 +80,7 @@ func (b *Board) isAttackedByBishopOrQueen(square Square, side Color) bool {
 
 			// if there is a piece on square
 			if piece != Empty {
-				if (isBishop(piece) || isQueen(piece)) && pieceColor[piece] == side {
+				if (piece.isBishop() || piece.isQueen()) && pieceColor[piece] == side {
 					return true
 				}
 				break
@@ -103,7 +103,7 @@ func (b *Board) isAttackedByKing(square Square, side Color) bool {
 	for _, dir := range direction {
 		piece := b.Pieces[square+Square(dir)]
 
-		if isKing(piece) && pieceColor[piece] == side {
+		if piece.isKing() && pieceColor[piece] == side {
 			return true
 		}
 
