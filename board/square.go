@@ -97,9 +97,12 @@ const Offboard Square = 120
 
 func (s *Square) String() string {
 
-	if *s == NoSquare || *s == Offboard {
+	file := Fr120ToFile(int(*s))
+	rank := Fr120ToRank(int(*s))
+
+	if file < A || file > H || rank < One || rank > Eight {
 		return "-"
 	}
 
-	return fmt.Sprintf("%c%d", 'a'+Fr120ToFile(int(*s)), Fr120ToRank(int(*s))+1)
+	return fmt.Sprintf("%c%d", 'a'+file, rank+1)
 }

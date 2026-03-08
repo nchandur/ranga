@@ -17,9 +17,6 @@ var (
 
 	// color of each piece
 	pieceColor = []Color{Both, White, White, White, White, White, White, Black, Black, Black, Black, Black, Black}
-
-	// does the piece slide
-	pieceSlide = []bool{false, false, false, true, true, true, false, false, false, true, true, true, false}
 )
 
 type Board struct {
@@ -50,7 +47,7 @@ type Board struct {
 }
 
 type Undo struct {
-	Move               int
+	Move               Move
 	CastlingPermission Castling
 	EnPass             Square
 	FiftyMove          int

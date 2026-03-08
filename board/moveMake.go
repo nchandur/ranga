@@ -191,7 +191,7 @@ func (b *Board) MakeMove(move Move) bool {
 	}
 
 	b.hashCastle()
-	b.History[b.HistPly].Move = move.move
+	b.History[b.HistPly].Move = move
 	b.History[b.HistPly].FiftyMove = b.FiftyMove
 	b.History[b.HistPly].EnPass = b.EnPass
 	b.History[b.HistPly].CastlingPermission = b.CastlingPermission
@@ -219,14 +219,8 @@ func (b *Board) MakeMove(move Move) bool {
 			switch side {
 			case White:
 				b.EnPass = from + 10
-				if Fr120ToRank(int(b.EnPass)) != Three {
-					return false
-				}
 			case Black:
 				b.EnPass = from - 10
-				if Fr120ToRank(int(b.EnPass)) != Six {
-					return false
-				}
 			}
 			b.hashEnPassant()
 		}
@@ -257,9 +251,100 @@ func (b *Board) MakeMove(move Move) bool {
 	b.hashSideToMove()
 
 	if b.IsAttacked(b.KingSq[side], b.SideToMove) {
-		// TakeMove
-		return false
+		return b.TakeMove()
 	}
 
 	return b.Check()
+}
+
+func (b *Board) TakeMove() bool {
+
+	if !b.Check() {
+		return false
+	}
+
+	b.HistPly--
+	b.Ply--
+
+	move := b.History[b.HistPly].Move
+
+	from := Square(move.FromSq())
+	to := Square(move.ToSq())
+
+	if from == NoSquare || from == Offboard || to == NoSquare || to == Offboard {
+		return false
+	}
+
+	if b.EnPass != NoSquare {
+		b.hashEnPassant()
+	}
+
+	b.hashCastle()
+	b.CastlingPermission = b.History[b.HistPly].CastlingPermission
+	b.FiftyMove = b.History[b.HistPly].FiftyMove
+	b.EnPass = b.History[b.HistPly].EnPass
+
+	if b.EnPass != NoSquare {
+		b.hashEnPassant()
+	}
+	b.hashCastle()
+
+	b.SideToMove ^= 1
+	b.hashSideToMove()
+
+	if move.IsEnPassant() {
+		switch b.SideToMove {
+		case White:
+			b.AddPiece(bP, to-10)
+		case Black:
+			b.AddPiece(wP, to+10)
+		}
+	}
+
+	if move.IsCapture() {
+		switch to {
+		case C1:
+			b.MovePiece(D1, A1)
+		case C8:
+			b.MovePiece(D8, A8)
+		case G1:
+			b.MovePiece(F1, H1)
+		case G8:
+			b.MovePiece(F8, H8)
+		default:
+			return false
+		}
+	}
+
+	b.MovePiece(to, from)
+
+	if b.Pieces[from].isKing() {
+		b.KingSq[b.SideToMove] = from
+	}
+
+	captured := Piece(move.CapturedPiece())
+
+	if captured != Empty {
+		b.AddPiece(captured, to)
+	}
+
+	promoted := Piece(move.PromotedPiece())
+
+	if promoted != Empty {
+		if !promoted.isPawn() {
+			b.ClearPiece(from)
+
+			pce := Empty
+			if pieceColor[promoted] == White {
+				pce = wP
+			} else {
+				pce = bP
+			}
+
+			b.AddPiece(pce, from)
+		}
+	}
+
+	return b.Check()
+
 }

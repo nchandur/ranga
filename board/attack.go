@@ -25,7 +25,7 @@ func (b *Board) isAttackedByKnight(square Square, side Color) bool {
 	for _, dir := range direction {
 		piece := b.Pieces[square+Square(dir)]
 
-		if piece.isKnight() && pieceColor[piece] == side {
+		if piece != Piece(Offboard) && piece.isKnight() && pieceColor[piece] == side {
 			return true
 		}
 

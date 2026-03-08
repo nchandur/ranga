@@ -27,26 +27,26 @@ var numDirection = []int{
 }
 
 type MoveList struct {
-	moves []Move
-	count int
+	Moves []Move
+	Count int
 }
 
 func NewMoveList() MoveList {
 	ml := MoveList{}
-	ml.moves = make([]Move, 256)
+	ml.Moves = make([]Move, 256)
 	return ml
 }
 
 func (m *MoveList) addQuietMove(move int) {
-	m.moves[m.count].move = move
-	m.moves[m.count].score = 0
-	m.count++
+	m.Moves[m.Count].move = move
+	m.Moves[m.Count].score = 0
+	m.Count++
 }
 
 func (m *MoveList) addCaptureMove(move int) {
-	m.moves[m.count].move = move
-	m.moves[m.count].score = 0
-	m.count++
+	m.Moves[m.Count].move = move
+	m.Moves[m.Count].score = 0
+	m.Count++
 }
 
 func (m *MoveList) addWhitePawnCaptureMove(from, to Square, capture Piece) {
@@ -94,7 +94,7 @@ func (m *MoveList) addBlackPawnMove(from, to Square) {
 }
 
 func (m *MoveList) pawnMoveGeneration(board *Board) {
-	m.count = 0
+	m.Count = 0
 	side := board.SideToMove
 
 	switch side {
@@ -113,19 +113,21 @@ func (m *MoveList) pawnMoveGeneration(board *Board) {
 
 			tempSq := board.Pieces[sq+9]
 			if tempSq != 120 && pieceColor[tempSq] == Black {
-				m.addWhitePawnCaptureMove(sq, sq+9, board.Pieces[sq+9])
+				m.addWhitePawnCaptureMove(sq, sq+9, tempSq)
 			}
 
 			tempSq = board.Pieces[sq+11]
 			if tempSq != 120 && pieceColor[tempSq] == Black {
-				m.addWhitePawnCaptureMove(sq, sq+11, board.Pieces[sq+11])
+				m.addWhitePawnCaptureMove(sq, sq+11, tempSq)
 			}
 
 			if (sq + 9) == board.EnPass {
+				fmt.Println(board.EnPass, sq+9)
 				m.addCaptureMove(NewMove(sq, sq+9, Empty, Empty, true, false).move)
 			}
 
 			if (sq + 11) == board.EnPass {
+				fmt.Println(board.EnPass, sq+11)
 				m.addCaptureMove(NewMove(sq, sq+11, Empty, Empty, true, false).move)
 			}
 
@@ -308,11 +310,11 @@ func (m *MoveList) Generate(board *Board) {
 func (m *MoveList) String() string {
 	var builder strings.Builder
 
-	for idx := range m.count {
-		score := m.moves[idx].score
-		fmt.Fprintf(&builder, "Move #%d: %s (score: %d)\n", idx+1, m.moves[idx].String(), score)
+	for idx := range m.Count {
+		score := m.Moves[idx].score
+		fmt.Fprintf(&builder, "Move #%d: %s (score: %d)\n", idx+1, m.Moves[idx].String(), score)
 	}
 
-	fmt.Fprintf(&builder, "Move List: %d\n", m.count)
+	fmt.Fprintf(&builder, "Move List: %d\n", m.Count)
 	return builder.String()
 }
