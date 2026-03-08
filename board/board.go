@@ -312,6 +312,26 @@ func (b *Board) Check() bool {
 	return true
 }
 
+// hash piece to position key
+func (b *Board) hashPiece(piece Piece, square Square) {
+	b.PositionKey ^= PieceKeys[piece][square]
+}
+
+// hash castle permission to position key
+func (b *Board) hashCastle() {
+	b.PositionKey ^= CastleKeys[b.CastlingPermission]
+}
+
+// hash side to move to position key
+func (b *Board) hashSideToMove() {
+	b.PositionKey ^= SideKey
+}
+
+// hash enpassant square to position key
+func (b *Board) hashEnPassant() {
+	b.PositionKey ^= PieceKeys[Empty][b.EnPass]
+}
+
 // print board
 func (b *Board) Print() {
 
