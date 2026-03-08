@@ -164,6 +164,7 @@ func (b *Board) ParseFEN(fen string) error {
 	}
 
 	b.PositionKey = b.GenPositionKey()
+	b.UpdatePieceList()
 
 	return nil
 }

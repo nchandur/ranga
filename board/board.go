@@ -51,8 +51,8 @@ type Board struct {
 
 type Undo struct {
 	Move               int
-	CastlingPermission uint8
-	EnPass             int
+	CastlingPermission Castling
+	EnPass             Square
 	FiftyMove          int
 	PositionKey        uint64
 }
@@ -82,6 +82,8 @@ func NewBoard() Board {
 	for i := range 13 {
 		b.PieceList[i] = make([]int, 10)
 	}
+
+	b.History = make([]Undo, 4096)
 
 	return b
 }
@@ -114,6 +116,13 @@ func (b *Board) UpdatePieceList() {
 
 			b.PieceList[piece][b.PieceNumber[piece]] = idx
 			b.PieceNumber[piece]++
+
+			switch piece {
+			case wK:
+				b.KingSq[White] = Square(idx)
+			case bK:
+				b.KingSq[Black] = Square(idx)
+			}
 
 			switch piece {
 			case wP:
@@ -196,7 +205,7 @@ func (b *Board) Reset() {
 	b.CastlingPermission = 0
 	b.PositionKey = uint64(0)
 
-	b.History = nil
+	b.History = make([]Undo, 4096)
 
 }
 
@@ -329,7 +338,7 @@ func (b *Board) hashSideToMove() {
 
 // hash enpassant square to position key
 func (b *Board) hashEnPassant() {
-	b.PositionKey ^= PieceKeys[Empty][b.EnPass]
+	b.PositionKey ^= EnPassKeys[b.EnPass]
 }
 
 // print board
