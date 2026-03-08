@@ -93,9 +93,11 @@ const (
 	NoSquare
 )
 
+const Offboard Square = 120
+
 func (s *Square) String() string {
 
-	if *s == Square(Empty) || *s == 120 {
+	if *s == NoSquare || *s == Offboard {
 		return "-"
 	}
 

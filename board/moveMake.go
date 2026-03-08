@@ -16,7 +16,7 @@ var castlePermission = []int{
 }
 
 // removes piece from board
-func (b *Board) ClearPiece(piece Piece, square Square) {
+func (b *Board) ClearPiece(square Square) {
 	if square == 120 {
 		return
 	}
@@ -27,24 +27,24 @@ func (b *Board) ClearPiece(piece Piece, square Square) {
 		return
 	}
 
-	color := pieceColor[piece]
+	color := pieceColor[pce]
 
 	tempPieceNum := -1
 
 	// hash out piece from position key
-	b.hashPiece(piece, square)
+	b.hashPiece(pce, square)
 
 	b.Pieces[square] = Empty
-	b.Material[color] -= pieceValue[piece]
+	b.Material[color] -= pieceValue[pce]
 
-	if pieceBig[piece] {
+	if pieceBig[pce] {
 		b.BigPieces[color]--
 
-		if pieceMaj[piece] {
+		if pieceMaj[pce] {
 			b.MajorPieces[color]--
 		}
 
-		if pieceMin[piece] {
+		if pieceMin[pce] {
 			b.MinorPieces[color]--
 		}
 	} else {
@@ -134,4 +134,132 @@ func (b *Board) MovePiece(from, to Square) {
 		}
 	}
 
+}
+
+func (b *Board) MakeMove(move Move) bool {
+
+	if !b.Check() {
+		return false
+	}
+
+	from := Square(move.FromSq())
+	to := Square(move.ToSq())
+
+	side := b.SideToMove
+
+	if from == NoSquare || from == Offboard || to == NoSquare || to == Offboard {
+		return false
+	}
+
+	if side != White && side != Black {
+		return false
+	}
+
+	if b.Pieces[from] == Empty {
+		return false
+	}
+
+	b.History[b.HistPly].PositionKey = b.PositionKey
+
+	if move.IsEnPassant() {
+		switch side {
+		case White:
+			b.ClearPiece(to - 10)
+		case Black:
+			b.ClearPiece(to + 10)
+		}
+
+	}
+
+	if move.IsCastle() {
+		switch to {
+		case C1:
+			b.MovePiece(A1, D1)
+		case C8:
+			b.MovePiece(A8, D8)
+		case G1:
+			b.MovePiece(H1, F1)
+		case G8:
+			b.MovePiece(H8, F8)
+		default:
+			return false
+		}
+	}
+
+	if b.EnPass != NoSquare {
+		b.hashEnPassant()
+	}
+
+	b.hashCastle()
+	b.History[b.HistPly].Move = move.move
+	b.History[b.HistPly].FiftyMove = b.FiftyMove
+	b.History[b.HistPly].EnPass = b.EnPass
+	b.History[b.HistPly].CastlingPermission = b.CastlingPermission
+
+	b.CastlingPermission &= Castling(castlePermission[from])
+	b.CastlingPermission &= Castling(castlePermission[to])
+	b.EnPass = NoSquare
+	b.hashCastle()
+
+	captured := move.CapturedPiece()
+	b.FiftyMove++
+
+	if captured != int(Empty) {
+		b.ClearPiece(to)
+		b.FiftyMove = 0
+	}
+
+	b.HistPly++
+	b.Ply++
+
+	if b.Pieces[from].isPawn() {
+		b.FiftyMove = 0
+
+		if move.IsPawnStart() {
+			switch side {
+			case White:
+				b.EnPass = from + 10
+				if Fr120ToRank(int(b.EnPass)) != Three {
+					return false
+				}
+			case Black:
+				b.EnPass = from - 10
+				if Fr120ToRank(int(b.EnPass)) != Six {
+					return false
+				}
+			}
+			b.hashEnPassant()
+		}
+
+	}
+
+	b.MovePiece(from, to)
+
+	promoted := Piece(move.PromotedPiece())
+
+	if promoted != Empty {
+		if promoted.isPawn() {
+			return false
+		}
+
+		b.ClearPiece(to)
+
+		b.AddPiece(promoted, to)
+
+	}
+
+	if b.Pieces[to].isKing() {
+		b.KingSq[b.SideToMove] = to
+	}
+
+	b.SideToMove ^= 1
+
+	b.hashSideToMove()
+
+	if b.IsAttacked(b.KingSq[side], b.SideToMove) {
+		// TakeMove
+		return false
+	}
+
+	return b.Check()
 }
