@@ -8,3 +8,6 @@ run: build
 
 test:
 	go test
+
+clean:
+	go clean -cache
