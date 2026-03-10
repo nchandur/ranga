@@ -10,5 +10,16 @@ type Board struct {
 	FiftyMove  int
 	Ply        int
 	HistoryPly int
-	Castling   CastleBit 
+	Castling   CastleBit
+	Material   []int
+}
+
+func NewBoard() Board {
+	board := Board{}
+
+	board.Pieces = make([]Piece, BOARD_SQUARE_NUM)
+	board.SideToMove = White
+	board.Material = make([]int, 2)
+
+	return board
 }

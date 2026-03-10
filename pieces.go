@@ -47,3 +47,51 @@ func (p *Piece) isQueen() bool {
 func (p *Piece) isKing() bool {
 	return *p == wK || *p == bK
 }
+
+// returns true the piece slides across the board
+func (p *Piece) isSlider() bool {
+	return *p == wB || *p == bB || *p == wR || *p == bR || *p == wQ || *p == bQ
+}
+
+// returns true if piece is major
+func (p *Piece) isMajor() bool {
+	return p.isQueen() || p.isRook()
+}
+
+// returns true if piece is minor
+func (p *Piece) isMinor() bool {
+	return p.isBishop() || p.isKnight()
+}
+
+// return material value of piece
+func (p *Piece) Value() int {
+	switch *p {
+	case wK, bK:
+		return 50000
+	case wQ, bQ:
+		return 1000
+	case wR, bR:
+		return 500
+	case wN, bN, wB, bB:
+		return 300
+	case wP, bP:
+		return 100
+
+	default:
+		return 0
+	}
+}
+
+// returns color of piece
+func (p *Piece) Color() Color {
+
+	if *p > 0 && *p < 7 {
+		return White
+	}
+
+	if *p >= 7 {
+		return Black
+	}
+
+	return Both
+}
