@@ -14,3 +14,4 @@ const (
 	RankNone
 )
 
+var RanksBoard = []int{}

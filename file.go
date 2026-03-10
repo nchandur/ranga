@@ -13,3 +13,5 @@ const (
 	FileH
 	FileNone
 )
+
+var FilesBoard = []int{}
