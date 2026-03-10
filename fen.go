@@ -105,5 +105,6 @@ func (b *Board) ParseFEN(fen string) {
 	}
 
 	b.Hash = b.GenHash()
+	b.UpdatePieceList()
 
 }

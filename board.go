@@ -120,6 +120,22 @@ func (b *Board) Reset() {
 
 }
 
+func (b *Board) UpdatePieceList() {
+	for idx := range 64 {
+		sq := Fr64To120[idx]
+
+		piece := b.Pieces[sq]
+
+		if piece != Empty {
+			color := pieceColor[piece]
+			b.Material[color] += pieceValue[piece]
+			b.PieceList[b.PieceIdx(piece)] = Square(sq)
+			b.PieceNumber[piece]++
+		}
+
+	}
+}
+
 func (b *Board) String() string {
 	var builder strings.Builder
 
