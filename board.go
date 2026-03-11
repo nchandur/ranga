@@ -166,7 +166,12 @@ func (b *Board) String() string {
 	}
 
 	fmt.Fprintf(&builder, "Side To Move: %s\n", sideStr)
-	fmt.Fprintf(&builder, "Enpassant Square: %c%c\n", FileChar[FilesBoard[b.EnPassant]], RankChar[RanksBoard[b.EnPassant]])
+
+	if b.EnPassant != NoSquare {
+		fmt.Fprintf(&builder, "Enpassant Square: %c%c\n", FileChar[FilesBoard[b.EnPassant]], RankChar[RanksBoard[b.EnPassant]])
+	} else {
+		fmt.Fprintf(&builder, "Enpassant Square: -\n")
+	}
 
 	castleStr := ""
 

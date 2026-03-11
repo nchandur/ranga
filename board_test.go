@@ -127,3 +127,33 @@ func TestUpdatePieceList(t *testing.T) {
 			expectedBlackMaterial, board.Material[Black])
 	}
 }
+
+func TestValidateFEN(t *testing.T) {
+	board := NewBoard()
+
+	tests := []struct {
+		fen       string
+		shouldErr bool
+	}{
+		{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", false},
+		{"8/8/8/8/8/8/8/8 b - - 0 1", false},
+		{"8/8/8/8/8/8/8/8 w - 0", true},
+		{"8/8/8/8/8/8/8 w KQkq - 0 1", true},
+		{"8/8/8/8/8/8/8/X w KQkq - 0 1", true},
+		{"8/8/8/8/8/8/8/8 x KQkq - 0 1", true},
+		{"8/8/8/8/8/8/8/8 w ABC - 0 1", true},
+		{"8/8/8/8/8/8/8/8 w KQkq i9 0 1", true},
+		{"8/8/8/8/8/8/8/8 w KQkq - -1 1", true},
+		{"8/8/8/8/8/8/8/8 w KQkq - 0 0", true},
+	}
+
+	for _, test := range tests {
+		err := board.validateFEN(test.fen)
+		if test.shouldErr && err == nil {
+			t.Errorf("expected error for FEN: %q, but got none", test.fen)
+		}
+		if !test.shouldErr && err != nil {
+			t.Errorf("did not expect error for FEN: %q, but got: %v", test.fen, err)
+		}
+	}
+}

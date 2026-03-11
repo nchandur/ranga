@@ -1,6 +1,82 @@
 package main
 
-func (b *Board) ParseFEN(fen string) {
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+func (b *Board) validateFEN(fen string) error {
+	elements := strings.Split(fen, " ")
+
+	if len(elements) != 6 {
+		return fmt.Errorf("invalid FEN: expected 6 fields separated by spaces, got %d", len(elements))
+	}
+
+	ranks := strings.Split(elements[0], "/")
+
+	if len(ranks) != 8 {
+		return fmt.Errorf("invalid FEN: expected 8 ranks in piece placement, got %d", len(ranks))
+	}
+
+	for _, rank := range ranks {
+
+		if len(rank) == 0 {
+			return fmt.Errorf("rank cannot be empty")
+		}
+
+		count := 0
+		for _, c := range rank {
+			if c >= '1' && c <= '8' {
+				count += int(c - '0')
+			} else if strings.ContainsRune(PieceChar, c) {
+				count++
+			} else {
+				return fmt.Errorf("invalid character in piece placement: %c", c)
+			}
+		}
+		if count != 8 {
+			return fmt.Errorf("rank must have exactly 8 squares, got %d", count)
+		}
+	}
+
+	if elements[1] != "w" && elements[1] != "b" {
+		return fmt.Errorf("side to move must be 'w' or 'b'")
+	}
+
+	castling := elements[2]
+	if castling != "-" {
+		for _, c := range castling {
+			if !strings.ContainsRune("KQkq", c) {
+				return fmt.Errorf("invalid castling character: %c", c)
+			}
+		}
+	}
+
+	ep := elements[3]
+	if ep != "-" {
+		if len(ep) != 2 || ep[0] < 'a' || ep[0] > 'h' || ep[1] < '1' || ep[1] > '8' {
+			return fmt.Errorf("invalid en passant square: %s", ep)
+		}
+	}
+
+	if _, err := strconv.Atoi(elements[4]); err != nil || elements[4][0] == '-' {
+		return fmt.Errorf("invalid halfmove clock: %s", elements[4])
+	}
+
+	fullmove, err := strconv.Atoi(elements[5])
+	if err != nil || fullmove < 1 {
+		return fmt.Errorf("invalid fullmove number: %s", elements[5])
+	}
+
+	return nil
+}
+
+func (b *Board) ParseFEN(fen string) error {
+
+	if err := b.validateFEN(fen); err != nil {
+		return fmt.Errorf("failed to parse fen string: %v", err)
+	}
 
 	b.Reset()
 
@@ -106,5 +182,7 @@ func (b *Board) ParseFEN(fen string) {
 
 	b.Hash = b.GenHash()
 	b.UpdatePieceList()
+
+	return nil
 
 }
