@@ -1,6 +1,6 @@
 package main
 
-var PieceKeys [13][120]uint64
+var PieceKeys []uint64
 var SideKey uint64
-var CastleKeys [16]uint64
-var EnPassKeys [120]uint64
+var CastleKeys []uint64
+var EnPassKeys []uint64

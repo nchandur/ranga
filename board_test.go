@@ -26,8 +26,8 @@ func TestBoardReset(t *testing.T) {
 	}
 
 	for i := range board.PieceList {
-		if board.PieceList[i] != Square(Empty) {
-			t.Errorf("PieceList[%d] expected Empty, got %d", i, board.PieceList[i])
+		if board.PieceList[i] != NoSquare {
+			t.Errorf("PieceList[%d] expected NoSquare, got %d", i, board.PieceList[i])
 		}
 	}
 

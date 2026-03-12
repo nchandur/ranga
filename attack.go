@@ -1,17 +1,28 @@
 package main
 
+// squares a knight can reach from it's position on a 120-index board
+var knightDir = []Square{-8, -19, -21, -12, 8, 19, 21, 12}
+
+// squares a bishop (or queen) can reach from it's position on a 120-index board
+var bishopDir = []Square{-9, -11, 11, 9}
+
+// squares a rook (or queen) can reach from it's position on a 120-index board
+var rookDir = []Square{-1, -10, 1, 10}
+
+// squares a king can reach from it's position on a 120-index board
+var kingDir = []Square{-1, -10, 1, 10, -9, -11, 11, 9}
+
 // check if given square is attacked by a pawn
 func (b *Board) isAttackedByPawn(square Square, side Color) bool {
 	switch side {
 	case White:
-		if (b.Pieces[square-11] == wP) || (b.Pieces[square-9] == wP) {
+		if b.Pieces[square-11] == wP || b.Pieces[square-9] == wP {
 			return true
 		}
 	case Black:
-		if (b.Pieces[square+11] == bP) || (b.Pieces[square+9] == bP) {
+		if b.Pieces[square+11] == bP || b.Pieces[square+9] == bP {
 			return true
 		}
-
 	}
 	return false
 }
@@ -19,49 +30,47 @@ func (b *Board) isAttackedByPawn(square Square, side Color) bool {
 // check if given square is attacked by a knight
 func (b *Board) isAttackedByKnight(square Square, side Color) bool {
 
-	if square == Offboard {
+	if b.Pieces[square] == Piece(Offboard) {
 		return false
 	}
 
-	// squares a knight can reach from it's position on a 120-index board
-	direction := []Square{-8, -19, -21, -12, 8, 19, 21, 12}
+	for idx := range knightDir {
+		pce := b.Pieces[square+knightDir[idx]]
 
-	for _, dir := range direction {
-		tSq := square + dir
-		piece := b.Pieces[tSq]
+		if pce == Piece(Offboard) {
+			continue
+		}
 
-		if tSq != Offboard && piece != Empty && isKnight[piece] && pieceColor[piece] == side {
+		if b.PieceList[pce] != Offboard && pieceColor[pce] == side && isKnight[pce] {
 			return true
 		}
 
 	}
+
 	return false
 }
 
-// check if given square is attacked by rook or queen (horizonal and vertical)
+// check if given square is attacked by rook or queen (horizontal and vertical)
 func (b *Board) isAttackedByRookOrQueen(square Square, side Color) bool {
 
-	// range of squares a rook can reach from it's position on a 120-index board
-	direction := []int{-1, -10, 1, 10}
+	if b.Pieces[square] == Piece(Offboard) {
+		return false
+	}
 
-	for _, dir := range direction {
-		tempSq := square + Square(dir)
+	for _, dir := range rookDir {
+		tSq := square + dir
 
-		piece := b.Pieces[tempSq]
+		pce := b.Pieces[tSq]
 
-		// while square is not offboard
-		for piece != Empty {
-
-			// if there is a piece on square
-			if piece != Empty {
-				if (isRook[piece] || isQueen[piece]) && pieceColor[piece] == side {
+		for pce != Piece(Offboard) {
+			if pce != Empty {
+				if (isRook[pce] || isQueen[pce]) && pieceColor[pce] == side {
 					return true
 				}
 				break
 			}
-			tempSq += Square(dir)
-			piece = b.Pieces[tempSq]
-
+			tSq += dir
+			pce = b.Pieces[tSq]
 		}
 
 	}
@@ -72,43 +81,47 @@ func (b *Board) isAttackedByRookOrQueen(square Square, side Color) bool {
 // check if given square is attacked by bishop or queen (diagonal)
 func (b *Board) isAttackedByBishopOrQueen(square Square, side Color) bool {
 
-	// range of squares a bishop can reach from it's position on a 120-based index
-	direction := []int{-9, -11, 11, 9}
+	if b.Pieces[square] == Piece(Offboard) {
+		return false
+	}
 
-	for _, dir := range direction {
-		tempSq := square + Square(dir)
+	for _, dir := range bishopDir {
+		tSq := square + dir
 
-		piece := b.Pieces[tempSq]
+		pce := b.Pieces[tSq]
 
-		// while square is not offboard
-		for piece != Empty {
-
-			// if there is a piece on square
-			if piece != Empty {
-				if (isBishop[piece] || isQueen[piece]) && pieceColor[piece] == side {
+		for pce != Piece(Offboard) {
+			if pce != Empty {
+				if (isBishop[pce] || isQueen[pce]) && pieceColor[pce] == side {
 					return true
 				}
 				break
 			}
-			tempSq += Square(dir)
-			piece = b.Pieces[tempSq]
-
+			tSq += dir
+			pce = b.Pieces[tSq]
 		}
 
 	}
+
 	return false
+
 }
 
 // check if given square is attacked by a king
 func (b *Board) isAttackedByKing(square Square, side Color) bool {
 
-	// range of squares a king can reach from it's position on a 120-based index
-	direction := []int{-1, -10, 1, 10, -9, -11, 11, 9}
+	if b.Pieces[square] == Piece(Offboard) {
+		return false
+	}
 
-	for _, dir := range direction {
-		piece := b.Pieces[square+Square(dir)]
+	for idx := range kingDir {
+		pce := b.Pieces[square+kingDir[idx]]
 
-		if piece != Empty || isKing[piece] && pieceColor[piece] == side {
+		if pce == Piece(Offboard) {
+			continue
+		}
+
+		if b.PieceList[pce] != Offboard && pieceColor[pce] == side && isKing[pce] {
 			return true
 		}
 
@@ -118,5 +131,9 @@ func (b *Board) isAttackedByKing(square Square, side Color) bool {
 }
 
 func (b *Board) IsAttacked(square Square, side Color) bool {
-	return b.isAttackedByPawn(square, side) || b.isAttackedByKnight(square, side) || b.isAttackedByBishopOrQueen(square, side) || b.isAttackedByRookOrQueen(square, side) || b.isAttackedByKing(square, side)
+	return b.isAttackedByPawn(square, side) ||
+		b.isAttackedByKnight(square, side) ||
+		b.isAttackedByBishopOrQueen(square, side) ||
+		b.isAttackedByRookOrQueen(square, side) ||
+		b.isAttackedByKing(square, side)
 }
