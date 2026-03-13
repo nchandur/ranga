@@ -91,10 +91,10 @@ func TestUpdatePieceList(t *testing.T) {
 	board.UpdatePieceList()
 
 	if board.PieceNumber[wP] != 1 {
-		t.Errorf("expected 1 white pawN, got %d", board.PieceNumber[wP])
+		t.Errorf("expected 1 white pawn, got %d", board.PieceNumber[wP])
 	}
 	if board.PieceNumber[bP] != 1 {
-		t.Errorf("expected 1 black pawN, got %d", board.PieceNumber[bP])
+		t.Errorf("expected 1 black pawn, got %d", board.PieceNumber[bP])
 	}
 	if board.PieceNumber[wN] != 1 {
 		t.Errorf("expected 1 white knight, got %d", board.PieceNumber[wN])
@@ -102,12 +102,12 @@ func TestUpdatePieceList(t *testing.T) {
 
 	wPIdx := (int(wP) * 10) + (board.PieceNumber[wP] - 1)
 	if board.PieceList[wPIdx] != Square(sq1) {
-		t.Errorf("expected white pawN at square %d, got %d", sq1, board.PieceList[wPIdx])
+		t.Errorf("expected white pawn at square %d, got %d", sq1, board.PieceList[wPIdx])
 	}
 
 	bPIdx := (int(bP) * 10) + (board.PieceNumber[bP] - 1)
 	if board.PieceList[bPIdx] != Square(sq2) {
-		t.Errorf("expected black pawN at square %d, got %d", sq2, board.PieceList[bPIdx])
+		t.Errorf("expected black pawn at square %d, got %d", sq2, board.PieceList[bPIdx])
 	}
 
 	wNIdx := (int(wN) * 10) + (board.PieceNumber[wN] - 1)
