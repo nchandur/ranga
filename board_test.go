@@ -21,58 +21,58 @@ func TestBoardReset(t *testing.T) {
 	for i := range 64 {
 		sq := Fr64To120[i]
 		if board.Pieces[sq] != Empty {
-			t.Errorf("Pieces[%d] expected Empty, got %d", sq, board.Pieces[sq])
+			t.Errorf("expected Empty, got %d", board.Pieces[sq])
 		}
 	}
 
 	for i := range board.PieceList {
 		if board.PieceList[i] != NoSquare {
-			t.Errorf("PieceList[%d] expected NoSquare, got %d", i, board.PieceList[i])
+			t.Errorf("expected NoSquare, got %d", board.PieceList[i])
 		}
 	}
 
 	for i := range board.Material {
 		if board.Material[i] != 0 {
-			t.Errorf("Material[%d] expected 0, got %d", i, board.Material[i])
+			t.Errorf("expected 0, got %d", board.Material[i])
 		}
 	}
 
 	for i := range board.PieceNumber {
 		if board.PieceNumber[i] != 0 {
-			t.Errorf("PieceNumber[%d] expected 0, got %d", i, board.PieceNumber[i])
+			t.Errorf("expected 0, got %d", board.PieceNumber[i])
 		}
 	}
 
 	if board.SideToMove != Both {
-		t.Errorf("SideToMove expected %d, got %d", Both, board.SideToMove)
+		t.Errorf("expected %d, got %d", Both, board.SideToMove)
 	}
 
 	if board.EnPassant != NoSquare {
-		t.Errorf("EnPassant expected %d, got %d", NoSquare, board.EnPassant)
+		t.Errorf("expected %d, got %d", NoSquare, board.EnPassant)
 	}
 
 	if board.FiftyMove != 0 {
-		t.Errorf("FiftyMove expected 0, got %d", board.FiftyMove)
+		t.Errorf("expected 0, got %d", board.FiftyMove)
 	}
 
 	if board.HistoryPly != 0 {
-		t.Errorf("HistoryPly expected 0, got %d", board.HistoryPly)
+		t.Errorf("expected 0, got %d", board.HistoryPly)
 	}
 
 	if board.Ply != 0 {
-		t.Errorf("Ply expected 0, got %d", board.Ply)
+		t.Errorf("expected 0, got %d", board.Ply)
 	}
 
 	if board.Castling != 0 {
-		t.Errorf("Castling expected 0, got %d", board.Castling)
+		t.Errorf("expected 0, got %d", board.Castling)
 	}
 
 	if board.Hash != 0 {
-		t.Errorf("Hash expected 0, got %d", board.Hash)
+		t.Errorf("expected 0, got %d", board.Hash)
 	}
 
 	if board.MoveList[board.Ply] != 0 {
-		t.Errorf("MoveList[%d] expected 0, got %d", board.Ply, board.MoveList[board.Ply])
+		t.Errorf("expected 0, got %d", board.MoveList[board.Ply])
 	}
 }
 
