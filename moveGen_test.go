@@ -6,9 +6,9 @@ func TestAddCaptureMove(t *testing.T) {
 	tests := []struct {
 		ply           int
 		startIndex    int
-		moveToAdd     int
+		moveToAdd     Move
 		expectedIndex int
-		expectedMove  int
+		expectedMove  Move
 	}{
 		{
 			ply:           0,
@@ -38,10 +38,10 @@ func TestAddCaptureMove(t *testing.T) {
 		board.Ply = test.ply
 		board.MoveListStart[test.ply+1] = test.startIndex
 
-		board.addCaptureMove(Move{move: test.moveToAdd})
+		board.addCaptureMove(test.moveToAdd)
 
 		// Check the move is added
-		if board.MoveList[test.startIndex] != test.expectedMove {
+		if board.MoveList[test.startIndex] != int(test.expectedMove) {
 			t.Errorf("expected: %d, output: %d", test.expectedMove, board.MoveList[test.startIndex])
 		}
 
@@ -57,9 +57,9 @@ func TestAddQuietMove(t *testing.T) {
 	tests := []struct {
 		ply           int
 		startIndex    int
-		moveToAdd     int
+		moveToAdd     Move
 		expectedIndex int
-		expectedMove  int
+		expectedMove  Move
 	}{
 		{
 			ply:           0,
@@ -89,10 +89,10 @@ func TestAddQuietMove(t *testing.T) {
 		board.Ply = test.ply
 		board.MoveListStart[test.ply+1] = test.startIndex
 
-		board.addQuietMove(Move{move: test.moveToAdd})
+		board.addQuietMove(test.moveToAdd)
 
 		// Check the move is added
-		if board.MoveList[test.startIndex] != test.expectedMove {
+		if board.MoveList[test.startIndex] != int(test.expectedMove) {
 			t.Errorf("expected: %d, output: %d", test.expectedMove, board.MoveList[test.startIndex])
 		}
 
@@ -108,9 +108,9 @@ func TestAddEnpassantMove(t *testing.T) {
 	tests := []struct {
 		ply           int
 		startIndex    int
-		moveToAdd     int
+		moveToAdd     Move
 		expectedIndex int
-		expectedMove  int
+		expectedMove  Move
 	}{
 		{
 			ply:           0,
@@ -140,10 +140,10 @@ func TestAddEnpassantMove(t *testing.T) {
 		board.Ply = test.ply
 		board.MoveListStart[test.ply+1] = test.startIndex
 
-		board.addQuietMove(Move{move: test.moveToAdd})
+		board.addQuietMove(test.moveToAdd)
 
 		// Check the move is added
-		if board.MoveList[test.startIndex] != test.expectedMove {
+		if board.MoveList[test.startIndex] != int(test.expectedMove) {
 			t.Errorf("expected: %d, output: %d", test.expectedMove, board.MoveList[test.startIndex])
 		}
 

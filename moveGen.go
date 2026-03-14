@@ -1,19 +1,19 @@
 package main
 
 func (b *Board) addCaptureMove(move Move) {
-	b.MoveList[b.MoveListStart[b.Ply+1]] = move.move
+	b.MoveList[b.MoveListStart[b.Ply+1]] = int(move)
 	b.MoveScores[b.MoveListStart[b.Ply+1]] = 0
 	b.MoveListStart[b.Ply+1]++
 }
 
 func (b *Board) addQuietMove(move Move) {
-	b.MoveList[b.MoveListStart[b.Ply+1]] = move.move
+	b.MoveList[b.MoveListStart[b.Ply+1]] = int(move)
 	b.MoveScores[b.MoveListStart[b.Ply+1]] = 0
 	b.MoveListStart[b.Ply+1]++
 }
 
 func (b *Board) addEnpassantMove(move Move) {
-	b.MoveList[b.MoveListStart[b.Ply+1]] = move.move
+	b.MoveList[b.MoveListStart[b.Ply+1]] = int(move)
 	b.MoveScores[b.MoveListStart[b.Ply+1]] = 0
 	b.MoveListStart[b.Ply+1]++
 }

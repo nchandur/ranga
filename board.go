@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -56,6 +57,22 @@ func NewBoard() Board {
 
 func (b *Board) PieceIdx(piece Piece) int {
 	return (int(piece) * 10) + b.PieceNumber[int(piece)]
+}
+
+func (b *Board) hashPiece(piece Piece, square Square) {
+	b.Hash ^= PieceKeys[(int(piece)*120)+int(square)]
+}
+
+func (b *Board) hashCastle() {
+	b.Hash ^= CastleKeys[b.Castling]
+}
+
+func (b *Board) hashEnpassant() {
+	b.Hash ^= PieceKeys[b.EnPassant]
+}
+
+func (b *Board) hashSideToMove() {
+	b.Hash ^= SideKey
 }
 
 func (b *Board) GenHash() uint64 {
@@ -115,19 +132,77 @@ func (b *Board) Reset() {
 
 }
 
-func (b *Board) UpdatePieceList() {
-	for idx := range 64 {
-		sq := Fr64To120[idx]
+func (b *Board) Checkboard() bool {
 
+	tPieceNum := make([]int, 13)
+	tMaterial := make([]int, 2)
+
+	for tPce := wP; tPce <= bK; tPce++ {
+		for tPceNum := range b.PieceNumber[tPce] {
+			sq120 := b.PieceList[(int(tPce)*10)+tPceNum]
+			if b.Pieces[sq120] != tPce {
+				log.Println("piece mismatch")
+				return false
+			}
+		}
+	}
+
+	for sq64 := range 64 {
+		sq120 := Fr64To120[sq64]
+		tPce := b.Pieces[sq120]
+		tPieceNum[tPce]++
+
+		if tPce != Empty {
+			tMaterial[pieceColor[tPce]] += pieceValue[tPce]
+		}
+	}
+
+	for tPce := wP; tPce <= bK; tPce++ {
+		if tPieceNum[tPce] != b.PieceNumber[tPce] {
+			log.Println("piece number mismatch")
+			return false
+		}
+	}
+
+	if tMaterial[White] != b.Material[White] || tMaterial[Black] != b.Material[Black] {
+		log.Println("material mismatch")
+		return false
+	}
+
+	if b.SideToMove != White && b.SideToMove != Black {
+		log.Println("side to move mismatch")
+		return false
+	}
+
+	if b.GenHash() != b.Hash {
+		log.Println("hash mismatch")
+		return false
+	}
+
+	return true
+}
+
+func (b *Board) UpdatePieceList() {
+
+	for i := range b.Material {
+		b.Material[i] = 0
+	}
+
+	for i := range b.PieceNumber {
+		b.PieceNumber[i] = 0
+	}
+
+	for idx := range 64 {
+
+		sq := Fr64To120[idx]
 		piece := b.Pieces[sq]
 
 		if piece != Empty {
 			color := pieceColor[piece]
 			b.Material[color] += pieceValue[piece]
-			b.PieceList[b.PieceIdx(piece)] = Square(sq)
-			b.PieceNumber[piece]++
+			b.PieceList[(int(piece)*10)+b.PieceNumber[int(piece)]] = Square(sq)
+			b.PieceNumber[int(piece)]++
 		}
-
 	}
 }
 

@@ -22,39 +22,31 @@ const (
 	MNONE     = 0         // flag for no move
 )
 
-type Move struct {
-	move  int
-	score int
-}
+type Move int
 
 func NewMove(from, to Square, captured, promoted Piece, flag int) Move {
-
-	m := Move{}
-
-	m.move = int(from) | (int(to) << 7) | (int(captured) << 14) | (int(promoted) << 20) | flag
-	m.score = 0
-
-	return m
+	move := int(from) | (int(to) << 7) | (int(captured) << 14) | (int(promoted) << 20) | flag
+	return Move(move)
 }
 
 // returns square from which piece moved
 func (m *Move) FromSquare() Square {
-	return Square(m.move & 0x7f)
+	return Square(int(*m) & 0x7f)
 }
 
 // returns square to which piece moved
 func (m *Move) ToSquare() Square {
-	return Square((m.move >> 7) & 0x7f)
+	return Square((int(*m) >> 7) & 0x7f)
 }
 
 // returns piece captured
 func (m *Move) Captured() Piece {
-	return Piece((m.move >> 14) & 0xF)
+	return Piece((int(*m) >> 14) & 0xF)
 }
 
 // returns piece to which pawn was promoted
 func (m *Move) Promoted() Piece {
-	return Piece((m.move >> 20) & 0xF)
+	return Piece((int(*m) >> 20) & 0xF)
 }
 
 // string
