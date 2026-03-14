@@ -181,7 +181,7 @@ func (b *Board) GenMoves() {
 
 		}
 
-		if b.Castling&WKSide != 0 {
+		if b.CastleBit&WKSide != 0 {
 			if (b.Pieces[F1] == Empty) && b.Pieces[G1] == Empty {
 				if !b.IsAttacked(F1, Black) && !b.IsAttacked(E1, Black) {
 					b.addQuietMove(NewMove(E1, G1, Empty, Empty, MFLAGCA))
@@ -189,7 +189,7 @@ func (b *Board) GenMoves() {
 			}
 		}
 
-		if b.Castling&WQSide != 0 {
+		if b.CastleBit&WQSide != 0 {
 			if b.Pieces[D1] == Empty && b.Pieces[C1] == Empty && b.Pieces[B1] == Empty {
 				if !b.IsAttacked(D1, Black) && !b.IsAttacked(E1, Black) {
 					b.addQuietMove(NewMove(E1, C1, Empty, Empty, MFLAGCA))
@@ -227,7 +227,7 @@ func (b *Board) GenMoves() {
 			}
 
 		}
-		if b.Castling&BKSide != 0 {
+		if b.CastleBit&BKSide != 0 {
 			if (b.Pieces[F8] == Empty) && b.Pieces[G8] == Empty {
 				if !b.IsAttacked(F8, White) && !b.IsAttacked(E8, White) {
 					b.addQuietMove(NewMove(E8, G8, Empty, Empty, MFLAGCA))
@@ -235,7 +235,7 @@ func (b *Board) GenMoves() {
 			}
 		}
 
-		if b.Castling&BQSide != 0 {
+		if b.CastleBit&BQSide != 0 {
 			if b.Pieces[D8] == Empty && b.Pieces[C8] == Empty && b.Pieces[B8] == Empty {
 				if !b.IsAttacked(D8, White) && !b.IsAttacked(E8, White) {
 					b.addQuietMove(NewMove(E8, C8, Empty, Empty, MFLAGCA))

@@ -29,12 +29,12 @@ type Board struct {
 	HistoryPly int
 	History    []struct {
 		Move
-		Hash      int
-		EnPass    Square
+		Hash      uint64
+		EnPassant Square
 		FiftyMove int
 		CastleBit
 	}
-	Castling      CastleBit
+	CastleBit
 	Material      []int
 	PieceNumber   []int // number of each piece on board
 	PieceList     []Square
@@ -60,14 +60,14 @@ func NewBoard() Board {
 	for range MAX_GAME_MOVES {
 		board.History = append(board.History, struct {
 			Move
-			Hash      int
-			EnPass    Square
+			Hash      uint64
+			EnPassant Square
 			FiftyMove int
 			CastleBit
 		}{
 			Move:      0,
 			CastleBit: 0,
-			EnPass:    NoSquare,
+			EnPassant: NoSquare,
 			FiftyMove: 0,
 			Hash:      0,
 		})
@@ -87,7 +87,7 @@ func (b *Board) hashPiece(piece Piece, square Square) {
 }
 
 func (b *Board) hashCastle() {
-	b.Hash ^= CastleKeys[b.Castling]
+	b.Hash ^= CastleKeys[b.CastleBit]
 }
 
 func (b *Board) hashEnpassant() {
@@ -117,7 +117,7 @@ func (b *Board) GenHash() uint64 {
 		res ^= PieceKeys[b.EnPassant]
 	}
 
-	res ^= CastleKeys[b.Castling]
+	res ^= CastleKeys[b.CastleBit]
 
 	return res
 }
@@ -149,7 +149,7 @@ func (b *Board) Reset() {
 	b.FiftyMove = 0
 	b.HistoryPly = 0
 	b.Ply = 0
-	b.Castling = 0
+	b.CastleBit = 0
 	b.Hash = 0
 	b.MoveList[b.Ply] = 0
 
@@ -268,19 +268,19 @@ func (b *Board) String() string {
 
 	castleStr := ""
 
-	if b.Castling&WKSide != 0 {
+	if b.CastleBit&WKSide != 0 {
 		castleStr += "K"
 	}
 
-	if b.Castling&WQSide != 0 {
+	if b.CastleBit&WQSide != 0 {
 		castleStr += "Q"
 	}
 
-	if b.Castling&BKSide != 0 {
+	if b.CastleBit&BKSide != 0 {
 		castleStr += "k"
 	}
 
-	if b.Castling&BQSide != 0 {
+	if b.CastleBit&BQSide != 0 {
 		castleStr += "q"
 	}
 

@@ -44,11 +44,11 @@ func (b *Board) validateFEN(fen string) error {
 		return fmt.Errorf("side to move must be 'w' or 'b'")
 	}
 
-	castling := elements[2]
-	if castling != "-" {
-		for _, c := range castling {
+	CastleBit := elements[2]
+	if CastleBit != "-" {
+		for _, c := range CastleBit {
 			if !strings.ContainsRune("KQkq", c) {
-				return fmt.Errorf("invalid castling character: %c", c)
+				return fmt.Errorf("invalid CastleBit character: %c", c)
 			}
 		}
 	}
@@ -157,13 +157,13 @@ func (b *Board) ParseFEN(fen string) error {
 
 		switch fen[fenCount] {
 		case 'K':
-			b.Castling |= WKSide
+			b.CastleBit |= WKSide
 		case 'Q':
-			b.Castling |= WQSide
+			b.CastleBit |= WQSide
 		case 'k':
-			b.Castling |= BKSide
+			b.CastleBit |= BKSide
 		case 'q':
-			b.Castling |= BQSide
+			b.CastleBit |= BQSide
 		}
 
 		fenCount++
