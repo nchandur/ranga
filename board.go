@@ -22,11 +22,18 @@ const (
 )
 
 type Board struct {
-	Pieces        []Piece // represents pieces on the 120-index board. the square on which a piece exists has its corresponding value
-	SideToMove    Color
-	FiftyMove     int
-	Ply           int
-	HistoryPly    int
+	Pieces     []Piece // represents pieces on the 120-index board. the square on which a piece exists has its corresponding value
+	SideToMove Color
+	FiftyMove  int
+	Ply        int
+	HistoryPly int
+	History    []struct {
+		Move
+		Hash      int
+		EnPass    Square
+		FiftyMove int
+		CastleBit
+	}
 	Castling      CastleBit
 	Material      []int
 	PieceNumber   []int // number of each piece on board
@@ -49,6 +56,22 @@ func NewBoard() Board {
 	board.MoveList = make([]int, MAX_DEPTH*MAX_POSITION_MOVES)
 	board.MoveScores = make([]int, MAX_DEPTH*MAX_POSITION_MOVES)
 	board.MoveListStart = make([]int, MAX_DEPTH)
+
+	for range MAX_GAME_MOVES {
+		board.History = append(board.History, struct {
+			Move
+			Hash      int
+			EnPass    Square
+			FiftyMove int
+			CastleBit
+		}{
+			Move:      0,
+			CastleBit: 0,
+			EnPass:    NoSquare,
+			FiftyMove: 0,
+			Hash:      0,
+		})
+	}
 
 	board.Reset()
 
