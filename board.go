@@ -43,14 +43,13 @@ func NewBoard() Board {
 	board.Pieces = make([]Piece, BOARD_SQUARE_NUM)
 	board.PieceNumber = make([]int, 13)
 	board.PieceList = make([]Square, 130)
-	board.SideToMove = Both
 	board.Material = make([]int, 2)
-	board.EnPassant = NoSquare
-	board.Hash = 0
 
 	board.MoveList = make([]int, MAX_DEPTH*MAX_POSITION_MOVES)
 	board.MoveScores = make([]int, MAX_DEPTH*MAX_POSITION_MOVES)
 	board.MoveListStart = make([]int, MAX_DEPTH)
+
+	board.Reset()
 
 	return board
 }
@@ -60,33 +59,29 @@ func (b *Board) PieceIdx(piece Piece) int {
 }
 
 func (b *Board) GenHash() uint64 {
+	var res uint64
 
-	var key uint64
-
-	// pieces
-	for sq := range 120 {
+	for sq := range BOARD_SQUARE_NUM {
 		piece := b.Pieces[sq]
-		if piece != Empty && piece != 120 {
-			key ^= PieceKeys[piece][sq]
+
+		if piece != Empty && piece != Piece(Offboard) {
+			res ^= PieceKeys[(int(piece)*120)+sq]
 		}
 	}
 
-	// side to move
 	if b.SideToMove == White {
-		key ^= SideKey
+		res ^= SideKey
 	}
 
-	// en passant
 	if b.EnPassant != NoSquare {
-		key ^= EnPassKeys[b.EnPassant]
+		res ^= PieceKeys[b.EnPassant]
 	}
 
-	// castling rights
-	key ^= CastleKeys[b.Castling]
+	res ^= CastleKeys[b.Castling]
 
-	return key
-
+	return res
 }
+
 func (b *Board) Reset() {
 
 	for idx := range BOARD_SQUARE_NUM {
@@ -98,7 +93,7 @@ func (b *Board) Reset() {
 	}
 
 	for idx := range b.PieceList {
-		b.PieceList[idx] = Square(Empty)
+		b.PieceList[idx] = NoSquare
 	}
 
 	for idx := range b.Material {
@@ -160,12 +155,12 @@ func (b *Board) String() string {
 
 	switch b.SideToMove {
 	case White:
-		sideStr = "W"
+		sideStr = "w"
 	case Black:
-		sideStr = "B"
+		sideStr = "b"
 	}
 
-	fmt.Fprintf(&builder, "Side To Move: %s\n", sideStr)
+	fmt.Fprintf(&builder, "To Move: %s\n", sideStr)
 
 	if b.EnPassant != NoSquare {
 		fmt.Fprintf(&builder, "Enpassant Square: %c%c\n", FileChar[FilesBoard[b.EnPassant]], RankChar[RanksBoard[b.EnPassant]])
@@ -191,7 +186,11 @@ func (b *Board) String() string {
 		castleStr += "q"
 	}
 
-	fmt.Fprintf(&builder, "Castling: %s\n", castleStr)
+	if castleStr == "" {
+		fmt.Fprintf(&builder, "Castling: -\n")
+	} else {
+		fmt.Fprintf(&builder, "Castling: %s\n", castleStr)
+	}
 	fmt.Fprintf(&builder, "Hash: %x\n", b.Hash)
 
 	return builder.String()

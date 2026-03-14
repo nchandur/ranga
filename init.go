@@ -24,12 +24,15 @@ func initFileRankBoard() {
 
 // initializes hash slices
 func initHashkeys() {
+
+	PieceKeys = make([]uint64, 13*BOARD_SQUARE_NUM)
+	CastleKeys = make([]uint64, 16)
+	EnPassKeys = make([]uint64, 120)
+
 	rng := rand.New(rand.NewSource(19991211))
 
-	for piece := range 13 {
-		for sq := range 120 {
-			PieceKeys[piece][sq] = rng.Uint64()
-		}
+	for sq := range 13 * BOARD_SQUARE_NUM {
+		PieceKeys[sq] = rng.Uint64()
 	}
 
 	for i := range 16 {

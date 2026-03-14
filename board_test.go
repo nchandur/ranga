@@ -21,58 +21,58 @@ func TestBoardReset(t *testing.T) {
 	for i := range 64 {
 		sq := Fr64To120[i]
 		if board.Pieces[sq] != Empty {
-			t.Errorf("Pieces[%d] expected Empty, got %d", sq, board.Pieces[sq])
+			t.Errorf("expected Empty, got %d", board.Pieces[sq])
 		}
 	}
 
 	for i := range board.PieceList {
-		if board.PieceList[i] != Square(Empty) {
-			t.Errorf("PieceList[%d] expected Empty, got %d", i, board.PieceList[i])
+		if board.PieceList[i] != NoSquare {
+			t.Errorf("expected NoSquare, got %d", board.PieceList[i])
 		}
 	}
 
 	for i := range board.Material {
 		if board.Material[i] != 0 {
-			t.Errorf("Material[%d] expected 0, got %d", i, board.Material[i])
+			t.Errorf("expected 0, got %d", board.Material[i])
 		}
 	}
 
 	for i := range board.PieceNumber {
 		if board.PieceNumber[i] != 0 {
-			t.Errorf("PieceNumber[%d] expected 0, got %d", i, board.PieceNumber[i])
+			t.Errorf("expected 0, got %d", board.PieceNumber[i])
 		}
 	}
 
 	if board.SideToMove != Both {
-		t.Errorf("SideToMove expected %d, got %d", Both, board.SideToMove)
+		t.Errorf("expected %d, got %d", Both, board.SideToMove)
 	}
 
 	if board.EnPassant != NoSquare {
-		t.Errorf("EnPassant expected %d, got %d", NoSquare, board.EnPassant)
+		t.Errorf("expected %d, got %d", NoSquare, board.EnPassant)
 	}
 
 	if board.FiftyMove != 0 {
-		t.Errorf("FiftyMove expected 0, got %d", board.FiftyMove)
+		t.Errorf("expected 0, got %d", board.FiftyMove)
 	}
 
 	if board.HistoryPly != 0 {
-		t.Errorf("HistoryPly expected 0, got %d", board.HistoryPly)
+		t.Errorf("expected 0, got %d", board.HistoryPly)
 	}
 
 	if board.Ply != 0 {
-		t.Errorf("Ply expected 0, got %d", board.Ply)
+		t.Errorf("expected 0, got %d", board.Ply)
 	}
 
 	if board.Castling != 0 {
-		t.Errorf("Castling expected 0, got %d", board.Castling)
+		t.Errorf("expected 0, got %d", board.Castling)
 	}
 
 	if board.Hash != 0 {
-		t.Errorf("Hash expected 0, got %d", board.Hash)
+		t.Errorf("expected 0, got %d", board.Hash)
 	}
 
 	if board.MoveList[board.Ply] != 0 {
-		t.Errorf("MoveList[%d] expected 0, got %d", board.Ply, board.MoveList[board.Ply])
+		t.Errorf("expected 0, got %d", board.MoveList[board.Ply])
 	}
 }
 
@@ -91,10 +91,10 @@ func TestUpdatePieceList(t *testing.T) {
 	board.UpdatePieceList()
 
 	if board.PieceNumber[wP] != 1 {
-		t.Errorf("expected 1 white pawN, got %d", board.PieceNumber[wP])
+		t.Errorf("expected 1 white pawn, got %d", board.PieceNumber[wP])
 	}
 	if board.PieceNumber[bP] != 1 {
-		t.Errorf("expected 1 black pawN, got %d", board.PieceNumber[bP])
+		t.Errorf("expected 1 black pawn, got %d", board.PieceNumber[bP])
 	}
 	if board.PieceNumber[wN] != 1 {
 		t.Errorf("expected 1 white knight, got %d", board.PieceNumber[wN])
@@ -102,12 +102,12 @@ func TestUpdatePieceList(t *testing.T) {
 
 	wPIdx := (int(wP) * 10) + (board.PieceNumber[wP] - 1)
 	if board.PieceList[wPIdx] != Square(sq1) {
-		t.Errorf("expected white pawN at square %d, got %d", sq1, board.PieceList[wPIdx])
+		t.Errorf("expected white pawn at square %d, got %d", sq1, board.PieceList[wPIdx])
 	}
 
 	bPIdx := (int(bP) * 10) + (board.PieceNumber[bP] - 1)
 	if board.PieceList[bPIdx] != Square(sq2) {
-		t.Errorf("expected black pawN at square %d, got %d", sq2, board.PieceList[bPIdx])
+		t.Errorf("expected black pawn at square %d, got %d", sq2, board.PieceList[bPIdx])
 	}
 
 	wNIdx := (int(wN) * 10) + (board.PieceNumber[wN] - 1)
