@@ -71,6 +71,7 @@ func (b *Board) movePiece(from, to Square) {
 	}
 }
 
+
 func (b *Board) MakeMove(move Move) bool {
 	from := move.FromSquare()
 	to := move.ToSquare()
