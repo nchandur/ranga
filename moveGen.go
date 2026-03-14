@@ -1,18 +1,18 @@
 package main
 
-func (b *Board) AddCaptureMove(move Move) {
+func (b *Board) addCaptureMove(move Move) {
 	b.MoveList[b.MoveListStart[b.Ply+1]] = move.move
 	b.MoveScores[b.MoveListStart[b.Ply+1]] = 0
 	b.MoveListStart[b.Ply+1]++
 }
 
-func (b *Board) AddQuietMove(move Move) {
+func (b *Board) addQuietMove(move Move) {
 	b.MoveList[b.MoveListStart[b.Ply+1]] = move.move
 	b.MoveScores[b.MoveListStart[b.Ply+1]] = 0
 	b.MoveListStart[b.Ply+1]++
 }
 
-func (b *Board) AddEnPassantMove(move Move) {
+func (b *Board) addEnpassantMove(move Move) {
 	b.MoveList[b.MoveListStart[b.Ply+1]] = move.move
 	b.MoveScores[b.MoveListStart[b.Ply+1]] = 0
 	b.MoveListStart[b.Ply+1]++
@@ -41,11 +41,11 @@ func (b *Board) genNonSlideMoves() {
 				if b.Pieces[tSq] != Empty {
 
 					if pieceColor[b.Pieces[tSq]] != b.SideToMove {
-						b.AddCaptureMove(NewMove(sq, tSq, b.Pieces[tSq], Empty, MFLAGCAP))
+						b.addCaptureMove(NewMove(sq, tSq, b.Pieces[tSq], Empty, MFLAGCAP))
 					}
 
 				} else {
-					b.AddQuietMove(NewMove(sq, tSq, Empty, Empty, MNONE))
+					b.addQuietMove(NewMove(sq, tSq, Empty, Empty, MNONE))
 				}
 			}
 		}
@@ -76,13 +76,13 @@ func (b *Board) genSlideMoves() {
 					if b.Pieces[tSq] != Empty {
 
 						if pieceColor[b.Pieces[tSq]] != b.SideToMove {
-							b.AddCaptureMove(NewMove(sq, tSq, b.Pieces[tSq], Empty, MFLAGCAP))
+							b.addCaptureMove(NewMove(sq, tSq, b.Pieces[tSq], Empty, MFLAGCAP))
 						}
 
 						break
 					}
 
-					b.AddQuietMove(NewMove(sq, tSq, Empty, Empty, MNONE))
+					b.addQuietMove(NewMove(sq, tSq, Empty, Empty, MNONE))
 
 					tSq += dir
 				}
@@ -98,22 +98,22 @@ func (b *Board) genPawnCaptureMove(from, to Square, captured Piece, side Color) 
 	switch side {
 	case White:
 		if RanksBoard[from] == int(Rank7) {
-			b.AddCaptureMove(NewMove(from, to, captured, wN, MNONE))
-			b.AddCaptureMove(NewMove(from, to, captured, wB, MNONE))
-			b.AddCaptureMove(NewMove(from, to, captured, wR, MNONE))
-			b.AddCaptureMove(NewMove(from, to, captured, wQ, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, wN, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, wB, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, wR, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, wQ, MNONE))
 		} else {
-			b.AddCaptureMove(NewMove(from, to, captured, Empty, MFLAGCAP))
+			b.addCaptureMove(NewMove(from, to, captured, Empty, MFLAGCAP))
 		}
 
 	case Black:
 		if RanksBoard[from] == int(Rank2) {
-			b.AddCaptureMove(NewMove(from, to, captured, bN, MNONE))
-			b.AddCaptureMove(NewMove(from, to, captured, bB, MNONE))
-			b.AddCaptureMove(NewMove(from, to, captured, bR, MNONE))
-			b.AddCaptureMove(NewMove(from, to, captured, bQ, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, bN, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, bB, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, bR, MNONE))
+			b.addCaptureMove(NewMove(from, to, captured, bQ, MNONE))
 		} else {
-			b.AddCaptureMove(NewMove(from, to, captured, Empty, MFLAGCAP))
+			b.addCaptureMove(NewMove(from, to, captured, Empty, MFLAGCAP))
 		}
 	}
 
@@ -123,22 +123,22 @@ func (b *Board) genPawnQuietMove(from, to Square, side Color) {
 	switch side {
 	case White:
 		if RanksBoard[from] == int(Rank7) {
-			b.AddQuietMove(NewMove(from, to, Empty, wN, MNONE))
-			b.AddQuietMove(NewMove(from, to, Empty, wB, MNONE))
-			b.AddQuietMove(NewMove(from, to, Empty, wR, MNONE))
-			b.AddQuietMove(NewMove(from, to, Empty, wQ, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, wN, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, wB, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, wR, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, wQ, MNONE))
 		} else {
-			b.AddQuietMove(NewMove(from, to, Empty, Empty, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, Empty, MNONE))
 		}
 
 	case Black:
 		if RanksBoard[from] == int(Rank2) {
-			b.AddQuietMove(NewMove(from, to, Empty, bN, MNONE))
-			b.AddQuietMove(NewMove(from, to, Empty, bB, MNONE))
-			b.AddQuietMove(NewMove(from, to, Empty, bR, MNONE))
-			b.AddQuietMove(NewMove(from, to, Empty, bQ, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, bN, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, bB, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, bR, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, bQ, MNONE))
 		} else {
-			b.AddQuietMove(NewMove(from, to, Empty, Empty, MNONE))
+			b.addQuietMove(NewMove(from, to, Empty, Empty, MNONE))
 		}
 	}
 
@@ -157,7 +157,7 @@ func (b *Board) GenMoves() {
 			if b.Pieces[sq+10] == Empty {
 				b.genPawnQuietMove(sq, sq+10, White)
 				if RanksBoard[sq] == int(Rank2) && b.Pieces[sq+20] == Empty {
-					b.AddQuietMove(NewMove(sq, sq+20, Empty, Empty, MFLAGPS))
+					b.addQuietMove(NewMove(sq, sq+20, Empty, Empty, MFLAGPS))
 				}
 			}
 
@@ -171,11 +171,11 @@ func (b *Board) GenMoves() {
 
 			if b.EnPassant != NoSquare {
 				if sq+9 == b.EnPassant {
-					b.AddEnPassantMove(NewMove(sq, sq+9, Empty, Empty, MFLAGEP))
+					b.addEnpassantMove(NewMove(sq, sq+9, Empty, Empty, MFLAGEP))
 				}
 
 				if sq+11 == b.EnPassant {
-					b.AddEnPassantMove(NewMove(sq, sq+11, Empty, Empty, MFLAGEP))
+					b.addEnpassantMove(NewMove(sq, sq+11, Empty, Empty, MFLAGEP))
 				}
 			}
 
@@ -184,7 +184,7 @@ func (b *Board) GenMoves() {
 		if b.Castling&WKSide != 0 {
 			if (b.Pieces[F1] == Empty) && b.Pieces[G1] == Empty {
 				if !b.IsAttacked(F1, Black) && !b.IsAttacked(E1, Black) {
-					b.AddQuietMove(NewMove(E1, G1, Empty, Empty, MFLAGCA))
+					b.addQuietMove(NewMove(E1, G1, Empty, Empty, MFLAGCA))
 				}
 			}
 		}
@@ -192,7 +192,7 @@ func (b *Board) GenMoves() {
 		if b.Castling&WQSide != 0 {
 			if b.Pieces[D1] == Empty && b.Pieces[C1] == Empty && b.Pieces[B1] == Empty {
 				if !b.IsAttacked(D1, Black) && !b.IsAttacked(E1, Black) {
-					b.AddQuietMove(NewMove(E1, C1, Empty, Empty, MFLAGCA))
+					b.addQuietMove(NewMove(E1, C1, Empty, Empty, MFLAGCA))
 				}
 			}
 		}
@@ -204,7 +204,7 @@ func (b *Board) GenMoves() {
 			if b.Pieces[sq-10] == Empty {
 				b.genPawnQuietMove(sq, sq-10, Black)
 				if RanksBoard[sq] == int(Rank7) && b.Pieces[sq-20] == Empty {
-					b.AddQuietMove(NewMove(sq, sq-20, Empty, Empty, MFLAGPS))
+					b.addQuietMove(NewMove(sq, sq-20, Empty, Empty, MFLAGPS))
 				}
 			}
 
@@ -218,11 +218,11 @@ func (b *Board) GenMoves() {
 
 			if b.EnPassant != NoSquare {
 				if sq-9 == b.EnPassant {
-					b.AddEnPassantMove(NewMove(sq, sq-9, Empty, Empty, MFLAGEP))
+					b.addEnpassantMove(NewMove(sq, sq-9, Empty, Empty, MFLAGEP))
 				}
 
 				if sq-11 == b.EnPassant {
-					b.AddEnPassantMove(NewMove(sq, sq-11, Empty, Empty, MFLAGEP))
+					b.addEnpassantMove(NewMove(sq, sq-11, Empty, Empty, MFLAGEP))
 				}
 			}
 
@@ -230,7 +230,7 @@ func (b *Board) GenMoves() {
 		if b.Castling&BKSide != 0 {
 			if (b.Pieces[F8] == Empty) && b.Pieces[G8] == Empty {
 				if !b.IsAttacked(F8, White) && !b.IsAttacked(E8, White) {
-					b.AddQuietMove(NewMove(E8, G8, Empty, Empty, MFLAGCA))
+					b.addQuietMove(NewMove(E8, G8, Empty, Empty, MFLAGCA))
 				}
 			}
 		}
@@ -238,7 +238,7 @@ func (b *Board) GenMoves() {
 		if b.Castling&BQSide != 0 {
 			if b.Pieces[D8] == Empty && b.Pieces[C8] == Empty && b.Pieces[B8] == Empty {
 				if !b.IsAttacked(D8, White) && !b.IsAttacked(E8, White) {
-					b.AddQuietMove(NewMove(E8, C8, Empty, Empty, MFLAGCA))
+					b.addQuietMove(NewMove(E8, C8, Empty, Empty, MFLAGCA))
 				}
 			}
 		}

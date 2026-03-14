@@ -52,16 +52,16 @@ var pieceValue = []int{0, 100, 300, 300, 500, 1000, 50000, 100, 300, 300, 500, 1
 var pieceColor = []Color{Both, White, White, White, White, White, White, Black, Black, Black, Black, Black, Black}
 
 // squares a knight can reach from it's position on a 120-index board
-var knightDir = []Square{-8, -19, -21, -12, 8, 19, 21, 12}
+var knightDir = []Square{-21, -19, -12, -8, 8, 12, 19, 21}
 
 // squares a bishop (or queen) can reach from it's position on a 120-index board
-var bishopDir = []Square{-9, -11, 11, 9}
+var bishopDir = []Square{-9, -11, 9, 11}
 
 // squares a rook (or queen) can reach from it's position on a 120-index board
-var rookDir = []Square{-1, -10, 1, 10}
+var rookDir = []Square{-10, -1, 1, 10}
 
 // squares a king can reach from it's position on a 120-index board
-var kingDir = []Square{-1, -10, 1, 10, -9, -11, 11, 9}
+var kingDir = []Square{-11, -10, -9, -1, 1, 9, 10, 11}
 
 // number of directions each piece can move
 var dirNum = []int{0, 0, 8, 4, 4, 8, 8, 0, 8, 4, 4, 8, 8}
