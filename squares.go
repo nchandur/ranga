@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Square int
 
 const (
@@ -28,3 +30,7 @@ const (
 	NoSquare Square = 99
 	Offboard Square = 120
 )
+
+func (s *Square) String() string {
+	return fmt.Sprintf("%c%d", 'a'+FilesBoard[*s], RanksBoard[*s]+1)
+}

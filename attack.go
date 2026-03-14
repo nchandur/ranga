@@ -1,17 +1,5 @@
 package main
 
-// squares a knight can reach from it's position on a 120-index board
-var knightDir = []Square{-8, -19, -21, -12, 8, 19, 21, 12}
-
-// squares a bishop (or queen) can reach from it's position on a 120-index board
-var bishopDir = []Square{-9, -11, 11, 9}
-
-// squares a rook (or queen) can reach from it's position on a 120-index board
-var rookDir = []Square{-1, -10, 1, 10}
-
-// squares a king can reach from it's position on a 120-index board
-var kingDir = []Square{-1, -10, 1, 10, -9, -11, 11, 9}
-
 // check if given square is attacked by a pawn
 func (b *Board) isAttackedByPawn(square Square, side Color) bool {
 	switch side {

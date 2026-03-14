@@ -155,12 +155,12 @@ func (b *Board) String() string {
 
 	switch b.SideToMove {
 	case White:
-		sideStr = "W"
+		sideStr = "w"
 	case Black:
-		sideStr = "B"
+		sideStr = "b"
 	}
 
-	fmt.Fprintf(&builder, "Side To Move: %s\n", sideStr)
+	fmt.Fprintf(&builder, "To Move: %s\n", sideStr)
 
 	if b.EnPassant != NoSquare {
 		fmt.Fprintf(&builder, "Enpassant Square: %c%c\n", FileChar[FilesBoard[b.EnPassant]], RankChar[RanksBoard[b.EnPassant]])
@@ -186,7 +186,11 @@ func (b *Board) String() string {
 		castleStr += "q"
 	}
 
-	fmt.Fprintf(&builder, "Castling: %s\n", castleStr)
+	if castleStr == "" {
+		fmt.Fprintf(&builder, "Castling: -\n")
+	} else {
+		fmt.Fprintf(&builder, "Castling: %s\n", castleStr)
+	}
 	fmt.Fprintf(&builder, "Hash: %x\n", b.Hash)
 
 	return builder.String()
