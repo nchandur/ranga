@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -21,12 +22,19 @@ const (
 )
 
 type Board struct {
-	Pieces        []Piece // represents pieces on the 120-index board. the square on which a piece exists has its corresponding value
-	SideToMove    Color
-	FiftyMove     int
-	Ply           int
-	HistoryPly    int
-	Castling      CastleBit
+	Pieces     []Piece // represents pieces on the 120-index board. the square on which a piece exists has its corresponding value
+	SideToMove Color
+	FiftyMove  int
+	Ply        int
+	HistoryPly int
+	History    []struct {
+		Move
+		Hash      uint64
+		EnPassant Square
+		FiftyMove int
+		CastleBit
+	}
+	CastleBit
 	Material      []int
 	PieceNumber   []int // number of each piece on board
 	PieceList     []Square
@@ -49,6 +57,22 @@ func NewBoard() Board {
 	board.MoveScores = make([]int, MAX_DEPTH*MAX_POSITION_MOVES)
 	board.MoveListStart = make([]int, MAX_DEPTH)
 
+	for range MAX_GAME_MOVES {
+		board.History = append(board.History, struct {
+			Move
+			Hash      uint64
+			EnPassant Square
+			FiftyMove int
+			CastleBit
+		}{
+			Move:      0,
+			CastleBit: 0,
+			EnPassant: NoSquare,
+			FiftyMove: 0,
+			Hash:      0,
+		})
+	}
+
 	board.Reset()
 
 	return board
@@ -56,6 +80,22 @@ func NewBoard() Board {
 
 func (b *Board) PieceIdx(piece Piece) int {
 	return (int(piece) * 10) + b.PieceNumber[int(piece)]
+}
+
+func (b *Board) hashPiece(piece Piece, square Square) {
+	b.Hash ^= PieceKeys[(int(piece)*120)+int(square)]
+}
+
+func (b *Board) hashCastle() {
+	b.Hash ^= CastleKeys[b.CastleBit]
+}
+
+func (b *Board) hashEnpassant() {
+	b.Hash ^= PieceKeys[b.EnPassant]
+}
+
+func (b *Board) hashSideToMove() {
+	b.Hash ^= SideKey
 }
 
 func (b *Board) GenHash() uint64 {
@@ -77,7 +117,7 @@ func (b *Board) GenHash() uint64 {
 		res ^= PieceKeys[b.EnPassant]
 	}
 
-	res ^= CastleKeys[b.Castling]
+	res ^= CastleKeys[b.CastleBit]
 
 	return res
 }
@@ -109,25 +149,83 @@ func (b *Board) Reset() {
 	b.FiftyMove = 0
 	b.HistoryPly = 0
 	b.Ply = 0
-	b.Castling = 0
+	b.CastleBit = 0
 	b.Hash = 0
 	b.MoveList[b.Ply] = 0
 
 }
 
-func (b *Board) UpdatePieceList() {
-	for idx := range 64 {
-		sq := Fr64To120[idx]
+func (b *Board) Checkboard() bool {
 
+	tPieceNum := make([]int, 13)
+	tMaterial := make([]int, 2)
+
+	for tPce := wP; tPce <= bK; tPce++ {
+		for tPceNum := range b.PieceNumber[tPce] {
+			sq120 := b.PieceList[(int(tPce)*10)+tPceNum]
+			if b.Pieces[sq120] != tPce {
+				log.Println("piece mismatch")
+				return false
+			}
+		}
+	}
+
+	for sq64 := range 64 {
+		sq120 := Fr64To120[sq64]
+		tPce := b.Pieces[sq120]
+		tPieceNum[tPce]++
+
+		if tPce != Empty {
+			tMaterial[pieceColor[tPce]] += pieceValue[tPce]
+		}
+	}
+
+	for tPce := wP; tPce <= bK; tPce++ {
+		if tPieceNum[tPce] != b.PieceNumber[tPce] {
+			log.Println("piece number mismatch")
+			return false
+		}
+	}
+
+	if tMaterial[White] != b.Material[White] || tMaterial[Black] != b.Material[Black] {
+		log.Println("material mismatch")
+		return false
+	}
+
+	if b.SideToMove != White && b.SideToMove != Black {
+		log.Println("side to move mismatch")
+		return false
+	}
+
+	if b.GenHash() != b.Hash {
+		log.Println("hash mismatch")
+		return false
+	}
+
+	return true
+}
+
+func (b *Board) UpdatePieceList() {
+
+	for i := range b.Material {
+		b.Material[i] = 0
+	}
+
+	for i := range b.PieceNumber {
+		b.PieceNumber[i] = 0
+	}
+
+	for idx := range 64 {
+
+		sq := Fr64To120[idx]
 		piece := b.Pieces[sq]
 
 		if piece != Empty {
 			color := pieceColor[piece]
 			b.Material[color] += pieceValue[piece]
-			b.PieceList[b.PieceIdx(piece)] = Square(sq)
-			b.PieceNumber[piece]++
+			b.PieceList[(int(piece)*10)+b.PieceNumber[int(piece)]] = Square(sq)
+			b.PieceNumber[int(piece)]++
 		}
-
 	}
 }
 
@@ -170,19 +268,19 @@ func (b *Board) String() string {
 
 	castleStr := ""
 
-	if b.Castling&WKSide != 0 {
+	if b.CastleBit&WKSide != 0 {
 		castleStr += "K"
 	}
 
-	if b.Castling&WQSide != 0 {
+	if b.CastleBit&WQSide != 0 {
 		castleStr += "Q"
 	}
 
-	if b.Castling&BKSide != 0 {
+	if b.CastleBit&BKSide != 0 {
 		castleStr += "k"
 	}
 
-	if b.Castling&BQSide != 0 {
+	if b.CastleBit&BQSide != 0 {
 		castleStr += "q"
 	}
 

@@ -13,7 +13,7 @@ func TestBoardReset(t *testing.T) {
 	board.FiftyMove = 10
 	board.Ply = 3
 	board.HistoryPly = 5
-	board.Castling = 7
+	board.CastleBit = 7
 	board.Hash = 123456
 
 	board.Reset()
@@ -63,8 +63,8 @@ func TestBoardReset(t *testing.T) {
 		t.Errorf("expected 0, got %d", board.Ply)
 	}
 
-	if board.Castling != 0 {
-		t.Errorf("expected 0, got %d", board.Castling)
+	if board.CastleBit != 0 {
+		t.Errorf("expected 0, got %d", board.CastleBit)
 	}
 
 	if board.Hash != 0 {
