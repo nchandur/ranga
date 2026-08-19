@@ -87,6 +87,10 @@ func (b *Board) Clear() {
 
 // add piece to the board
 func (b *Board) AddPiece(piece Piece, sq Square) {
+	if piece == Empty {
+		return
+	}
+
 	b.PieceBitBoards[piece].SetBit(sq)
 
 	if piece <= WK {
@@ -103,18 +107,20 @@ func (b *Board) AddPiece(piece Piece, sq Square) {
 // remove piece from the board
 func (b *Board) RemovePiece(sq Square) {
 	piece := b.Mailbox[sq]
+	if piece == Empty {
+		return
+	}
+
 	b.PieceBitBoards[piece].PopBit(sq)
 
-	switch PieceColor[piece] {
-	case White:
+	if piece <= WK {
 		b.Occupancies[White].PopBit(sq)
-	case Black:
+	} else if piece > WK && piece <= BK {
 		b.Occupancies[Black].PopBit(sq)
 	}
 
 	b.Occupancies[Both].PopBit(sq)
 	b.Mailbox[sq] = Empty
-
 }
 
 // attempts to make a move on board and updates internal board state

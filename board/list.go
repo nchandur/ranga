@@ -21,8 +21,8 @@ func NewMoveList() *MoveList {
 
 // appends move to move list and increments the move counter
 func (m *MoveList) AddMove(move Move) {
-	(*m).Moves[m.Count] = move
-	(*m).Count++
+	m.Moves[m.Count] = move
+	m.Count++
 }
 
 func (m MoveList) String() string {

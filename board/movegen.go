@@ -107,6 +107,7 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 					}
 				}
 
+				bitboard.PopBit(source)
 			}
 
 		}
