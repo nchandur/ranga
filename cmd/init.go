@@ -7,7 +7,6 @@ import (
 
 // precomputes attack lookup tables for leaper pieces
 func initLeaperAttacks() {
-
 	for square := range 64 {
 
 		sq := board.Square(square)
@@ -89,4 +88,5 @@ func init() {
 	initLeaperAttacks()
 	initSliderAttacks(true)
 	initSliderAttacks(false)
+	initHashKeys()
 }
