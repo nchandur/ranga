@@ -6,7 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"ranga/board"
+	"ranga/internal/board"
 	"strconv"
 	"strings"
 	"time"
