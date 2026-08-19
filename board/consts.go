@@ -202,3 +202,20 @@ var BishopMagicNumbers = [64]BitBoard{
 
 // print pieces
 const PieceChar = "PNBRQKpnbrqk "
+
+// piece color lookup
+var PieceColor = [13]Color{
+	WP:    White,
+	WN:    White,
+	WB:    White,
+	WR:    White,
+	WQ:    White,
+	WK:    White,
+	BP:    Black,
+	BN:    Black,
+	BB:    Black,
+	BR:    Black,
+	BQ:    Black,
+	BK:    Black,
+	Empty: Both,
+}
