@@ -1,11 +1,20 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"ranga/board"
 )
 
-var version string = "dev"
+var version string = ""
 
 func main() {
-	fmt.Printf("ranga-%s\n", version)
+
+	b := board.NewBoard()
+
+	if err := b.ParseFEN(board.START); err != nil {
+		log.Fatal(err)
+	}
+
+	b.Print()
+
 }
