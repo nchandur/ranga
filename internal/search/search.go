@@ -1,0 +1,143 @@
+package search
+
+import (
+	"context"
+	"ranga/internal/board"
+	"ranga/internal/evaluate"
+)
+
+// coordinates search tree execution
+type Searcher struct {
+	evaluate.Evaluator // static evaluation to score positions at leaf nodes
+}
+
+// instantiates new searcher
+func NewSearcher(eval evaluate.Evaluator) *Searcher {
+	s := Searcher{Evaluator: eval}
+	return &s
+}
+
+// executes main alpha-beta minimax search tree traversal
+func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int, nodes *int, ctx context.Context) int {
+	// guard against out-of-bounds at maximum search ply
+	if b.Ply > MAX_PLY-1 {
+		return s.Evaluate(b)
+	}
+
+	// check timeout or cancel
+	if (*nodes)&2047 == 0 {
+		if ctx.Err() != nil {
+			return 0
+		}
+	}
+
+	(*nodes)++
+
+	var inCheck bool
+
+	// check if current side king is in check
+	switch b.Side {
+	case board.White:
+		inCheck = b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.WK].GetLSB()), board.Black)
+	case board.Black:
+		inCheck = b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.BK].GetLSB()), board.White)
+	}
+
+	// increase depth by 1 if in check
+	if inCheck {
+		depth++
+	}
+
+	// drop into quiescence search at leaf nodes
+	if depth == 0 {
+		return s.Evaluate(b)
+	}
+
+	legalMoves := 0
+	ml := board.NewMoveList()
+	ml.GenerateMoves(b)
+
+	for _, move := range ml.Moves {
+
+		state := b.Preserve()
+		b.Ply++
+		if !b.MakeMove(move, false) {
+			b.Restore(&state)
+			b.Ply--
+			continue
+		}
+
+		legalMoves++
+
+		score := -s.AlphaBeta(b, -beta, -alpha, depth-1, nodes, ctx)
+
+		b.Restore(&state)
+		b.Ply--
+
+		// abort on cancellation
+		if ctx.Err() != nil {
+			return 0
+		}
+
+		// fail hard on beta cutoff
+		if score >= beta {
+			return beta
+		}
+		if score > alpha {
+			alpha = score
+		}
+
+	}
+
+	// checkmate or stalemate
+	if legalMoves == 0 {
+		if inCheck {
+			return -ISMATE + b.Ply
+		} else {
+			return 0
+		}
+	}
+
+	return alpha
+}
+
+// executes search on a given state, returns the best move found
+func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) board.Move {
+	nodes := 0
+	alpha, beta := -INFINITY, INFINITY
+
+	var bestMove board.Move
+	bestScore := -INFINITY
+
+	ml := board.NewMoveList()
+	ml.GenerateMoves(b)
+
+	for _, move := range ml.Moves {
+		state := b.Preserve()
+		b.Ply++
+		if !b.MakeMove(move, false) {
+			b.Restore(&state)
+			b.Ply--
+			continue
+		}
+
+		score := -s.AlphaBeta(b, -beta, -alpha, depth-1, &nodes, ctx)
+
+		b.Restore(&state)
+		b.Ply--
+
+		if ctx.Err() != nil {
+			break
+		}
+
+		if score > bestScore {
+			bestScore = score
+			bestMove = move
+		}
+		if score > alpha {
+			alpha = score
+		}
+	}
+
+	return bestMove
+}

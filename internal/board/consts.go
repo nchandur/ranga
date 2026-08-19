@@ -219,3 +219,19 @@ var PieceColor = [13]Color{
 	BK:    Black,
 	Empty: Both,
 }
+
+// static piece value
+var PieceValue = [13]int{
+	WP: 100,
+	WN: 325,
+	WB: 325,
+	WR: 500,
+	WQ: 800,
+	WK: 10000,
+	BP: -100,
+	BN: -325,
+	BB: -325,
+	BR: -500,
+	BQ: -800,
+	BK: -10000,
+}
