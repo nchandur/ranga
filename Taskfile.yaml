@@ -1,0 +1,40 @@
+version: '3'
+
+vars:
+  VERSION: "1.0"
+  BINARY_NAME: ranga-{{.VERSION}}
+  MAIN_PATH: ./cmd/main.go
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+
+  build:
+      desc: Build the Go binary
+      sources:
+        - '**/*.go'
+        - 'go.mod'
+        - 'go.sum'
+      generates:
+        - 'bin/{{.BINARY_NAME}}'
+      cmds:
+        - mkdir -p bin
+        - go build -ldflags="-X 'main.version={{.VERSION}}'" -o bin/{{.BINARY_NAME}} {{.MAIN_PATH}}
+  run:
+    desc: Build and run the application
+    deps: [build]
+    cmds:
+      - ./bin/{{.BINARY_NAME}}
+
+  test:
+    desc: Run unit tests with race detector
+    cmds:
+      - go test -v -race ./...
+
+  clean:
+    desc: Remove build artifacts and temporary files
+    cmds:
+      - rm -rf bin/
+      - go clean
