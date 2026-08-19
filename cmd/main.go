@@ -1,11 +1,7 @@
 package main
 
-import (
-	"fmt"
-)
-
-var version string = "dev"
+var version string = ""
 
 func main() {
-	fmt.Printf("ranga-%s\n", version)
+
 }
