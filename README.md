@@ -83,13 +83,32 @@ info depth 8 score cp 0 nodes 46904025 nps 15054504 time 3115
 bestmove a2a3
 ```
 
+### Supported UCI commands
+ 
+| Command                          | Description |
+|----------------------------------|-------------|
+| `uci`                            | Identifies the engine and confirms UCI protocol support |
+| `isready`                        | Confirms the engine is ready to receive further commands |
+| `ucinewgame`                     | Resets internal state for a new game |
+| `position startpos [moves ...]`  | Sets up the standard starting position, optionally followed by a sequence of moves |
+| `position fen <fen> [moves ...]` | Sets up a position from FEN string, optionally followed by a sequence of moves |
+| `go [options]`                   | Starts a search — see supported `go` parameters below |
+| `eval`                           | Prints the static evaluation of the current position |
+| `show`                           | Prints an ASCII representation of the current board |
+| `clear`                          | Clears the current board state |
+| `stop`                           | Stops the search currently in progress and returns the best move found so far |
+| `quit`                           | Exits the engine process |
+
 ### Supported `go` parameters
  
-| Parameter                   | Description                                      |
-|-----------------------------|--------------------------------------------------|
-| `depth <n>`                 | Search to a fixed depth                          |
-| `movetime <ms>`             | Search for a fixed amount of time                |
-| `wtime <ms>` / `btime <ms>` | Remaining clock time for white / black           |
-| `winc <ms>` / `binc <ms>`   | Increment per move for white / black             |
-| `movestogo <n>`             | Moves remaining until the next time control      |
-| `infinite`                  | Search until an explicit `stop` command          |
+| Parameter               | Description                                      |
+|--------------------------|--------------------------------------------------|
+| `depth <n>`              | Search to a fixed depth                          |
+| `movetime <ms>`          | Search for a fixed amount of time                |
+| `wtime <ms>` / `btime <ms>` | Remaining clock time for white / black        |
+| `winc <ms>` / `binc <ms>`   | Increment per move for white / black          |
+| `movestogo <n>`          | Moves remaining until the next time control      |
+| `infinite`               | Search until an explicit `stop` command          |
+
+## Estimated Strength **~417-489**
+> See [here](docs/results.md#elo-estimate) for the full breakdown
