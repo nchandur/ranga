@@ -144,12 +144,9 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 		b.FiftyMove = 0
 	}
 
-	// moves piece on bitboard and updates Zobrist hash key
+	// remove piece on board and updates Zobrist hash key
 	b.RemovePiece(source)
 	b.ZobristKey ^= PieceKeys[piece][source]
-
-	b.AddPiece(piece, target)
-	b.ZobristKey ^= PieceKeys[piece][target]
 
 	// removes target piece from opponent bitboard during regular captures
 	if move.IsCapture() && !move.IsEnpass() {
@@ -157,6 +154,10 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 		b.ZobristKey ^= PieceKeys[captured][target]
 		b.RemovePiece(target)
 	}
+
+	// add piece on board and updates hash key
+	b.AddPiece(piece, target)
+	b.ZobristKey ^= PieceKeys[piece][target]
 
 	// handles pawn promotion (replaces pawn with promoted piece)
 	if move.Promoted() != Empty {
@@ -246,6 +247,57 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 	}
 
 	return true
+}
+
+// converts a UCI move string into a valid move
+func (b *Board) ParseMove(move string) Move {
+
+	if move[1] > '8' || move[1] < '1' {
+		return Move(0)
+	}
+
+	if move[3] > '8' || move[3] < '1' {
+		return Move(0)
+	}
+
+	if move[0] > 'h' || move[0] < 'a' {
+		return Move(0)
+	}
+
+	if move[2] > 'h' || move[2] < 'a' {
+		return Move(0)
+	}
+
+	from := FRtoSq(int('8'-move[1]), int(move[0]-'a'))
+	to := FRtoSq(int('8'-move[3]), int(move[2]-'a'))
+
+	list := NewMoveList()
+
+	list.GenerateMoves(b)
+
+	for n := range list.Count {
+		m := list.Moves[n]
+
+		if m.Source() == from && m.Target() == to {
+			prom := m.Promoted()
+
+			if prom != Empty {
+				if (prom == WR || prom == BR) && move[4] == 'r' {
+					return m
+				} else if (prom == WB || prom == BB) && move[4] == 'b' {
+					return m
+				} else if (prom == WQ || prom == BQ) && move[4] == 'q' {
+					return m
+				} else if (prom == WN || prom == BN) && move[4] == 'n' {
+					return m
+				}
+				continue
+			}
+			return m
+		}
+
+	}
+	return Move(0)
 }
 
 func (b *Board) Print() {
