@@ -214,16 +214,22 @@ func (e *Engine) handleGo(args []string) {
 	var ctx context.Context
 	var cancel context.CancelFunc
 
-	if ctx == nil {
+	if opts.infinite {
 		ctx, cancel = context.WithCancel(context.Background())
+	} else {
+		budget := calculateSearchTime(opts, e.board.Side)
+		if budget > 0 {
+			ctx, cancel = context.WithTimeout(context.Background(), budget)
+		} else {
+			ctx, cancel = context.WithCancel(context.Background())
+		}
 	}
-	e.searchCancel = cancel
 
+	e.searchCancel = cancel
 	e.searchWg.Go(func() {
 		defer cancel()
 		e.runSearch(ctx, opts)
 	})
-
 }
 
 // helper function to run search and evaluation
