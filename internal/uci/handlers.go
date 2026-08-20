@@ -10,17 +10,6 @@ import (
 	"strings"
 )
 
-type goOptions struct {
-	depth     int
-	infinite  bool
-	wtime     int
-	btime     int
-	winc      int
-	binc      int
-	movesToGo int
-	moveTime  int
-}
-
 // handles uci command
 // introduces engine
 func (e *Engine) handleUCI() {
@@ -214,18 +203,17 @@ func (e *Engine) handleGo(args []string) {
 	var ctx context.Context
 	var cancel context.CancelFunc
 
-	if opts.infinite {
-		ctx, cancel = context.WithCancel(context.Background())
-	} else {
-		budget := calculateSearchTime(opts, e.board.Side)
-		if budget > 0 {
-			ctx, cancel = context.WithTimeout(context.Background(), budget)
-		} else {
-			ctx, cancel = context.WithCancel(context.Background())
+	if !opts.infinite && !opts.metrics {
+		if timeAllocation := e.calculateTimeLimit(opts); timeAllocation > 0 {
+			ctx, cancel = context.WithTimeout(context.Background(), timeAllocation)
 		}
 	}
 
+	if ctx == nil {
+		ctx, cancel = context.WithCancel(context.Background())
+	}
 	e.searchCancel = cancel
+
 	e.searchWg.Go(func() {
 		defer cancel()
 		e.runSearch(ctx, opts)
