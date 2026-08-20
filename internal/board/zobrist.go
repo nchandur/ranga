@@ -6,8 +6,8 @@ var CastleKeys [16]uint64
 var EnpassantKeys [64]uint64
 var SideKey uint64
 
-// computes 64-bit Zobrist hash key representing board state
-func (b *Board) GenerateZobristKey() uint64 {
+// computes 64-bit hash key representing board state
+func (b *Board) GenerateKey() uint64 {
 
 	var res uint64
 

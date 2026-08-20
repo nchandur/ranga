@@ -18,7 +18,7 @@ func NewSearcher(eval evaluate.Evaluator) *Searcher {
 }
 
 // executes main alpha-beta minimax search tree traversal
-func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int, nodes *int, ctx context.Context) int {
+func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int, nodes *int) int {
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
 		return s.Evaluate(b)
@@ -57,7 +57,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int, nodes *int,
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
 
-	for _, move := range ml.Moves {
+	for _, move := range ml.Moves[:ml.Count] {
 
 		state := b.Preserve()
 		b.Ply++
@@ -69,7 +69,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int, nodes *int,
 
 		legalMoves++
 
-		score := -s.AlphaBeta(b, -beta, -alpha, depth-1, nodes, ctx)
+		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
 
 		b.Restore(&state)
 		b.Ply--
@@ -112,7 +112,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) board.
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
 
-	for _, move := range ml.Moves {
+	for _, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()
 		b.Ply++
 		if !b.MakeMove(move, false) {
@@ -121,7 +121,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) board.
 			continue
 		}
 
-		score := -s.AlphaBeta(b, -beta, -alpha, depth-1, &nodes, ctx)
+		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
 
 		b.Restore(&state)
 		b.Ply--
