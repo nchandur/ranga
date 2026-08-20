@@ -8,6 +8,7 @@ import (
 	"ranga/internal/search"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // handles uci command
@@ -230,7 +231,20 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 	bestMove := board.NOMOVE
 
 	for d := 1; d <= maxDepth; d++ {
-		move := e.searcher.Search(ctx, &e.board, d)
+		start := time.Now()
+		move, score, nodes := e.searcher.Search(ctx, &e.board, d)
+		elapsed := time.Since(start)
+
+		nps := int64(0)
+		if elapsed > 0 {
+			nps = int64(float64(nodes) / elapsed.Seconds())
+		}
+
+		if move != board.NOMOVE {
+			bestMove = move
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d nps %d time %d",
+				d, score, nodes, nps, elapsed.Milliseconds()))
+		}
 
 		if ctx.Err() != nil {
 			break

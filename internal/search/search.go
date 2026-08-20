@@ -102,7 +102,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 }
 
 // executes search on a given state, returns the best move found
-func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) board.Move {
+func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
 	nodes := 0
 	alpha, beta := -INFINITY, INFINITY
 
@@ -133,11 +133,11 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) board.
 		if score > alpha {
 			alpha = score
 		}
-		
+
 		if ctx.Err() != nil {
 			break
 		}
 	}
 
-	return bestMove
+	return bestMove, bestScore, nodes
 }
