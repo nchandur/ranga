@@ -237,6 +237,21 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 		}
 
 		bestMove = move
+
+	}
+
+	if bestMove == board.NOMOVE {
+		ml := board.NewMoveList()
+		ml.GenerateMoves(&e.board)
+		for _, m := range ml.Moves[:ml.Count] {
+			state := e.board.Preserve()
+			if e.board.MakeMove(m, false) {
+				e.board.Restore(&state)
+				bestMove = m
+				break
+			}
+			e.board.Restore(&state)
+		}
 	}
 
 	e.writeLine("bestmove " + bestMove.String())

@@ -126,16 +126,16 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) board.
 		b.Restore(&state)
 		b.Ply--
 
-		if ctx.Err() != nil {
-			break
-		}
-
 		if score > bestScore {
 			bestScore = score
 			bestMove = move
 		}
 		if score > alpha {
 			alpha = score
+		}
+		
+		if ctx.Err() != nil {
+			break
 		}
 	}
 
