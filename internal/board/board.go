@@ -14,7 +14,7 @@ type Board struct {
 	Castle                // castle rights
 	Ply            int    // current half-move ply
 	FiftyMove      int    // halfmove clock for 50-move draw rule
-	ZobristKey     uint64 // unique hash key for position
+	Key            uint64 // unique hash key for position
 }
 
 // creates a new instance of board
@@ -33,7 +33,7 @@ func NewBoard() Board {
 	res.Castle = 0
 	res.Ply = 0
 	res.FiftyMove = 0
-	res.ZobristKey = 0
+	res.Key = 0
 
 	return res
 }
@@ -50,7 +50,7 @@ func (b *Board) Preserve() Board {
 	res.Castle = b.Castle
 	res.Ply = b.Ply
 	res.FiftyMove = b.FiftyMove
-	res.ZobristKey = b.ZobristKey
+	res.Key = b.Key
 
 	return res
 }
@@ -65,7 +65,7 @@ func (b *Board) Restore(copy *Board) {
 	b.Castle = copy.Castle
 	b.Ply = copy.Ply
 	b.FiftyMove = copy.FiftyMove
-	b.ZobristKey = copy.ZobristKey
+	b.Key = copy.Key
 
 }
 
@@ -81,7 +81,7 @@ func (b *Board) Clear() {
 	b.Castle = 0
 	b.Ply = 0
 	b.FiftyMove = 0
-	b.ZobristKey = 0
+	b.Key = 0
 
 }
 
@@ -146,43 +146,43 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 
 	// remove piece on board and updates Zobrist hash key
 	b.RemovePiece(source)
-	b.ZobristKey ^= PieceKeys[piece][source]
+	b.Key ^= PieceKeys[piece][source]
 
 	// removes target piece from opponent bitboard during regular captures
 	if move.IsCapture() && !move.IsEnpass() {
 		captured := b.Mailbox[target]
-		b.ZobristKey ^= PieceKeys[captured][target]
+		b.Key ^= PieceKeys[captured][target]
 		b.RemovePiece(target)
 	}
 
 	// add piece on board and updates hash key
 	b.AddPiece(piece, target)
-	b.ZobristKey ^= PieceKeys[piece][target]
+	b.Key ^= PieceKeys[piece][target]
 
 	// handles pawn promotion (replaces pawn with promoted piece)
 	if move.Promoted() != Empty {
 		b.RemovePiece(target)
-		b.ZobristKey ^= PieceKeys[piece][target]
+		b.Key ^= PieceKeys[piece][target]
 
 		promoted := move.Promoted()
 		b.AddPiece(promoted, target)
-		b.ZobristKey ^= PieceKeys[promoted][target]
+		b.Key ^= PieceKeys[promoted][target]
 	}
 
 	// handle en passant capture (removes captured pawn behind target square)
 	if move.IsEnpass() {
 		if b.Side == White {
 			b.RemovePiece(target + 8)
-			b.ZobristKey ^= PieceKeys[BP][target+8]
+			b.Key ^= PieceKeys[BP][target+8]
 		} else {
 			b.RemovePiece(target - 8)
-			b.ZobristKey ^= PieceKeys[WP][target-8]
+			b.Key ^= PieceKeys[WP][target-8]
 		}
 	}
 
 	// clears previous en passant target square key
 	if b.EnPassant != NoSquare {
-		b.ZobristKey ^= EnpassantKeys[b.EnPassant]
+		b.Key ^= EnpassantKeys[b.EnPassant]
 	}
 	b.EnPassant = NoSquare
 
@@ -190,10 +190,10 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 	if move.IsDouble() {
 		if b.Side == White {
 			b.EnPassant = target + 8
-			b.ZobristKey ^= EnpassantKeys[target+8]
+			b.Key ^= EnpassantKeys[target+8]
 		} else {
 			b.EnPassant = target - 8
-			b.ZobristKey ^= EnpassantKeys[target-8]
+			b.Key ^= EnpassantKeys[target-8]
 		}
 	}
 
@@ -203,34 +203,34 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 		case G1:
 			b.RemovePiece(H1)
 			b.AddPiece(WR, F1)
-			b.ZobristKey ^= PieceKeys[WR][H1] ^ PieceKeys[WR][F1]
+			b.Key ^= PieceKeys[WR][H1] ^ PieceKeys[WR][F1]
 		case C1:
 			b.RemovePiece(A1)
 			b.AddPiece(WR, D1)
-			b.ZobristKey ^= PieceKeys[WR][A1] ^ PieceKeys[WR][D1]
+			b.Key ^= PieceKeys[WR][A1] ^ PieceKeys[WR][D1]
 		case G8:
 			b.RemovePiece(H8)
 			b.AddPiece(BR, F8)
-			b.ZobristKey ^= PieceKeys[BR][H8] ^ PieceKeys[BR][F8]
+			b.Key ^= PieceKeys[BR][H8] ^ PieceKeys[BR][F8]
 		case C8:
 			b.RemovePiece(A8)
 			b.AddPiece(BR, D8)
-			b.ZobristKey ^= PieceKeys[BR][A8] ^ PieceKeys[BR][D8]
+			b.Key ^= PieceKeys[BR][A8] ^ PieceKeys[BR][D8]
 		}
 	}
 
 	// updates castling rights permissions & Zobrist keys
-	b.ZobristKey ^= CastleKeys[b.Castle]
+	b.Key ^= CastleKeys[b.Castle]
 	b.Castle &= CastleRights[source]
 	b.Castle &= CastleRights[target]
-	b.ZobristKey ^= CastleKeys[b.Castle]
+	b.Key ^= CastleKeys[b.Castle]
 
 	// updates overall board occupancy bitboard
 	b.Occupancies[Both] = b.Occupancies[White] | b.Occupancies[Black]
 
 	// switches side to move
 	b.Side ^= 1
-	b.ZobristKey ^= SideKey
+	b.Key ^= SideKey
 
 	// verifies king safety
 	var inCheck bool
@@ -322,5 +322,5 @@ func (b *Board) Print() {
 	fmt.Printf("\nSide to Move : %c\n", b.Side)
 	fmt.Printf("En Passant   : %s\n", b.EnPassant)
 	fmt.Printf("Castling     : %s\n", b.Castle)
-	fmt.Printf("Zobrist      : 0x%x\n", b.ZobristKey)
+	fmt.Printf("Zobrist      : 0x%x\n", b.Key)
 }

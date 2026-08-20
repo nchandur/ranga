@@ -141,7 +141,7 @@ func (b *Board) ParseFEN(fen string) error {
 	}
 
 	// initializes position hash key
-	b.ZobristKey = b.GenerateZobristKey()
+	b.Key = b.GenerateKey()
 
 	return nil
 }
