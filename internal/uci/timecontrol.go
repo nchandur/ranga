@@ -5,38 +5,52 @@ import (
 	"time"
 )
 
-// computes how long to search for, given UCI go options and side to move
-func calculateSearchTime(opts goOptions, side board.Color) time.Duration {
-	// explicit movetime overrides everything
+// manages options for go command
+type goOptions struct {
+	depth     int
+	infinite  bool
+	metrics   bool
+	wtime     int
+	btime     int
+	winc      int
+	binc      int
+	movesToGo int
+	moveTime  int
+}
+
+// helper function to manage time during games
+func (e *Engine) calculateTimeLimit(opts goOptions) time.Duration {
 	if opts.moveTime > 0 {
 		return time.Duration(opts.moveTime) * time.Millisecond
 	}
 
-	var timeLeft, inc int
-	if side == board.White {
-		timeLeft, inc = opts.wtime, opts.winc
+	var timeLeft, increment int
+	if e.board.Side == board.White {
+		timeLeft = opts.wtime
+		increment = opts.winc
 	} else {
-		timeLeft, inc = opts.btime, opts.binc
+		timeLeft = opts.btime
+		increment = opts.binc
 	}
 
-	// no time info at all (e.g. infinite analysis) — caller handles separately
-	if timeLeft == 0 {
+	if timeLeft <= 0 {
 		return 0
 	}
 
-	movesToGo := 30 // crude fixed default
+	movesToGo := 40
 	if opts.movesToGo > 0 {
 		movesToGo = opts.movesToGo
 	}
 
-	const safetyMarginMs = 50
+	allocatedMs := (timeLeft / movesToGo) + (increment * 3 / 4)
 
-	allocated := timeLeft/movesToGo + inc
-	allocated -= safetyMarginMs
-
-	if allocated < 10 {
-		allocated = 10
+	if allocatedMs > (timeLeft * 4 / 5) {
+		allocatedMs = timeLeft * 4 / 5
 	}
 
-	return time.Duration(allocated) * time.Millisecond
+	if allocatedMs < 10 {
+		allocatedMs = 10
+	}
+
+	return time.Duration(allocatedMs) * time.Millisecond
 }
