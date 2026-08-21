@@ -1,0 +1,68 @@
+version: '3'
+
+vars:
+  VERSION: "1.0"
+  BINARY_NAME: "ranga-{{.VERSION}}"
+  BIN_DIR: "bin"
+
+tasks:
+  build:
+    desc: Build the Go binary for the engine
+    cmds:
+      - go build -o {{.BIN_DIR}}/{{.BINARY_NAME}} ./cmd
+      - chmod +x {{.BIN_DIR}}/{{.BINARY_NAME}}
+
+  run:
+    desc: Build and execute the engine
+    deps:
+      - build
+    cmds:
+      - ./{{.BIN_DIR}}/{{.BINARY_NAME}}
+
+  test:
+    desc: Run all tests in the repository
+    cmds:
+      - go test ./...
+
+  cover:
+    desc: Run tests and generate a visual HTML coverage report
+    cmds:
+      - go test -coverprofile=cover.out ./...
+      - go tool cover -html=cover.out
+
+  clean:
+    desc: Remove binaries and clean the Go cache
+    cmds:
+      - rm -rf {{.BIN_DIR}}/{{.BINARY_NAME}}
+      - go clean -cache -testcache -modcache
+
+  build-docker:
+    desc: Build using Docker exporter (Host architecture)
+    cmds:
+      - docker build --build-arg VERSION={{.VERSION}} --target exporter --output ./{{.BIN_DIR}} .
+
+  build-docker-linux:
+    desc: Build using Docker exporter for Linux (amd64)
+    cmds:
+      - task: internal-docker-build
+        vars: { OS: 'linux', ARCH: 'amd64' }
+
+  build-docker-windows:
+    desc: Build using Docker exporter for Windows (amd64)
+    cmds:
+      - task: internal-docker-build
+        vars: { OS: 'windows', ARCH: 'amd64' }
+
+  build-docker-mac:
+    desc: Build using Docker exporter for macOS (arm64)
+    cmds:
+      - task: internal-docker-build
+        vars: { OS: 'darwin', ARCH: 'arm64' }
+
+  internal-docker-build:
+    internal: true
+    desc: Internal template for cross-architecture Docker exports
+    requires:
+      vars: [OS, ARCH]
+    cmds:
+      - docker build --build-arg VERSION={{.VERSION}} --build-arg TARGETOS={{.OS}} --build-arg TARGETARCH={{.ARCH}} --target exporter --output ./{{.BIN_DIR}} .
