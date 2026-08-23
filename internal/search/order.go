@@ -5,6 +5,11 @@ import "ranga/internal/board"
 // evaluates heuristic score to move to prioritize it during move ordering
 func (s *Searcher) scoreMove(b *board.Board, move board.Move) int {
 
+	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
+		s.PV.ScorePV = false
+		return 20000
+	}
+
 	if move.IsCapture() {
 		var captured board.Piece
 

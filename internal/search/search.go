@@ -37,6 +37,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		}
 	}
 
+	s.PV.Length[b.Ply] = 0
+
 	(*nodes)++
 
 	var inCheck bool
@@ -62,6 +64,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	legalMoves := 0
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
+
+	if s.PV.FollowPv {
+		s.PV.enablePVScoring(ml, b.Ply)
+	}
+
 	s.sortMove(b, ml)
 
 	for _, move := range ml.Moves[:ml.Count] {
@@ -92,6 +99,9 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		}
 		if score > alpha {
 			alpha = score
+
+			// update pv line
+			s.PV.updatePVLine(move, b.Ply)
 		}
 
 	}
@@ -119,6 +129,9 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
+
+	s.PV.FollowPv = true
+	s.PV.enablePVScoring(ml, 0)
 	s.sortMove(b, ml)
 
 	for _, move := range ml.Moves[:ml.Count] {
@@ -142,12 +155,17 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		}
 		if score > alpha {
 			alpha = score
+			s.PV.updatePVLine(move, 0)
 		}
 
-		bestMove = s.PV.Table[0][0]
 		if ctx.Err() != nil {
 			break
 		}
+
+	}
+
+	if s.PV.Length[0] > 0 {
+		bestMove = s.PV.Table[0][0]
 	}
 
 	return bestMove, bestScore, nodes

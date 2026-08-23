@@ -22,6 +22,32 @@ func (p *PVTable) Clear() {
 	p.ScorePV = false
 }
 
+// flags pv move at given search depth to be prioritized for move ordering
+func (p *PVTable) enablePVScoring(ml *board.MoveList, ply int) {
+
+	p.FollowPv = false
+
+	for count := range ml.Count {
+		if p.Table[0][ply] == ml.Moves[count] {
+			p.ScorePV = true
+			p.FollowPv = true
+		}
+	}
+
+}
+
+// update line in pv at given ply
+func (p *PVTable) updatePVLine(move board.Move, ply int) {
+	p.Table[ply][ply] = move
+
+	for nply := ply + 1; nply < p.Length[ply+1]; nply++ {
+		p.Table[ply][nply] = p.Table[ply+1][nply]
+	}
+
+	p.Length[ply] = p.Length[ply+1]
+
+}
+
 func (p PVTable) String() string {
 
 	var res strings.Builder

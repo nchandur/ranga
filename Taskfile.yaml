@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  VERSION: "1.2"
+  VERSION: "1.3"
   BINARY_NAME: "ranga-{{.VERSION}}"
   BIN_DIR: "bin"
 
