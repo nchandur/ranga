@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+# [Unreleased]
+
 ## [v2.1] - 2026-08-23
 
 ### Added
