@@ -110,6 +110,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 // executes search on a given state, returns the best move found
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
 	nodes := 0
+	s.PV.Clear()
 	alpha, beta := -INFINITY, INFINITY
 
 	var bestMove board.Move
@@ -127,6 +128,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 			continue
 		}
 
+		s.PV.FollowPv = true
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
 
 		b.Restore(&state)
@@ -140,6 +142,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 			alpha = score
 		}
 
+		bestMove = s.PV.Table[0][0]
 		if ctx.Err() != nil {
 			break
 		}
