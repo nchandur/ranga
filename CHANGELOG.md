@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.3] - [upcoming]
+
+### Added
+* feat(search): principal variation table
+
+### Fixed
+* fix(board): side to move log
 
 ## [v1.2] - 2026-08-23
 

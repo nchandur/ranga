@@ -44,7 +44,7 @@ func (p *PVTable) updatePVLine(move board.Move, ply int) {
 		p.Table[ply][nply] = p.Table[ply+1][nply]
 	}
 
-	p.Length[ply] = p.Length[ply+1]
+	p.Length[ply] = p.Length[ply+1] + 1
 
 }
 

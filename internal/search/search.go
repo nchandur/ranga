@@ -14,7 +14,7 @@ type Searcher struct {
 
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator) *Searcher {
-	s := Searcher{Evaluator: eval}
+	s := Searcher{Evaluator: eval, PV: PVTable{}}
 	return &s
 }
 
@@ -77,7 +77,6 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Restore(&state)
-			b.Ply--
 			continue
 		}
 
@@ -86,7 +85,6 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
 
 		b.Restore(&state)
-		b.Ply--
 
 		// abort on cancellation
 		if ctx.Err() != nil {
@@ -139,7 +137,6 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Restore(&state)
-			b.Ply--
 			continue
 		}
 
@@ -147,7 +144,6 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
 
 		b.Restore(&state)
-		b.Ply--
 
 		if score > bestScore {
 			bestScore = score

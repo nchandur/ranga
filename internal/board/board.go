@@ -123,9 +123,88 @@ func (b *Board) RemovePiece(sq Square) {
 	b.Mailbox[sq] = Empty
 }
 
+// determines whether given square is under attack by any enemy piece
+func (b *Board) IsSquareAttacked(square Square, color Color) bool {
+
+	// checks pawn attacks
+	if (color == White) && (PawnAttacks[Black][square]&b.PieceBitBoards[WP]) != 0 {
+		return true
+	}
+
+	if (color == Black) && (PawnAttacks[White][square]&b.PieceBitBoards[BP]) != 0 {
+		return true
+	}
+
+	// check knight attacks
+	var enemyKnights BitBoard
+	switch color {
+	case White:
+		enemyKnights = b.PieceBitBoards[WN]
+	case Black:
+		enemyKnights = b.PieceBitBoards[BN]
+	}
+
+	if (KnightAttacks[square] & enemyKnights) != 0 {
+		return true
+	}
+
+	// check rook attacks
+	var enemyRooks BitBoard
+	switch color {
+	case White:
+		enemyRooks = b.PieceBitBoards[WR]
+	case Black:
+		enemyRooks = b.PieceBitBoards[BR]
+	}
+
+	if (GetRookAttacks(square, b.Occupancies[Both]) & enemyRooks) != 0 {
+		return true
+	}
+
+	// check bishop attacks
+	var enemyBishops BitBoard
+	switch color {
+	case White:
+		enemyBishops = b.PieceBitBoards[WB]
+	case Black:
+		enemyBishops = b.PieceBitBoards[BB]
+	}
+
+	if (GetBishopAttacks(square, b.Occupancies[Both]) & enemyBishops) != 0 {
+		return true
+	}
+
+	// check king attacks
+	var enemyKing BitBoard
+	switch color {
+	case White:
+		enemyKing = b.PieceBitBoards[WK]
+	case Black:
+		enemyKing = b.PieceBitBoards[BK]
+	}
+
+	if (KingAttacks[square] & enemyKing) != 0 {
+		return true
+	}
+
+	// check queen attacks
+	var enemyQueens BitBoard
+	switch color {
+	case White:
+		enemyQueens = b.PieceBitBoards[WQ]
+	case Black:
+		enemyQueens = b.PieceBitBoards[BQ]
+	}
+
+	if (GetQueenAttacks(square, b.Occupancies[Both]) & enemyQueens) != 0 {
+		return true
+	}
+
+	return false
+}
+
 // attempts to make a move on board and updates internal board state
 func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
-
 	// skips quiet moves during capture-only searches
 	if onlyCaptures && !move.IsCapture() {
 		return false
@@ -319,7 +398,7 @@ func (b *Board) Print() {
 
 	fmt.Println("     a   b   c   d   e   f   g   h")
 
-	fmt.Printf("\nSide to Move : %c\n", b.Side)
+	fmt.Printf("\nSide to Move : %c\n", b.Side.String())
 	fmt.Printf("En Passant   : %s\n", b.EnPassant)
 	fmt.Printf("Castling     : %s\n", b.Castle)
 	fmt.Printf("Zobrist      : 0x%x\n", b.Key)
