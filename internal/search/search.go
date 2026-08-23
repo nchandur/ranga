@@ -8,13 +8,19 @@ import (
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator // static evaluation to score positions at leaf nodes
+	evaluate.Evaluator         // static evaluation to score positions at leaf nodes
+	PV                 PVTable // stores and tracks the pv line found during search
 }
 
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator) *Searcher {
-	s := Searcher{Evaluator: eval}
+	s := Searcher{Evaluator: eval, PV: PVTable{}}
 	return &s
+}
+
+// clears searcher state
+func (s *Searcher) Reset() {
+	s.PV.Clear()
 }
 
 // executes main alpha-beta minimax search tree traversal
@@ -30,6 +36,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 			return 0
 		}
 	}
+
+	s.PV.Length[b.Ply] = 0
 
 	(*nodes)++
 
@@ -56,6 +64,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	legalMoves := 0
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
+
+	if s.PV.FollowPv {
+		s.PV.enablePVScoring(ml, b.Ply)
+	}
+
 	s.sortMove(b, ml)
 
 	for _, move := range ml.Moves[:ml.Count] {
@@ -64,7 +77,6 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Restore(&state)
-			b.Ply--
 			continue
 		}
 
@@ -73,7 +85,6 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
 
 		b.Restore(&state)
-		b.Ply--
 
 		// abort on cancellation
 		if ctx.Err() != nil {
@@ -86,6 +97,9 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		}
 		if score > alpha {
 			alpha = score
+
+			// update pv line
+			s.PV.updatePVLine(move, b.Ply)
 		}
 
 	}
@@ -105,6 +119,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 // executes search on a given state, returns the best move found
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
 	nodes := 0
+	s.PV.Clear()
 	alpha, beta := -INFINITY, INFINITY
 
 	var bestMove board.Move
@@ -112,6 +127,9 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
+
+	s.PV.FollowPv = true
+	s.PV.enablePVScoring(ml, 0)
 	s.sortMove(b, ml)
 
 	for _, move := range ml.Moves[:ml.Count] {
@@ -119,14 +137,17 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Restore(&state)
-			b.Ply--
 			continue
 		}
 
+		s.PV.FollowPv = true
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
 
 		b.Restore(&state)
-		b.Ply--
+
+		if ctx.Err() != nil {
+			break
+		}
 
 		if score > bestScore {
 			bestScore = score
@@ -134,11 +155,13 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		}
 		if score > alpha {
 			alpha = score
+			s.PV.updatePVLine(move, 0)
 		}
 
-		if ctx.Err() != nil {
-			break
-		}
+	}
+
+	if s.PV.Length[0] > 0 {
+		bestMove = s.PV.Table[0][0]
 	}
 
 	return bestMove, bestScore, nodes
