@@ -38,14 +38,13 @@ func (p *PVTable) enablePVScoring(ml *board.MoveList, ply int) {
 
 // update line in pv at given ply
 func (p *PVTable) updatePVLine(move board.Move, ply int) {
-	p.Table[ply][ply] = move
+	p.Table[ply][0] = move
 
-	for nply := ply + 1; nply < p.Length[ply+1]; nply++ {
-		p.Table[ply][nply] = p.Table[ply+1][nply]
+	for i := 0; i < p.Length[ply+1]; i++ {
+		p.Table[ply][i+1] = p.Table[ply+1][i]
 	}
 
 	p.Length[ply] = p.Length[ply+1] + 1
-
 }
 
 func (p PVTable) String() string {
