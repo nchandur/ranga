@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v2.1] - 2026-08-23
 
 ### Added
 * feat(search): quiescence search [[#8](https://github.com/nchandur/ranga/pull/8)]
