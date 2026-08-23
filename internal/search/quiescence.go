@@ -56,6 +56,8 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 		ml.GenerateCaptures(b)
 	}
 
+	s.sortMove(b, ml)
+
 	legalMoves := 0
 
 	for count := range ml.Count {
