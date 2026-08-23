@@ -50,7 +50,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// drop into quiescence search at leaf nodes
 	if depth == 0 {
-		return s.Evaluate(b)
+		return s.Quiescence(ctx, b, alpha, beta, nodes)
 	}
 
 	legalMoves := 0

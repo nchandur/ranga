@@ -1,41 +1,28 @@
 # Results
 
 ## Contents
-- [Elo Estimate](#elo-estimate)
-- [Gauntlet](#round-robin)
+- [SPRT](#sequential-probability-ratio-test)
 
----
-
-## Elo Estimate
-
-| Engine       | Reference Elo | Estimated Elo    |
-|--------------|---------------|------------------|
-| Stash-8.0    | 1090          | 1090             |
-| **ranga-1.0**| —637          | **~453 +/- 36**  |
- 
-> **Estimated Elo: ~417-489**
-
----
-
-## Gauntlet
+## Sequential Probability Ratio Test
 
 **Date:** 20/08/2026
 
-### ranga-1.0 vs stash-8.0
- 
-**Engines:** ranga-1.0, stash-8.0
-**TC:** 8+0.08 | **Rounds:** 1000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
- 
-| Engine     | Elo      | +/-   | nElo     | +/-   | Games | Score  | Draw  |
-|------------|----------|-------|----------|-------|-------|--------|-------|
-| stash-8.0  | 0        | 36.09 | 0        | 15.23 | 2000  | 97.50% | 4.70% |
-| ranga-1.0  | -636.43  | 36.09 | -1447.43 | 15.23 | 2000  | 2.50%  | 4.70% |
- 
-**Ptnml (0-2):**
- 
-| Engine     | LL  | LD  | DD  | WD  | WW  |
-|------------|-----|-----|-----|-----|-----|
-| ranga-1.0  | 907 | 86  | 7   | 0   | 0   |
-| stash-8.0  | 0   | 0   | 7   | 86  | 907 |
- 
-Total time: 00:20:32 (h:m:s)
+**RC Engine:** ranga-1.1 | **Base Engine:** ranga-1.0
+
+**TC:** 8+0.08 | **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
+
+**SPRT:** elo0=0, elo1=5, $\alpha$=0.05, $\beta$=0.05
+
+
+| Metric        | Value                                |
+|---------------|--------------------------------------|
+| Result        | **H1 accepted** (pass)               |
+| Elo           | 19.94 +/- 5.65                       |
+| nElo          | 68.00 +/- 19.21                      |
+| LOS           | 100.00%                              |
+| Games         | 1256 (W: 94, L: 22, D: 1140)         |
+| Score         | 664 / 1256 (52.87%)                  |
+| Draw ratio    | 82.01%                               |
+| LLR           | 2.96 (100.4%) — bounds (-2.94, 2.94) |
+
+Total time: 00:29:15 (h:m:s)
