@@ -241,8 +241,6 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 			break
 		}
 
-		bestMove = move
-
 	}
 
 	if bestMove == board.NOMOVE {

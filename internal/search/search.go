@@ -145,6 +145,10 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 		b.Restore(&state)
 
+		if ctx.Err() != nil {
+			break
+		}
+
 		if score > bestScore {
 			bestScore = score
 			bestMove = move
@@ -152,10 +156,6 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		if score > alpha {
 			alpha = score
 			s.PV.updatePVLine(move, 0)
-		}
-
-		if ctx.Err() != nil {
-			break
 		}
 
 	}
