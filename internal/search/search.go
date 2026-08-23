@@ -56,6 +56,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	legalMoves := 0
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
+	s.sortMove(b, ml)
 
 	for _, move := range ml.Moves[:ml.Count] {
 
@@ -111,6 +112,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
+	s.sortMove(b, ml)
 
 	for _, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()

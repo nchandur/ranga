@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  VERSION: "1.1"
+  VERSION: "1.2"
   BINARY_NAME: "ranga-{{.VERSION}}"
   BIN_DIR: "bin"
 
@@ -9,7 +9,7 @@ tasks:
   build:
     desc: Build the Go binary for the engine
     cmds:
-      - go build -o {{.BIN_DIR}}/{{.BINARY_NAME}} ./cmd
+      - go build -ldflags="-X main.version={{.VERSION}}" -o {{.BIN_DIR}}/{{.BINARY_NAME}} ./cmd
       - chmod +x {{.BIN_DIR}}/{{.BINARY_NAME}}
 
   run:
