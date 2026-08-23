@@ -4,13 +4,16 @@ All notable changes to this project will be documented in this file.
 
 # [Unreleased]
 
+### Added
+* feat(search): triangular principal variation table 
+
+### Fixed
+* fix(uci): consume version number
+
 ## [v2.1] - 2026-08-23
 
 ### Added
 * feat(search): quiescence search [[#8](https://github.com/nchandur/ranga/pull/8)]
-
-### Fixed
-* fix(uci): consume version number
 
 ## [v1.0] - 2026-08-20
 
