@@ -8,13 +8,19 @@ import (
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator // static evaluation to score positions at leaf nodes
+	evaluate.Evaluator         // static evaluation to score positions at leaf nodes
+	PV                 PVTable // stores and tracks the pv line found during search
 }
 
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator) *Searcher {
 	s := Searcher{Evaluator: eval}
 	return &s
+}
+
+// clears searcher state
+func (s *Searcher) Reset() {
+	s.PV.Clear()
 }
 
 // executes main alpha-beta minimax search tree traversal
