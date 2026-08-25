@@ -61,7 +61,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 		ml.GenerateCaptures(b)
 	}
 
-	s.sortMove(b, ml)
+	s.sortMove(b, ml, board.NOMOVE)
 
 	legalMoves := 0
 
