@@ -8,13 +8,14 @@ import (
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator         // static evaluation to score positions at leaf nodes
-	PV                 PVTable // stores and tracks the pv line found during search
+	evaluate.Evaluator                     // static evaluation to score positions at leaf nodes
+	PV                 PVTable             // stores and tracks the pv line found during search
+	TT                 *TranspositionTable // caches position evaluations and cutoffs
 }
 
 // instantiates new searcher
-func NewSearcher(eval evaluate.Evaluator) *Searcher {
-	s := Searcher{Evaluator: eval, PV: PVTable{}}
+func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
+	s := Searcher{Evaluator: eval, PV: PVTable{}, TT: NewTranspositionTable(ttSize)}
 	return &s
 }
 

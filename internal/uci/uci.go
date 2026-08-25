@@ -37,7 +37,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		in:       bufio.NewScanner(in),
 		out:      out,
 		board:    board.NewBoard(),
-		searcher: search.NewSearcher(evaluate.Evaluator{}),
+		searcher: search.NewSearcher(evaluate.Evaluator{}, 24),
 		commands: make(map[string]Handler),
 		version:  version,
 	}
