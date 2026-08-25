@@ -60,6 +60,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		return 0
 	}
 
+	// transposition table lookup
+	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); b.Ply != 0 && score != NOENTRY && !s.PV.FollowPv {
+		return score
+	}
+
 	var inCheck bool
 
 	// check if current side king is in check
@@ -84,11 +89,18 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
 
+	// look for move in transposition table
+	ttMove := s.TT.ProbeMove(b.Key)
+
 	if s.PV.FollowPv {
 		s.PV.enablePVScoring(ml, b.Ply)
 	}
 
-	s.sortMove(b, ml)
+	s.sortMove(b, ml, ttMove)
+
+	flag := FALPHA
+	score := 0
+	bestMove := board.NOMOVE
 
 	for _, move := range ml.Moves[:ml.Count] {
 
@@ -106,7 +118,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		legalMoves++
 
-		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -119,10 +131,13 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		// fail hard on beta cutoff
 		if score >= beta {
+			s.TT.Store(score, depth, b.Ply, FBETA, b.Key, move)
 			return beta
 		}
 		if score > alpha {
 			alpha = score
+			flag = FEXACT
+			bestMove = move
 
 			// update pv line
 			s.PV.updatePVLine(move, b.Ply)
@@ -139,6 +154,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		}
 	}
 
+	// store final score in transposition table
+	s.TT.Store(alpha, depth, b.Ply, flag, b.Key, bestMove)
 	return alpha
 }
 
@@ -156,7 +173,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	s.PV.FollowPv = true
 	s.PV.enablePVScoring(ml, 0)
-	s.sortMove(b, ml)
+	s.sortMove(b, ml, board.NOMOVE)
 
 	for _, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()

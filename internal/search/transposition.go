@@ -21,7 +21,7 @@ type TranspositionTableEntry struct {
 	Score      int
 	Depth      int
 	Flag       int
-	ZobristKey uint64
+	Key uint64
 }
 
 // transposition table
@@ -65,7 +65,7 @@ func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int
 
 	entry := (*tt).Entries[idx]
 
-	if entry.ZobristKey == key {
+	if entry.Key == key {
 
 		score := entry.Score
 
@@ -101,7 +101,7 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 
 	entry := &(tt.Entries[key%uint64(tt.Length)])
 
-	if entry.ZobristKey != 0 && entry.ZobristKey != key && entry.Depth > depth {
+	if entry.Key != 0 && entry.Key != key && entry.Depth > depth {
 		return
 	}
 
@@ -113,7 +113,7 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 		score += ply
 	}
 
-	entry.ZobristKey = key
+	entry.Key = key
 	entry.Score = score
 	entry.Flag = flag
 	entry.Depth = depth
@@ -126,7 +126,7 @@ func (tt *TranspositionTable) ProbeMove(key uint64) board.Move {
 
 	entry := &tt.Entries[key%uint64(tt.Length)]
 
-	if entry.ZobristKey == key {
+	if entry.Key == key {
 		return entry.Move
 	}
 
