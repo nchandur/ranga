@@ -8,8 +8,6 @@ const (
 	INFINITY  int = 1200000 // upper numeric boundary
 )
 
-const ()
-
 // assigns higher priorities to captures where lower-value piece captures higher-value piece,
 var MVVLVA = [12][12]int{
 	{105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},
