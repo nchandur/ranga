@@ -14,7 +14,11 @@ type Board struct {
 	Castle                // castle rights
 	Ply            int    // current half-move ply
 	FiftyMove      int    // halfmove clock for 50-move draw rule
-	Key            uint64 // unique hash key for position
+	Repetition     struct {
+		Idx   int
+		Table [512]uint64
+	} // stack of positions to detect 3-fold repetition
+	Key uint64 // unique hash key for position
 }
 
 // creates a new instance of board
@@ -35,6 +39,9 @@ func NewBoard() Board {
 	res.FiftyMove = 0
 	res.Key = 0
 
+	res.Repetition.Idx = 0
+	res.Repetition.Table = [512]uint64{}
+
 	return res
 }
 
@@ -51,6 +58,7 @@ func (b *Board) Preserve() Board {
 	res.Ply = b.Ply
 	res.FiftyMove = b.FiftyMove
 	res.Key = b.Key
+	res.Repetition.Idx = b.Repetition.Idx
 
 	return res
 }
@@ -66,6 +74,7 @@ func (b *Board) Restore(copy *Board) {
 	b.Ply = copy.Ply
 	b.FiftyMove = copy.FiftyMove
 	b.Key = copy.Key
+	b.Repetition.Idx = copy.Repetition.Idx
 
 }
 
@@ -82,6 +91,8 @@ func (b *Board) Clear() {
 	b.Ply = 0
 	b.FiftyMove = 0
 	b.Key = 0
+	b.Repetition.Idx = 0
+	b.Repetition.Table = [512]uint64{}
 
 }
 

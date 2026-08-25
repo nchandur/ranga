@@ -22,6 +22,11 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	(*nodes)++
 
+	// evaluate repetition or 50 move rule
+	if (s.IsRepetition(b) || b.FiftyMove >= 100) && b.Ply != 0 {
+		return 0
+	}
+
 	// check if current side king is in check
 	var inCheck bool
 	switch b.Side {
@@ -71,11 +76,15 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 			continue
 		}
 
+		b.Repetition.Idx++
+		b.Repetition.Table[b.Repetition.Idx] = b.Key
+
 		legalMoves++
 
 		score := -s.Quiescence(ctx, b, -beta, -alpha, nodes)
 
 		b.Ply--
+		b.Repetition.Idx--
 
 		b.Restore(&copy)
 
