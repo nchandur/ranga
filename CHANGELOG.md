@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(search): transposition table for storing previously searched positions [[#17](https://github.com/nchandur/ranga/pull/17)]
+
 ## [v1.4] - 2026-08-25
 
 ### Added
