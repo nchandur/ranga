@@ -26,6 +26,7 @@ func (p *PVTable) Clear() {
 func (p *PVTable) enablePVScoring(ml *board.MoveList, ply int) {
 
 	p.FollowPv = false
+	p.ScorePV = false
 
 	for count := range ml.Count {
 		if p.Table[0][ply] == ml.Moves[count] {

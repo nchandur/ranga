@@ -161,13 +161,19 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		state := b.Preserve()
 		b.Ply++
 		if !b.MakeMove(move, false) {
+			b.Ply--
 			b.Restore(&state)
 			continue
 		}
 
+		b.Repetition.Idx++
+		b.Repetition.Table[b.Repetition.Idx] = b.Key
+
 		s.PV.FollowPv = true
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
 
+		b.Ply--
+		b.Repetition.Idx--
 		b.Restore(&state)
 
 		if ctx.Err() != nil {
