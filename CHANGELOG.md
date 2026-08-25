@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.4] - 2026-08-25
+
+### Added
+* feat(search): repetition detection and 50-move rule [[#15](https://github.com/nchandur/ranga/pull/15)]
+
+### Fixed
+* fix(search): ply count bug
+
 ## [v1.3] - 2026-08-23
 
 ### Added
