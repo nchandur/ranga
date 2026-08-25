@@ -109,6 +109,9 @@ func (e *Engine) handlePosition(args []string) {
 		return
 	}
 
+	e.board.Repetition.Idx = 0
+	e.board.Repetition.Table[e.board.Repetition.Idx] = e.board.Key
+
 	movesStr = strings.TrimSpace(movesStr)
 	if movesStr != "" {
 		for moveStr := range strings.FieldsSeq(movesStr) {
@@ -123,6 +126,10 @@ func (e *Engine) handlePosition(args []string) {
 				fmt.Fprintf(os.Stderr, "illegal move encountered in setup: %s\n", moveStr)
 				return
 			}
+
+			e.board.Repetition.Idx++
+			e.board.Repetition.Table[e.board.Repetition.Idx] = e.board.Key
+
 		}
 	}
 

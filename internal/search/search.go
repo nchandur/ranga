@@ -23,6 +23,19 @@ func (s *Searcher) Reset() {
 	s.PV.Clear()
 }
 
+// checks whether current board position has occurred previously
+func (s *Searcher) IsRepetition(b *board.Board) bool {
+	startIdx := max(b.Repetition.Idx-b.FiftyMove, 0)
+
+	for i := startIdx; i < b.Repetition.Idx; i++ {
+		if b.Repetition.Table[i] == b.Key {
+			return true
+		}
+	}
+
+	return false
+}
+
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int, nodes *int) int {
 	// guard against out-of-bounds at maximum search ply
@@ -40,6 +53,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	s.PV.Length[b.Ply] = 0
 
 	(*nodes)++
+
+	// evaluate repetition or 50 move rule
+	if (s.IsRepetition(b) || b.FiftyMove >= 100) && b.Ply != 0 {
+		return 0
+	}
 
 	var inCheck bool
 
@@ -75,15 +93,22 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		state := b.Preserve()
 		b.Ply++
+
 		if !b.MakeMove(move, false) {
+			b.Ply--
 			b.Restore(&state)
 			continue
 		}
+
+		b.Repetition.Idx++
+		b.Repetition.Table[b.Repetition.Idx] = b.Key
 
 		legalMoves++
 
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
 
+		b.Ply--
+		b.Repetition.Idx--
 		b.Restore(&state)
 
 		// abort on cancellation
