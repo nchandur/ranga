@@ -2,7 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.4] - 2026-08-25
+
+### Added
+* feat(search): repetition detection and 50-move rule [[#15](https://github.com/nchandur/ranga/pull/15)]
 
 ## [v1.3] - 2026-08-23
 
