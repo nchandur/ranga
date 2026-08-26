@@ -4,6 +4,12 @@ import (
 	"fmt"
 )
 
+var (
+	NNUEOnAdd      func(b *Board, piece Piece, sq Square)
+	NNUEOnRemove   func(b *Board, piece Piece, sq Square)
+	NNUEOnMoveDone func(b *Board)
+)
+
 // represents complete chess board state
 type Board struct {
 	PieceBitBoards [12]BitBoard // bitboards for each piece
@@ -19,6 +25,10 @@ type Board struct {
 		Table [512]uint64
 	} // stack of positions to detect 3-fold repetition
 	Key uint64 // unique hash key for position
+
+	// nnue eval state
+	NNUEAcc   [2][NNUEHiddenSize]float32
+	NNUEDirty [2]bool
 }
 
 // creates a new instance of board
@@ -42,6 +52,9 @@ func NewBoard() Board {
 	res.Repetition.Idx = 0
 	res.Repetition.Table = [512]uint64{}
 
+	res.NNUEAcc = [2][NNUEHiddenSize]float32{}
+	res.NNUEDirty = [2]bool{}
+
 	return res
 }
 
@@ -59,6 +72,8 @@ func (b *Board) Preserve() Board {
 	res.FiftyMove = b.FiftyMove
 	res.Key = b.Key
 	res.Repetition.Idx = b.Repetition.Idx
+	res.NNUEAcc = b.NNUEAcc
+	res.NNUEDirty = b.NNUEDirty
 
 	return res
 }
@@ -75,6 +90,8 @@ func (b *Board) Restore(copy *Board) {
 	b.FiftyMove = copy.FiftyMove
 	b.Key = copy.Key
 	b.Repetition.Idx = copy.Repetition.Idx
+	b.NNUEAcc = copy.NNUEAcc
+	b.NNUEDirty = copy.NNUEDirty
 
 }
 
@@ -93,6 +110,8 @@ func (b *Board) Clear() {
 	b.Key = 0
 	b.Repetition.Idx = 0
 	b.Repetition.Table = [512]uint64{}
+	b.NNUEAcc = [2][NNUEHiddenSize]float32{}
+	b.NNUEDirty = [2]bool{}
 
 }
 
@@ -113,6 +132,10 @@ func (b *Board) AddPiece(piece Piece, sq Square) {
 	b.Occupancies[Both].SetBit(sq)
 	b.Mailbox[sq] = piece
 
+	if NNUEOnAdd != nil {
+		NNUEOnAdd(b, piece, sq)
+	}
+
 }
 
 // remove piece from the board
@@ -132,6 +155,11 @@ func (b *Board) RemovePiece(sq Square) {
 
 	b.Occupancies[Both].PopBit(sq)
 	b.Mailbox[sq] = Empty
+
+	if NNUEOnRemove != nil {
+		NNUEOnRemove(b, piece, sq)
+	}
+
 }
 
 // determines whether given square is under attack by any enemy piece
@@ -334,6 +362,11 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 	if inCheck {
 		b.Restore(&stateCopy)
 		return false
+	}
+
+	// repairs any NNUE accumulator left stale by king move this ply
+	if NNUEOnMoveDone != nil {
+		NNUEOnMoveDone(b)
 	}
 
 	return true

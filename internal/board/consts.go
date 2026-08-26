@@ -200,6 +200,9 @@ var BishopMagicNumbers = [64]BitBoard{
 	0x144504883040080,
 }
 
+// NNUE hidden layer size
+const NNUEHiddenSize int = 256
+
 // print pieces
 const PieceChar = "PNBRQKpnbrqk "
 

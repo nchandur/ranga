@@ -1,6 +1,9 @@
 package evaluate
 
-import "ranga/internal/board"
+import (
+	"ranga/internal/board"
+	"ranga/internal/nnue"
+)
 
 type Evaluator struct{}
 
@@ -12,4 +15,10 @@ func (e *Evaluator) Evaluate(b *board.Board) int {
 	}
 
 	return score
+}
+
+type NNUEEvaluator struct{}
+
+func (e *NNUEEvaluator) Evaluate(b *board.Board) int {
+	return nnue.Evaluate(b)
 }
