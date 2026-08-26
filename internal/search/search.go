@@ -173,7 +173,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	s.PV.FollowPv = true
 	s.PV.enablePVScoring(ml, 0)
-	s.sortMove(b, ml, board.NOMOVE)
+	s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
 	for _, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()

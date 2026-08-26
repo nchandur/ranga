@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 ### Added
 * feat(search): transposition table for storing previously searched positions [[#17](https://github.com/nchandur/ranga/pull/17)]
 
+### Fixed
+* fix(search): enforce minimum 1MB transposition table size
+* fix(search): root node now probes TT for move ordering instead of using no move
+* fix(search): TT replacement scheme now protects same-key entries from shallower overwrites
+
+[[#18](https://github.com/nchandur/ranga/pull/18)]
+
 ## [v1.4] - 2026-08-25
 
 ### Added

@@ -18,10 +18,10 @@ const NOENTRY int = 99999 // indicate cache miss or uninitialized entry
 // holds tranposition table entries
 type TranspositionTableEntry struct {
 	board.Move
-	Score      int
-	Depth      int
-	Flag       int
-	Key uint64
+	Score int
+	Depth int
+	Flag  int
+	Key   uint64
 }
 
 // transposition table
@@ -34,10 +34,8 @@ type TranspositionTable struct {
 // instantiates new transposition table
 // size specifies the total memory allocated for the transposition table in MB
 func NewTranspositionTable(size int) *TranspositionTable {
-	if size <= 0 {
-		return nil
-	}
 
+	size = max(size, 1)
 	bytes := size * 1024 * 1024
 
 	entrySize := int(unsafe.Sizeof(TranspositionTableEntry{}))
@@ -101,7 +99,7 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 
 	entry := &(tt.Entries[key%uint64(tt.Length)])
 
-	if entry.Key != 0 && entry.Key != key && entry.Depth > depth {
+	if entry.Key != 0 && entry.Depth > depth && entry.Key != key {
 		return
 	}
 
