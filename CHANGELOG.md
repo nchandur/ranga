@@ -2,17 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.5] - 2026-08-25
 
 ### Added
 * feat(search): transposition table for storing previously searched positions [[#17](https://github.com/nchandur/ranga/pull/17)]
 
 ### Fixed
-* fix(search): enforce minimum 1MB transposition table size
-* fix(search): root node now probes TT for move ordering instead of using no move
-* fix(search): TT replacement scheme now protects same-key entries from shallower overwrites
-
-[[#18](https://github.com/nchandur/ranga/pull/18)]
+* fix(search): enforce minimum 1MB transposition table size [[#18](https://github.com/nchandur/ranga/pull/18)]
+* fix(search): root node now probes TT for move ordering instead of using no move [[#18](https://github.com/nchandur/ranga/pull/18)]
+* fix(search): TT replacement scheme now protects same-key entries from shallower overwrites [[#18](https://github.com/nchandur/ranga/pull/18)]
 
 ## [v1.4] - 2026-08-25
 
@@ -20,7 +18,7 @@ All notable changes to this project will be documented in this file.
 * feat(search): repetition detection and 50-move rule [[#15](https://github.com/nchandur/ranga/pull/15)]
 
 ### Fixed
-* fix(search): ply count bug
+* fix(search): correct ply count tracking during search traversal [[#15](https://github.com/nchandur/ranga/pull/15)]
 
 ## [v1.3] - 2026-08-23
 
@@ -28,7 +26,7 @@ All notable changes to this project will be documented in this file.
 * feat(search): principal variation table [[#12](https://github.com/nchandur/ranga/pull/12)]
 
 ### Fixed
-* fix(board): side to move log
+* fix(board): correct side-to-move in log [[#12](https://github.com/nchandur/ranga/pull/12)]
 
 ## [v1.2] - 2026-08-23
 
@@ -41,7 +39,7 @@ All notable changes to this project will be documented in this file.
 * feat(search): quiescence search [[#8](https://github.com/nchandur/ranga/pull/8)]
 
 ### Fixed
-* fix(uci): consume version number
+* fix(uci): correctly parse version number in UCI handshake
 
 ## [v1.0] - 2026-08-20
 
