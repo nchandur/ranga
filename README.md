@@ -109,6 +109,3 @@ bestmove a2a3
 | `winc <ms>` / `binc <ms>`   | Increment per move for white / black          |
 | `movestogo <n>`          | Moves remaining until the next time control      |
 | `infinite`               | Search until an explicit `stop` command          |
-
-## Estimated Strength **~417-489**
-> See [here](docs/results.md#elo-estimate) for the full breakdown

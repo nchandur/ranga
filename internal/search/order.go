@@ -3,7 +3,11 @@ package search
 import "ranga/internal/board"
 
 // evaluates heuristic score to move to prioritize it during move ordering
-func (s *Searcher) scoreMove(b *board.Board, move board.Move) int {
+func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
+
+	if move == ttMove {
+		return 30000
+	}
 
 	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
 		s.PV.ScorePV = false
@@ -33,11 +37,11 @@ func (s *Searcher) scoreMove(b *board.Board, move board.Move) int {
 }
 
 // orders the legal moves in given move list
-func (s *Searcher) sortMove(b *board.Board, ml *board.MoveList) {
+func (s *Searcher) sortMove(b *board.Board, ml *board.MoveList, ttMove board.Move) {
 
 	score := make([]int, ml.Count)
 	for i := 0; i < ml.Count; i++ {
-		score[i] = s.scoreMove(b, ml.Moves[i])
+		score[i] = s.scoreMove(b, ml.Moves[i], ttMove)
 	}
 
 	for i := 1; i < ml.Count; i++ {
