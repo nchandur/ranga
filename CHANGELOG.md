@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 * fix(search): root node now probes TT for move ordering instead of using no move
 * fix(search): TT replacement scheme now protects same-key entries from shallower overwrites
 
+[[#18](https://github.com/nchandur/ranga/pull/18)]
+
 ## [v1.4] - 2026-08-25
 
 ### Added
