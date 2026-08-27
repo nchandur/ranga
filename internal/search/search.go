@@ -8,9 +8,12 @@ import (
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator                     // static evaluation to score positions at leaf nodes
-	PV                 PVTable             // stores and tracks the pv line found during search
-	TT                 *TranspositionTable // caches position evaluations and cutoffs
+	evaluate.Evaluator                        // static evaluation to score positions at leaf nodes
+	PV                 PVTable                // stores and tracks the pv line found during search
+	TT                 *TranspositionTable    // caches position evaluations and cutoffs
+	Killers            [2][MAX_PLY]board.Move // holds killer moves
+	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
+
 }
 
 // instantiates new searcher
@@ -22,6 +25,8 @@ func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
 // clears searcher state
 func (s *Searcher) Reset() {
 	s.PV.Clear()
+	s.Killers = [2][MAX_PLY]board.Move{}
+	s.History = [12][64]int{}
 }
 
 // checks whether current board position has occurred previously
@@ -102,7 +107,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	score := 0
 	bestMove := board.NOMOVE
 
-	for _, move := range ml.Moves[:ml.Count] {
+	for count, move := range ml.Moves[:ml.Count] {
 
 		state := b.Preserve()
 		b.Ply++
@@ -132,12 +137,37 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		// fail hard on beta cutoff
 		if score >= beta {
 			s.TT.Store(score, depth, b.Ply, FBETA, b.Key, move)
+
+			// record killer moves
+			if !move.IsCapture() {
+				s.Killers[1][b.Ply] = s.Killers[0][b.Ply]
+				s.Killers[0][b.Ply] = move
+
+				// record history heuristic
+				bonus := min(depth*depth, 1200)
+				s.updateHistory(move, bonus)
+
+				// maluses for quiet moves already searched this node that didn't cut off
+				for i := range count {
+					if !ml.Moves[i].IsCapture() {
+						s.updateHistory(ml.Moves[i], -bonus)
+					}
+				}
+
+			}
+
 			return beta
 		}
 		if score > alpha {
 			alpha = score
 			flag = FEXACT
 			bestMove = move
+
+			// history heuristic for quiet moves
+			if !move.IsCapture() {
+				bonus := min(depth*depth, 1200)
+				s.updateHistory(move, bonus)
+			}
 
 			// update pv line
 			s.PV.updatePVLine(move, b.Ply)
@@ -162,7 +192,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 // executes search on a given state, returns the best move found
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
 	nodes := 0
-	s.PV.Clear()
+	s.Reset()
 	alpha, beta := -INFINITY, INFINITY
 
 	var bestMove board.Move
