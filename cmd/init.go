@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand/v2"
 	"ranga/internal/board"
+	"ranga/internal/nnue"
 )
 
 // precomputes attack lookup tables for leaper pieces
@@ -84,9 +85,19 @@ func initHashKeys() {
 
 }
 
+// wires package's update logic into board's hook variables
+func initNNUE() {
+	board.NNUEOnAdd = nnue.OnAdd
+	board.NNUEOnRemove = nnue.OnRemove
+	board.NNUEOnMoveDone = nnue.OnMoveDone
+
+	nnue.Net = nnue.RandomNetwork()
+}
+
 func init() {
 	initLeaperAttacks()
 	initSliderAttacks(true)
 	initSliderAttacks(false)
 	initHashKeys()
+	initNNUE()
 }

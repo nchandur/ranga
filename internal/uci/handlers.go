@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"ranga/internal/board"
+	"ranga/internal/nnue"
 	"ranga/internal/search"
 	"strconv"
 	"strings"
@@ -109,6 +110,7 @@ func (e *Engine) handlePosition(args []string) {
 		return
 	}
 
+	nnue.RefreshAll(&e.board)
 	e.board.Repetition.Idx = 0
 	e.board.Repetition.Table[e.board.Repetition.Idx] = e.board.Key
 

@@ -9,14 +9,7 @@ const (
 	InputSize       = 64 * FeaturesPerKing   // 40960
 )
 
-// wires package's update logic into board's hook variables
-func init() {
-	board.NNUEOnAdd = onAdd
-	board.NNUEOnRemove = onRemove
-	board.NNUEOnMoveDone = onMoveDone
-}
-
-// maps a piece to its HalfKP piece-type index (0..4 for P N B R Q) and color
+// maps a piece to its HalfKP piece-type index and color
 func classify(piece board.Piece) (ptIndex int, color board.Color, isPiece bool) {
 	switch piece {
 	case board.WP:
@@ -67,15 +60,21 @@ func featureIndex(kingSq, pieceSq board.Square, ptIndex int, pieceColor, perspec
 	return ks*FeaturesPerKing + (ptIndex*2+sameColor)*64 + ps
 }
 
-func kingSquare(b *board.Board, perspective board.Color) board.Square {
+func kingSquare(b *board.Board, perspective board.Color) (sq board.Square, ok bool) {
+	var bb board.BitBoard
 	if perspective == board.White {
-		return board.Square(b.PieceBitBoards[board.WK].GetLSB())
+		bb = b.PieceBitBoards[board.WK]
+	} else {
+		bb = b.PieceBitBoards[board.BK]
 	}
-	return board.Square(b.PieceBitBoards[board.BK].GetLSB())
+	if bb == 0 {
+		return 0, false
+	}
+	return board.Square(bb.GetLSB()), true
 }
 
 // invoked by board.AddPiece right after a piece is placed.
-func onAdd(b *board.Board, piece board.Piece, sq board.Square) {
+func OnAdd(b *board.Board, piece board.Piece, sq board.Square) {
 	ptIndex, color, isPiece := classify(piece)
 	if !isPiece {
 		switch piece {
@@ -91,13 +90,18 @@ func onAdd(b *board.Board, piece board.Piece, sq board.Square) {
 		if b.NNUEDirty[p] {
 			continue
 		}
-		idx := featureIndex(kingSquare(b, perspective), sq, ptIndex, color, perspective)
+		ks, ok := kingSquare(b, perspective)
+		if !ok {
+			b.NNUEDirty[p] = true
+			continue
+		}
+		idx := featureIndex(ks, sq, ptIndex, color, perspective)
 		addFeature(&b.NNUEAcc[p], idx)
 	}
 }
 
 // invoked by board.RemovePiece right after a piece is taken off.
-func onRemove(b *board.Board, piece board.Piece, sq board.Square) {
+func OnRemove(b *board.Board, piece board.Piece, sq board.Square) {
 	ptIndex, color, isPiece := classify(piece)
 	if !isPiece {
 		switch piece {
@@ -113,13 +117,18 @@ func onRemove(b *board.Board, piece board.Piece, sq board.Square) {
 		if b.NNUEDirty[p] {
 			continue
 		}
-		idx := featureIndex(kingSquare(b, perspective), sq, ptIndex, color, perspective)
+		ks, ok := kingSquare(b, perspective)
+		if !ok {
+			b.NNUEDirty[p] = true
+			continue
+		}
+		idx := featureIndex(ks, sq, ptIndex, color, perspective)
 		removeFeature(&b.NNUEAcc[p], idx)
 	}
 }
 
 // runs once at the end of every successful MakeMove and repairs any perspective whose king moved this ply
-func onMoveDone(b *board.Board) {
+func OnMoveDone(b *board.Board) {
 	if b.NNUEDirty[0] {
 		Refresh(b, board.White)
 		b.NNUEDirty[0] = false
@@ -135,7 +144,10 @@ func Refresh(b *board.Board, perspective board.Color) {
 	acc := &b.NNUEAcc[int(perspective)]
 	copy(acc[:], Net.FTBias)
 
-	ks := kingSquare(b, perspective)
+	ks, ok := kingSquare(b, perspective)
+	if !ok {
+		return
+	}
 	for sq := range 64 {
 		piece := b.Mailbox[sq]
 		if piece == board.Empty {
