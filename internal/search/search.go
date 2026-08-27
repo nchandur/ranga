@@ -205,7 +205,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 	s.PV.enablePVScoring(ml, 0)
 	s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
-	for count, move := range ml.Moves[:ml.Count] {
+	for _, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()
 		b.Ply++
 		if !b.MakeMove(move, false) {
@@ -217,7 +217,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Repetition.Idx++
 		b.Repetition.Table[b.Repetition.Idx] = b.Key
 
-		s.PV.FollowPv = (count == 0)
+		s.PV.FollowPv = true
 		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
 
 		b.Ply--
