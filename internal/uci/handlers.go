@@ -241,13 +241,13 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 	for d := 1; d <= maxDepth; d++ {
 		move, score, nodes := e.searcher.Search(ctx, &e.board, d)
 
+		if ctx.Err() != nil {
+			break
+		}
+
 		if move != board.NOMOVE {
 			bestMove = move
 			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, nodes, e.searcher.PV))
-		}
-
-		if ctx.Err() != nil {
-			break
 		}
 
 	}
