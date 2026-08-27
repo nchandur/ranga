@@ -2,10 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.6] - 2026-08-27 
 
 ### Added
 * feat(search): killer moves and history heuristics [[#20](https://github.com/nchandur/ranga/pull/20)]
+
+### Fixed
+* fix(search): pv root node corruption [[#21](https://github.com/nchandur/ranga/pull/21)]
+* fix(search): history heuristic on strictly legal quiet moves [[#21](https://github.com/nchandur/ranga/pull/21)]
+* fix(time-management): time crash vulnerability [[#21](https://github.com/nchandur/ranga/pull/21)]
 
 ## [v1.5] - 2026-08-25
 
