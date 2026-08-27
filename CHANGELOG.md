@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(search): killer moves and history heuristics [[#20](https://github.com/nchandur/ranga/pull/20)]
+
 ## [v1.5] - 2026-08-25
 
 ### Added
