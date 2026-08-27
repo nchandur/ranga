@@ -107,7 +107,10 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	score := 0
 	bestMove := board.NOMOVE
 
-	for count, move := range ml.Moves[:ml.Count] {
+	localArray := [256]board.Move{}
+	searchedQuiets := localArray[:0]
+
+	for _, move := range ml.Moves[:ml.Count] {
 
 		state := b.Preserve()
 		b.Ply++
@@ -148,10 +151,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 				s.updateHistory(move, bonus)
 
 				// maluses for quiet moves already searched this node that didn't cut off
-				for i := range count {
-					if !ml.Moves[i].IsCapture() {
-						s.updateHistory(ml.Moves[i], -bonus)
-					}
+				for _, m := range searchedQuiets {
+					s.updateHistory(m, -bonus)
 				}
 
 			}
@@ -171,6 +172,10 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 			// update pv line
 			s.PV.updatePVLine(move, b.Ply)
+		}
+
+		if !move.IsCapture() {
+			searchedQuiets = append(searchedQuiets, move)
 		}
 
 	}
