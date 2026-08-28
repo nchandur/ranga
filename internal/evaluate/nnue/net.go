@@ -48,7 +48,7 @@ func clippedReLU(x float32) float32 {
 }
 
 // runs forward pass and returns centipawn score from perspective of side to move
-func Evaluate(b *board.Board) int {
+func evaluate(b *board.Board) int {
 	stm := int(b.Side)
 	other := 1 - stm
 

@@ -13,6 +13,7 @@ type Searcher struct {
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
+	NodeLimit          int                    // number of nodes to search before termination
 }
 
 // instantiates new searcher
@@ -43,6 +44,12 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int, nodes *int) int {
+
+	// terminate if user-defined node limit is reached
+	if s.NodeLimit > 0 && *nodes >= s.NodeLimit {
+		return alpha
+	}
+
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
 		return s.Evaluate(b)

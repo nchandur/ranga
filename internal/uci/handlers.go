@@ -201,6 +201,12 @@ func (e *Engine) handleGo(args []string) {
 				}
 				i++
 			}
+		case "nodes":
+			if i+1 < len(args) {
+				if val, err := strconv.Atoi(args[i+1]); err == nil {
+					opts.nodes = val
+				}
+			}
 		case "metrics":
 			if i+1 < len(args) {
 				if d, err := strconv.Atoi(args[i+1]); err == nil {
@@ -266,6 +272,8 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 	if opts.depth > 0 && !opts.infinite {
 		maxDepth = opts.depth
 	}
+
+	e.searcher.NodeLimit = opts.nodes
 
 	bestMove := board.NOMOVE
 
