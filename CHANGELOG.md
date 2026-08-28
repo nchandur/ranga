@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 * feat(uci): enabled exact search node capping via `go nodes <count>`
 
+### Fixed
+* fix(uci): clear command resets searcher
+
 ## [v1.6] - 2026-08-27 
 
 ### Added
