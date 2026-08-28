@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(uci): search capped at nodes
+
 ## [v1.6] - 2026-08-27 
 
 ### Added
