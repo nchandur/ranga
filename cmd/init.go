@@ -3,7 +3,7 @@ package main
 import (
 	"math/rand/v2"
 	"ranga/internal/board"
-	"ranga/internal/nnue"
+	"ranga/internal/evaluate/nnue"
 )
 
 // precomputes attack lookup tables for leaper pieces

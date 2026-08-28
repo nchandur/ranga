@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"ranga/internal/board"
-	"ranga/internal/nnue"
+	"ranga/internal/evaluate/hce"
+	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 func (e *Engine) handleUCI() {
 	e.writeLine(fmt.Sprintf("id name ranga %s", e.version))
 	e.writeLine("id author nchandur")
+	e.writeLine("option name UseNNUE type check default true")
 	e.writeLine("uciok")
 }
 
@@ -227,6 +229,35 @@ func (e *Engine) handleGo(args []string) {
 		defer cancel()
 		e.runSearch(ctx, opts)
 	})
+}
+
+// handles setoption command
+// updates engine configuration dynamically
+func (e *Engine) handleSetOption(args []string) {
+	var nameStr, valueStr string
+
+	for i := 0; i < len(args); i++ {
+		if args[i] == "name" && i+1 < len(args) {
+			nameStr = strings.ToLower(args[i+1])
+			i++
+		} else if args[i] == "value" && i+1 < len(args) {
+			valueStr = strings.ToLower(args[i+1])
+			i++
+		}
+	}
+
+	switch nameStr {
+	case "usennue":
+		switch valueStr {
+		case "true":
+			e.searcher.Evaluator = &nnue.NNUE{}
+		case "false":
+			e.searcher.Evaluator = &hce.HCE{}
+		}
+		e.searcher.TT.Clear()
+	case "clear hash":
+		e.searcher.TT.Clear()
+	}
 }
 
 // helper function to run search and evaluation

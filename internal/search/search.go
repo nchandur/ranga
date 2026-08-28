@@ -8,12 +8,11 @@ import (
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator                        // static evaluation to score positions at leaf nodes
+	evaluate.Evaluator                        // evaluation to score positions at leaf nodes
 	PV                 PVTable                // stores and tracks the pv line found during search
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-
 }
 
 // instantiates new searcher
