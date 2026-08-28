@@ -13,7 +13,9 @@ type Searcher struct {
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-
+	Nodes              int                    // nodes visited
+	NodeLimit          int                    // cap for searched nodes
+	Cancel             context.CancelFunc     // cancel search
 }
 
 // instantiates new searcher
@@ -43,14 +45,21 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 }
 
 // executes main alpha-beta minimax search tree traversal
-func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int, nodes *int) int {
+func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int) int {
+
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
 		return s.Evaluate(b)
 	}
 
 	// check timeout or cancel
-	if (*nodes)&2047 == 0 {
+	if s.Nodes&2047 == 0 {
+
+		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+			s.Cancel()
+			return 0
+		}
+
 		if ctx.Err() != nil {
 			return 0
 		}
@@ -58,7 +67,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	s.PV.Length[b.Ply] = 0
 
-	(*nodes)++
+	s.Nodes++
 
 	// evaluate repetition or 50 move rule
 	if (s.IsRepetition(b) || b.FiftyMove >= 100) && b.Ply != 0 {
@@ -87,7 +96,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// drop into quiescence search at leaf nodes
 	if depth == 0 {
-		return s.Quiescence(ctx, b, alpha, beta, nodes)
+		return s.Quiescence(ctx, b, alpha, beta)
 	}
 
 	legalMoves := 0
@@ -126,7 +135,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		legalMoves++
 
-		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -196,7 +205,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 // executes search on a given state, returns the best move found
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
-	nodes := 0
+
 	s.Reset()
 	alpha, beta := -INFINITY, INFINITY
 
@@ -223,7 +232,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Repetition.Table[b.Repetition.Idx] = b.Key
 
 		s.PV.FollowPv = (count == 0)
-		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
+		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -248,5 +257,5 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		bestMove = s.PV.Table[0][0]
 	}
 
-	return bestMove, bestScore, nodes
+	return bestMove, bestScore, s.Nodes
 }

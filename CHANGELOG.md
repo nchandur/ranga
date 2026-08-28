@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(uci): enabled exact search node capping via `go nodes <count>`
+
 ## [v1.6] - 2026-08-27 
 
 ### Added
