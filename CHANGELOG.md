@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-* feat(uci): search capped at nodes
+* feat(uci): search capped at nodes [[#23](https://github.com/nchandur/ranga/pull/23)]
 
 ## [v1.6] - 2026-08-27 
 
