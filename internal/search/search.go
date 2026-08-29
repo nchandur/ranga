@@ -4,6 +4,7 @@ import (
 	"context"
 	"ranga/internal/board"
 	"ranga/internal/evaluate"
+	"ranga/internal/evaluate/nnue"
 )
 
 // coordinates search tree execution
@@ -15,7 +16,8 @@ type Searcher struct {
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
 	Nodes              int                    // nodes visited
 	NodeLimit          int                    // cap for searched nodes
-	Cancel             context.CancelFunc     // cancel search
+	Accumulators       [MAX_PLY]nnue.Accumulator
+	Cancel             context.CancelFunc // cancel search
 }
 
 // instantiates new searcher
