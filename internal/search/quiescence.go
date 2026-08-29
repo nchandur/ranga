@@ -10,7 +10,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
-		return s.Eval.Evaluate(b)
+		return s.Network.Evaluate(&s.Accumulators[b.Ply], b.Side)
 	}
 
 	// check timeout or cancel
@@ -74,6 +74,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 	for count := range ml.Count {
 
 		copy := b.Preserve()
+		s.UpdateAccumulator(b, ml.Moves[count])
 		b.Ply++
 
 		if !b.MakeMove(ml.Moves[count], false) {

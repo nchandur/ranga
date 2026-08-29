@@ -53,7 +53,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
-		return s.Eval.Evaluate(b)
+		return s.Network.Evaluate(&s.Accumulators[b.Ply], b.Side)
 	}
 
 	// check timeout or cancel
@@ -126,6 +126,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	for _, move := range ml.Moves[:ml.Count] {
 
 		state := b.Preserve()
+		s.UpdateAccumulator(b, move)
+		
 		b.Ply++
 
 		if !b.MakeMove(move, false) {
@@ -211,6 +213,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
 
 	s.Reset()
+
+	s.Accumulators[0].Refresh(s.Network, b)
 	alpha, beta := -INFINITY, INFINITY
 
 	var bestMove board.Move
@@ -225,6 +229,8 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	for count, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()
+		s.UpdateAccumulator(b, move)
+
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Ply--
