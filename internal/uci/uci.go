@@ -7,6 +7,7 @@ import (
 	"io"
 	"ranga/internal/board"
 	"ranga/internal/evaluate/hce"
+	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
 	"strings"
 	"sync"
@@ -33,11 +34,13 @@ type Engine struct {
 // instantiates new engine
 func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
+	nn := nnue.NewRandomNetwork()
+
 	e := &Engine{
 		in:       bufio.NewScanner(in),
 		out:      out,
 		board:    board.NewBoard(),
-		searcher: search.NewSearcher(hce.HCE{}, 24),
+		searcher: search.NewSearcher(hce.HCE{}, 24, nn),
 		commands: make(map[string]Handler),
 		version:  version,
 	}

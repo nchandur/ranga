@@ -9,20 +9,21 @@ import (
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator                        // static evaluation to score positions at leaf nodes
-	PV                 PVTable                // stores and tracks the pv line found during search
-	TT                 *TranspositionTable    // caches position evaluations and cutoffs
-	Killers            [2][MAX_PLY]board.Move // holds killer moves
-	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-	Nodes              int                    // nodes visited
-	NodeLimit          int                    // cap for searched nodes
-	Accumulators       [MAX_PLY]nnue.Accumulator
-	Cancel             context.CancelFunc // cancel search
+	Eval          evaluate.Evaluator        // static evaluation to score positions at leaf nodes
+	PV            PVTable                   // stores and tracks the pv line found during search
+	TT            *TranspositionTable       // caches position evaluations and cutoffs
+	Killers       [2][MAX_PLY]board.Move    // holds killer moves
+	History       [12][64]int               // maintains history heuristic scores [piece][targetSq]
+	Nodes         int                       // nodes visited
+	NodeLimit     int                       // cap for searched nodes
+	*nnue.Network                           // reference to global weights
+	Accumulators  [MAX_PLY]nnue.Accumulator // nnue accumulators for each ply
+	Cancel        context.CancelFunc        // cancel search
 }
 
 // instantiates new searcher
-func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
-	s := Searcher{Evaluator: eval, PV: PVTable{}, TT: NewTranspositionTable(ttSize)}
+func NewSearcher(eval evaluate.Evaluator, ttSize int, nn *nnue.Network) *Searcher {
+	s := Searcher{Eval: eval, PV: PVTable{}, TT: NewTranspositionTable(ttSize), Network: nn}
 	return &s
 }
 
@@ -31,6 +32,7 @@ func (s *Searcher) Reset() {
 	s.PV.Clear()
 	s.Killers = [2][MAX_PLY]board.Move{}
 	s.History = [12][64]int{}
+
 }
 
 // checks whether current board position has occurred previously
@@ -51,7 +53,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
-		return s.Evaluate(b)
+		return s.Eval.Evaluate(b)
 	}
 
 	// check timeout or cancel

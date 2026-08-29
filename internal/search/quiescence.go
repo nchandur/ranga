@@ -10,7 +10,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
-		return s.Evaluate(b)
+		return s.Eval.Evaluate(b)
 	}
 
 	// check timeout or cancel
@@ -46,7 +46,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	// evaluate quiet position if not in check
 	if !inCheck {
-		standPat = s.Evaluate(b)
+		standPat = s.Eval.Evaluate(b)
 
 		// fail high
 		if standPat >= beta {
