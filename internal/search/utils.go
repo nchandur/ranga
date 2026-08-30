@@ -1,6 +1,10 @@
 package search
 
-import "ranga/internal/board"
+import (
+	"fmt"
+	"ranga/internal/board"
+	"ranga/internal/evaluate/nnue"
+)
 
 // update history heuristic with gravity
 func (s *Searcher) updateHistory(move board.Move, bonus int) {
@@ -82,6 +86,31 @@ func (s *Searcher) UpdateAccumulator(b *board.Board, move board.Move) {
 		case board.C8:
 			acc.RemovePiece(s.Network, board.BR, board.A8)
 			acc.AddPiece(s.Network, board.BR, board.D8)
+		}
+	}
+}
+
+// verifies that the incrementally updated accumulator
+func (s *Searcher) CheckAccumulatorDrift(b *board.Board) {
+	// 1. Calculate a fresh accumulator from scratch
+	var fresh nnue.Accumulator
+	fresh.Refresh(s.Network, b)
+
+	// 2. Get the current incrementally updated accumulator
+	current := &s.Accumulators[b.Ply]
+
+	// 3. Compare all 256 features for both White and Black
+	for i := range nnue.HiddenSize {
+		if fresh.White[i] != current.White[i] || fresh.Black[i] != current.Black[i] {
+			fmt.Printf("\n--- ACCUMULATOR DRIFT DETECTED ---\n")
+			fmt.Printf("Ply: %d\n", b.Ply)
+			fmt.Printf("Mismatch at index %d\n", i)
+			fmt.Printf("White - Fresh: %d | Incremental: %d\n", fresh.White[i], current.White[i])
+			fmt.Printf("Black - Fresh: %d | Incremental: %d\n", fresh.Black[i], current.Black[i])
+
+			b.Print()
+
+			panic("Accumulator drift detected! Halting search.")
 		}
 	}
 }
