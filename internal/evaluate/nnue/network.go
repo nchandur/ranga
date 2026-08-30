@@ -1,7 +1,9 @@
 package nnue
 
 import (
+	"encoding/binary"
 	"math/rand/v2"
+	"os"
 	"ranga/internal/board"
 )
 
@@ -11,6 +13,24 @@ type Network struct {
 	FeatureBias    [HiddenSize]int16
 	OutputWeights  [HiddenSize * 2]int16
 	OutputBias     int32
+}
+
+// reads binary quantized weights into the Network struct.
+func LoadNetworkFromFile(path string) (*Network, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	nn := &Network{}
+
+	binary.Read(file, binary.LittleEndian, &nn.FeatureWeights)
+	binary.Read(file, binary.LittleEndian, &nn.FeatureBias)
+	binary.Read(file, binary.LittleEndian, &nn.OutputWeights)
+	binary.Read(file, binary.LittleEndian, &nn.OutputBias)
+
+	return nn, nil
 }
 
 // generates network with randomized weights (FOR TESTING ONLY. REMOVE THIS SHIT AFTER TRAINING)
@@ -64,6 +84,6 @@ func (nn *Network) Evaluate(acc *Accumulator, sideToMove board.Color) int {
 		output += activated * int32(nn.OutputWeights[HiddenSize+i])
 	}
 
-	// scale  down to roughly match standard centipawn scaling (TWEAK DIVISOR AFTER TRAINING)
-	return int(output / 4096)
+	// scale  down to roughly match standard centipawn scaling
+	return int(output / 128)
 }

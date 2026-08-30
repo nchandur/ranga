@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"ranga/internal/board"
 	"ranga/internal/evaluate/hce"
 	"ranga/internal/evaluate/nnue"
@@ -34,7 +35,11 @@ type Engine struct {
 // instantiates new engine
 func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
-	nn := nnue.NewRandomNetwork()
+	nn, err := nnue.LoadNetworkFromFile("data/selftest-1.7.pgn")
+
+	if err != nil {
+		log.Fatalf("failed to load network: %v", err)
+	}
 
 	e := &Engine{
 		in:       bufio.NewScanner(in),
