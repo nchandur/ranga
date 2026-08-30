@@ -7,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 
 class FastChessDataset(Dataset):
     def __init__(self, pgn_file, max_games=None):
-        # Store only active indices (integers) instead of massive dense float tensors
         self.w_indices = []
         self.b_indices = []
         self.targets = []
@@ -36,11 +35,14 @@ class FastChessDataset(Dataset):
                     if len(board.move_stack) < 10 or board.is_check():
                         continue
 
-                    # Extract active feature indices only (sparse representation)
+                    # Extract active feature indices only
                     w_idx, b_idx = self._get_feature_indices(board)
                     self.w_indices.append(w_idx)
                     self.b_indices.append(b_idx)
-                    self.targets.append(wdl)
+
+                    # FIX 1: Target must be from side-to-move's perspective
+                    stm_target = wdl if board.turn == chess.WHITE else (1.0 - wdl)
+                    self.targets.append(stm_target)
                     self.stm.append(1.0 if board.turn == chess.WHITE else 0.0)
 
                     pos_count += 1
@@ -61,13 +63,15 @@ class FastChessDataset(Dataset):
             # Map python-chess pieces (1-6) to Go layout (0-5, 6-11)
             p_idx = (piece.piece_type - 1) + (0 if piece.color == chess.WHITE else 6)
 
-            # White Perspective
-            w_active.append(p_idx * 64 + sq)
+            # FIX 2: Convert python-chess square (A1=0) to Go engine square (A8=0)
+            go_sq = sq ^ 56
 
-            # Black Perspective (Flip vertical, swap colors)
-            b_sq = sq ^ 56
+            # White Perspective (using Go square layout)
+            w_active.append(p_idx * 64 + go_sq)
+
+            # Black Perspective (Flip vertical in Go: (sq ^ 56) ^ 56 = sq, swap piece color)
             b_p_idx = (p_idx + 6) % 12
-            b_active.append(b_p_idx * 64 + b_sq)
+            b_active.append(b_p_idx * 64 + sq)
 
         return w_active, b_active
 
@@ -75,7 +79,6 @@ class FastChessDataset(Dataset):
         return len(self.targets)
 
     def __getitem__(self, idx):
-        # Create the dense 768 tensor on-the-fly per item/batch
         w_tensor = torch.zeros(768, dtype=torch.float32)
         b_tensor = torch.zeros(768, dtype=torch.float32)
 
@@ -104,9 +107,7 @@ class NNUE(nn.Module):
         return self.output(torch.cat([us, them], dim=1))
 
 
-# --- Execution ---
 print("Loading games...")
-# Increase batch size for much faster training throughput on CPU
 dataset = FastChessDataset("/home/ec2-user/selftest-1.7.pgn")
 loader = DataLoader(dataset, batch_size=256, shuffle=True, num_workers=2)
 
