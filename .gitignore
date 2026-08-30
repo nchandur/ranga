@@ -30,3 +30,4 @@ go.work.sum
 data/
 bin/
 .task/
+*.bin

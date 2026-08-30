@@ -1,9 +1,10 @@
 package nnue
 
 import (
+	"bytes"
+	_ "embed"
 	"encoding/binary"
 	"math/rand/v2"
-	"os"
 	"ranga/internal/board"
 )
 
@@ -15,20 +16,29 @@ type Network struct {
 	OutputBias     int32
 }
 
-// reads binary quantized weights into the Network struct.
-func LoadNetworkFromFile(path string) (*Network, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+//go:embed selftest-1.7.bin
+var networkData []byte
 
+// reads binary quantized weights into the Network struct.
+func LoadEmbeddedNetwork() (*Network, error) {
 	nn := &Network{}
 
-	binary.Read(file, binary.LittleEndian, &nn.FeatureWeights)
-	binary.Read(file, binary.LittleEndian, &nn.FeatureBias)
-	binary.Read(file, binary.LittleEndian, &nn.OutputWeights)
-	binary.Read(file, binary.LittleEndian, &nn.OutputBias)
+	// Create a reader from the embedded byte slice
+	reader := bytes.NewReader(networkData)
+
+	// Read in LittleEndian to match the Python struct.pack output
+	if err := binary.Read(reader, binary.LittleEndian, &nn.FeatureWeights); err != nil {
+		return nil, err
+	}
+	if err := binary.Read(reader, binary.LittleEndian, &nn.FeatureBias); err != nil {
+		return nil, err
+	}
+	if err := binary.Read(reader, binary.LittleEndian, &nn.OutputWeights); err != nil {
+		return nil, err
+	}
+	if err := binary.Read(reader, binary.LittleEndian, &nn.OutputBias); err != nil {
+		return nil, err
+	}
 
 	return nn, nil
 }

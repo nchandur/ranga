@@ -35,7 +35,7 @@ type Engine struct {
 // instantiates new engine
 func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
-	nn, err := nnue.LoadNetworkFromFile("data/selftest-1.7.pgn")
+	nn, err := nnue.LoadEmbeddedNetwork()
 
 	if err != nil {
 		log.Fatalf("failed to load network: %v", err)
