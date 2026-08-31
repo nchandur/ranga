@@ -16,7 +16,7 @@ type Board struct {
 	FiftyMove      int    // halfmove clock for 50-move draw rule
 	Repetition     struct {
 		Idx   int
-		Table [512]uint64
+		Table [2048]uint64
 	} // stack of positions to detect 3-fold repetition
 	Key uint64 // unique hash key for position
 }
@@ -40,7 +40,7 @@ func NewBoard() Board {
 	res.Key = 0
 
 	res.Repetition.Idx = 0
-	res.Repetition.Table = [512]uint64{}
+	res.Repetition.Table = [2048]uint64{}
 
 	return res
 }
@@ -92,7 +92,7 @@ func (b *Board) Clear() {
 	b.FiftyMove = 0
 	b.Key = 0
 	b.Repetition.Idx = 0
-	b.Repetition.Table = [512]uint64{}
+	b.Repetition.Table = [2048]uint64{}
 
 }
 
