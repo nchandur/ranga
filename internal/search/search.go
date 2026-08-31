@@ -137,26 +137,25 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		legalMoves++
 
-		// score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
-
 		// pv search and late move reduction
-		if movesSearched == 0 {
-			// search first move with full window
-			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
-		} else {
-			// apply lmr on quiet late moves
-			if movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT && !inCheck && !move.IsCapture() && move.Promoted() == board.Empty {
-				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2)
-			} else {
-				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
-			}
+		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
+			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
 
-			// re-search with full window if zero-window search fails high
-			if ctx.Err() == nil && score > alpha && score < beta {
-				score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
-			}
+		if reduced {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2)
+		} else {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
 		}
 
+		// reduced search beat alpha
+		if reduced && ctx.Err() == nil && score > alpha {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
+		}
+
+		// full re-search
+		if ctx.Err() == nil && score > alpha && score < beta {
+			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+		}
 		b.Ply--
 		b.Repetition.Idx--
 		b.Restore(&state)
