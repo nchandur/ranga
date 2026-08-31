@@ -116,6 +116,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	score := 0
 	bestMove := board.NOMOVE
 
+	movesSearched := 0
+
 	localArray := [256]board.Move{}
 	searchedQuiets := localArray[:0]
 
@@ -135,11 +137,31 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		legalMoves++
 
-		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+		// score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+
+		// pv search and late move reduction
+		if movesSearched == 0 {
+			// search first move with full window
+			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+		} else {
+			// apply lmr on quiet late moves
+			if movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT && !inCheck && !move.IsCapture() && move.Promoted() == board.Empty {
+				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2)
+			} else {
+				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
+			}
+
+			// re-search with full window if zero-window search fails high
+			if ctx.Err() == nil && score > alpha && score < beta {
+				score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+			}
+		}
 
 		b.Ply--
 		b.Repetition.Idx--
 		b.Restore(&state)
+
+		movesSearched++
 
 		// abort on cancellation
 		if ctx.Err() != nil {
