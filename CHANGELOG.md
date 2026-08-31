@@ -5,10 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-* feat(uci): enabled exact search node capping via `go nodes <count>`
+* feat(search): implement late move reduction with PVS re-search [[#25](https://github.com/nchandur/ranga/pull/25)]
+* feat(uci): enabled exact search node capping via `go nodes <count>` [[#24](https://github.com/nchandur/ranga/pull/24)]
 
 ### Fixed
-* fix(uci): clear command resets searcher
+* fix(bord): increased repetition table size to 2048 [[#25](https://github.com/nchandur/ranga/pull/25)]
+* fix(uci): clear command resets searcher [[#24](https://github.com/nchandur/ranga/pull/24)]
 
 ## [v1.6] - 2026-08-27 
 
