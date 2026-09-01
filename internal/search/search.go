@@ -106,6 +106,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	flag := FALPHA
 	score := 0
 	bestMove := board.NOMOVE
+	movesSearched := 0
 
 	localArray := [256]board.Move{}
 	searchedQuiets := localArray[:0]
@@ -126,11 +127,29 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		legalMoves++
 
-		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
+			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
+
+		if reduced {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2, nodes)
+		} else {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
+		}
+
+		// step 2: reduced search beat alpha -> re-verify at full depth, still null window
+		if reduced && ctx.Err() == nil && score > alpha {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
+		}
+
+		// step 3: still beats alpha and we're not already at a null window (score < beta) -> full re-search
+		if ctx.Err() == nil && score > alpha && score < beta {
+			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+		}
 
 		b.Ply--
 		b.Repetition.Idx--
 		b.Restore(&state)
+		movesSearched++
 
 		// abort on cancellation
 		if ctx.Err() != nil {
