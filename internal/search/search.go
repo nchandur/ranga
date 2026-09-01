@@ -187,12 +187,6 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 			flag = FEXACT
 			bestMove = move
 
-			// history heuristic for quiet moves
-			if !move.IsCapture() {
-				bonus := min(depth*depth, 1200)
-				s.updateHistory(move, bonus)
-			}
-
 			// update pv line
 			s.PV.updatePVLine(move, b.Ply)
 		}

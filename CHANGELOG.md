@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+* fix(search): no LMR on first move
+* fix(search): TT replacement scheme
+* fix(search): terminal nodes populate TT
+
 ## [v1.7] - 2026-09-01
 * feat(search): late move reduction (LMR) with PVS re-search [[#26](https://github.com/nchandur/ranga/pull/26)]
 
