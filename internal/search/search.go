@@ -205,11 +205,14 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// checkmate or stalemate
 	if legalMoves == 0 {
+		var score int
 		if inCheck {
-			return -ISMATE + b.Ply
+			score = -ISMATE + b.Ply
 		} else {
-			return 0
+			score = 0
 		}
+		s.TT.Store(score, depth, b.Ply, FEXACT, b.Key, board.NOMOVE)
+		return score
 	}
 
 	// store final score in transposition table
