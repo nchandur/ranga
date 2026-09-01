@@ -330,6 +330,10 @@ func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, de
 
 	b.Restore(&copy)
 
+	if ctx.Err() != nil {
+		return 0, false
+	}
+
 	// fail-high cutoff from null move
 	if nullScore >= beta {
 		if nullScore >= MATESCORE-MAX_PLY { // mate-range
