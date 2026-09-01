@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+* feat(search): late move reduction (LMR) with PVS re-search [[#26](https://github.com/nchandur/ranga/pull/26)]
+
 ## [v1.6] - 2026-08-27 
 
 ### Added

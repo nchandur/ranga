@@ -7,9 +7,9 @@
 
 ### STC: 8+0.08
 
-**Date:** 27/08/2026
+**Date:** 31/08/2026
 
-**RC Engine:** ranga-1.6 | **Base Engine:** ranga-1.5
+**RC Engine:** ranga-1.7 | **Base Engine:** ranga-1.6
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
@@ -19,23 +19,22 @@
 | Metric        | Value                                |
 |---------------|--------------------------------------|
 | Result        | **H1 accepted** (pass)               |
-| Elo           | 35.10 +/- 23.07                      |
-| nElo          | 34.94 +/- 22.77                      |
-| LOS           | 99.87%                               |
-| Games         | 894 (W: 475, L: 385, D: 34)          |
-| Score         | 492 / 894 (55.03%)                   |
-| Draw ratio    | 43.18%                               |
-| LLR           | 3.01 (102.1%) — bounds (-2.94, 2.94) |
-| Ptnml(0-2)    | [91, 10, 193, 24, 129]               |
+| Elo           | 51.75 +/- 28.27                      |
+| nElo          | 55.94 +/- 30.04                      |
+| LOS           | 99.99%                               |
+| Games         | 514 (W: 289, L: 213, D: 12)          |
+| Score         | 295 / 514 (57.39%)                   |
+| Draw ratio    | 52.14%                               |
+| LLR           | 3.01 (102.3%) — bounds (-2.94, 2.94) |
+| Ptnml(0-2)    | [37, 5, 134, 7, 74]                  |
 
-Total time: 00:14:34 (h:m:s)
-
+Total time: 00:17:35 (h:m:s)
 
 ### LTC: 40+0.04
 
-**Date:** 27/08/2026
+**Date:** 31/08/2026
 
-**RC Engine:** ranga-1.6 | **Base Engine:** ranga-1.5
+**RC Engine:** ranga-1.7 | **Base Engine:** ranga-1.6
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
@@ -45,13 +44,13 @@ Total time: 00:14:34 (h:m:s)
 | Metric        | Value                                |
 |---------------|--------------------------------------|
 | Result        | **H1 accepted** (pass)               |
-| Elo           | 91.77 +/- 41.41                      |
-| nElo          | 90.86 +/- 38.93                      |
-| LOS           | 100.00%                              |
-| Games         | 306 (W: 187, L: 108, D: 11)          |
-| Score         | 192.5 / 306 (62.91%)                 |
-| Draw ratio    | 39.22%                               |
-| LLR           | 2.96 (100.5%) — bounds (-2.94, 2.94) |
-| Ptnml(0-2)    | [22, 4, 60, 7, 60]                   |
+| Elo           | 32.72 +/- 21.03                      |
+| nElo          | 38.26 +/- 23.78                      |
+| LOS           | 99.89%                               |
+| Games         | 820 (W: 439, L: 362, D: 19)          |
+| Score         | 448.5 / 820 (54.70%)                 |
+| Draw ratio    | 57.32%                               |
+| LLR           | 3.00 (101.9%) — bounds (-2.94, 2.94) |
+| Ptnml(0-2)    | [58, 11, 235, 8, 98]                 |
 
-Total time: 00:16:31 (h:m:s)
+Total time: 01:37:40 (h:m:s)
