@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.8] - 2026-09-02
 
 ### Added
 * feat(search): null move pruning [[#30](https://github.com/nchandur/ranga/pull/30)]
