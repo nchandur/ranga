@@ -5,12 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-* feat(search): added null move pruning [[#30](https://github.com/nchandur/ranga/pull/30)]
+* feat(search): null move pruning [[#30](https://github.com/nchandur/ranga/pull/30)]
 
 ### Fixed
 * fix(search): no LMR on first move [[#29](https://github.com/nchandur/ranga/pull/29)]
-* fix(search): TT replacement scheme [[#29](https://github.com/nchandur/ranga/pull/29)]
-* fix(search): terminal nodes populate TT [[#29](https://github.com/nchandur/ranga/pull/29)]
+* fix(search): correct transposition table replacement scheme [[#29](https://github.com/nchandur/ranga/pull/29)]
+* fix(search): store checkmate/stalemate scores in transposition table [[#29](https://github.com/nchandur/ranga/pull/29)]
 
 ## [v1.7] - 2026-09-01
 * feat(search): late move reduction (LMR) with PVS re-search [[#26](https://github.com/nchandur/ranga/pull/26)]
