@@ -99,7 +99,7 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 
 	entry := &(tt.Entries[key%uint64(tt.Length)])
 
-	if entry.Key != 0 && entry.Depth > depth && entry.Key != key {
+	if entry.Key != 0 && entry.Depth > depth {
 		return
 	}
 
