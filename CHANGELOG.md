@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-* feat(search): added null move pruning
+* feat(search): added null move pruning [[#30](https://github.com/nchandur/ranga/pull/30)]
 
 ### Fixed
 * fix(search): no LMR on first move [[#29](https://github.com/nchandur/ranga/pull/29)]
