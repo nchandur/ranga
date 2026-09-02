@@ -90,6 +90,13 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		return s.Quiescence(ctx, b, alpha, beta, nodes)
 	}
 
+	staticEval := s.Evaluate(b)
+
+	// null move pruning (pass turn to attempt early fail-high)
+	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, nodes, inCheck); prune {
+		return score
+	}
+
 	legalMoves := 0
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
@@ -127,28 +134,8 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 		legalMoves++
 
-		if movesSearched == 0 {
-			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
-		} else {
-			reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
-				!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
-
-			if reduced {
-				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2, nodes)
-			} else {
-				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
-			}
-
-			// step 2: reduced search beat alpha -> re-verify at full depth, still null window
-			if reduced && ctx.Err() == nil && score > alpha {
-				score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
-			}
-
-			// step 3: still beats alpha and we're not already at a null window (score < beta) -> full re-search
-			if ctx.Err() == nil && score > alpha && score < beta {
-				score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
-			}
-		}
+		// late move reduction
+		score = s.lateMoveReduction(ctx, b, move, alpha, beta, depth, movesSearched, nodes, inCheck)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -274,4 +261,85 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 	}
 
 	return bestMove, bestScore, nodes
+}
+
+// helper function to perform late move reduction
+func (s *Searcher) lateMoveReduction(ctx context.Context, b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, nodes *int, inCheck bool) int {
+
+	var score int
+
+	if movesSearched == 0 {
+		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+	} else {
+		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
+			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
+
+		if reduced {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2, nodes)
+		} else {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
+		}
+
+		// reduced search beat alpha
+		if reduced && ctx.Err() == nil && score > alpha {
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
+		}
+
+		if ctx.Err() == nil && score > alpha && score < beta {
+			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+		}
+	}
+
+	return score
+}
+
+// helper function for null move pruning
+func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, depth, staticeval int, nodes *int, inCheck bool) (int, bool) {
+	if depth < 3 ||
+		inCheck ||
+		b.Ply == 0 ||
+		beta >= MATESCORE-MAX_PLY ||
+		staticeval < beta ||
+		!hasNonPawnMaterial(b) { // zugzwang check
+		return 0, false
+	}
+
+	copy := b.Preserve()
+
+	b.Side ^= 1
+
+	b.Key ^= board.SideKey
+
+	if b.EnPassant != board.NoSquare {
+		b.Key ^= board.EnpassantKeys[b.EnPassant]
+	}
+
+	b.EnPassant = board.NoSquare
+
+	b.Ply++
+
+	// adaptive depth reduction
+	R := 3 + depth/6
+	if staticeval-beta > 200 {
+		R++
+	}
+	reducedDepth := max(depth-R, 0)
+
+	nullScore := -s.AlphaBeta(ctx, b, -beta, -beta+1, reducedDepth, nodes)
+	b.Ply--
+
+	b.Restore(&copy)
+
+	if ctx.Err() != nil {
+		return 0, false
+	}
+
+	// fail-high cutoff from null move
+	if nullScore >= beta {
+		if nullScore >= MATESCORE-MAX_PLY { // mate-range
+			nullScore = beta
+		}
+		return nullScore, true
+	}
+	return 0, false
 }
