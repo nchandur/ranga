@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] 
+## [v1.9] - 2026-09-02 
 
 ### Added
-* feat(evaluate): piece-squaret tables, mobility bonuses/penalties and king safety
+* feat(evaluate): piece-square tables, mobility bonuses/penalties and king safety [[#32](https://github.com/nchandur/ranga/pull/32)]
+* chore(build): Go version bump to `1.27.1` [[#32](https://github.com/nchandur/ranga/pull/32)]
 
 ## [v1.8] - 2026-09-02
 
