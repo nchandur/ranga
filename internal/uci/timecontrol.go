@@ -16,6 +16,7 @@ type goOptions struct {
 	binc      int
 	movesToGo int
 	moveTime  int
+	nodes     int
 }
 
 // helper function to manage time during games

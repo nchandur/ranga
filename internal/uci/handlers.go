@@ -197,6 +197,13 @@ func (e *Engine) handleGo(args []string) {
 				}
 				i++
 			}
+		case "nodes":
+			if i+1 < len(args) {
+				if val, err := strconv.Atoi(args[i+1]); err == nil {
+					opts.nodes = val
+				}
+				i++
+			}
 		case "metrics":
 			if i+1 < len(args) {
 				if d, err := strconv.Atoi(args[i+1]); err == nil {
@@ -234,10 +241,14 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 		maxDepth = opts.depth
 	}
 
+	e.searcher.NodeLimit = opts.nodes
+	e.searcher.Cancel = e.searchCancel
+	e.searcher.Nodes = 0
+
 	bestMove := board.NOMOVE
 
 	for d := 1; d <= maxDepth; d++ {
-		move, score, nodes := e.searcher.Search(ctx, &e.board, d)
+		move, score := e.searcher.Search(ctx, &e.board, d)
 
 		if ctx.Err() != nil {
 			break
@@ -245,7 +256,7 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 
 		if move != board.NOMOVE {
 			bestMove = move
-			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, nodes, e.searcher.PV))
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
 		}
 
 	}

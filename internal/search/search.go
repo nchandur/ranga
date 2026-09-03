@@ -13,12 +13,23 @@ type Searcher struct {
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-
+	Nodes              int                    // nodes visited that search
+	NodeLimit          int                    // max number of nodes to visit
+	Cancel             context.CancelFunc     // search cancel
 }
 
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
-	s := Searcher{Evaluator: eval, PV: PVTable{}, TT: NewTranspositionTable(ttSize)}
+	s := Searcher{
+		Evaluator: eval,
+		PV:        PVTable{},
+		TT:        NewTranspositionTable(ttSize),
+		Killers:   [2][MAX_PLY]board.Move{},
+		History:   [12][64]int{},
+		Nodes:     0,
+		NodeLimit: 0,
+		Cancel:    nil,
+	}
 	return &s
 }
 
@@ -43,14 +54,20 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 }
 
 // executes main alpha-beta minimax search tree traversal
-func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int, nodes *int) int {
+func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
 		return s.Evaluate(b)
 	}
 
 	// check timeout or cancel
-	if (*nodes)&2047 == 0 {
+	if s.Nodes&2047 == 0 {
+
+		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+			s.Cancel()
+			return 0
+		}
+
 		if ctx.Err() != nil {
 			return 0
 		}
@@ -58,7 +75,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	s.PV.Length[b.Ply] = 0
 
-	(*nodes)++
+	s.Nodes++
 
 	// evaluate repetition or 50 move rule
 	if (s.IsRepetition(b) || b.FiftyMove >= 100) && b.Ply != 0 {
@@ -87,13 +104,13 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// drop into quiescence search at leaf nodes
 	if depth == 0 {
-		return s.Quiescence(ctx, b, alpha, beta, nodes)
+		return s.Quiescence(ctx, b, alpha, beta)
 	}
 
 	staticEval := s.Evaluate(b)
 
 	// null move pruning (pass turn to attempt early fail-high)
-	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, nodes, inCheck); prune {
+	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, inCheck); prune {
 		return score
 	}
 
@@ -135,7 +152,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		legalMoves++
 
 		// late move reduction
-		score = s.lateMoveReduction(ctx, b, move, alpha, beta, depth, movesSearched, nodes, inCheck)
+		score = s.lateMoveReduction(ctx, b, move, alpha, beta, depth, movesSearched, inCheck)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -202,8 +219,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 }
 
 // executes search on a given state, returns the best move found
-func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int, int) {
-	nodes := 0
+func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int) {
 	s.Reset()
 	alpha, beta := -INFINITY, INFINITY
 
@@ -235,7 +251,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Repetition.Table[b.Repetition.Idx] = b.Key
 
 		s.PV.FollowPv = (count == 0)
-		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, &nodes)
+		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -260,33 +276,33 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		bestMove = s.PV.Table[0][0]
 	}
 
-	return bestMove, bestScore, nodes
+	return bestMove, bestScore
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(ctx context.Context, b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, nodes *int, inCheck bool) int {
+func (s *Searcher) lateMoveReduction(ctx context.Context, b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck bool) int {
 
 	var score int
 
 	if movesSearched == 0 {
-		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
 	} else {
 		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
 			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
 
 		if reduced {
-			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2, nodes)
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2)
 		} else {
-			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
 		}
 
 		// reduced search beat alpha
 		if reduced && ctx.Err() == nil && score > alpha {
-			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1, nodes)
+			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
 		}
 
 		if ctx.Err() == nil && score > alpha && score < beta {
-			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1, nodes)
+			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
 		}
 	}
 
@@ -294,7 +310,7 @@ func (s *Searcher) lateMoveReduction(ctx context.Context, b *board.Board, move b
 }
 
 // helper function for null move pruning
-func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, depth, staticeval int, nodes *int, inCheck bool) (int, bool) {
+func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, depth, staticeval int, inCheck bool) (int, bool) {
 	if depth < 3 ||
 		inCheck ||
 		b.Ply == 0 ||
@@ -325,7 +341,7 @@ func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, de
 	}
 	reducedDepth := max(depth-R, 0)
 
-	nullScore := -s.AlphaBeta(ctx, b, -beta, -beta+1, reducedDepth, nodes)
+	nullScore := -s.AlphaBeta(ctx, b, -beta, -beta+1, reducedDepth)
 	b.Ply--
 
 	b.Restore(&copy)
