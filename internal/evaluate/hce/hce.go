@@ -17,11 +17,9 @@ func (h HCE) Evaluate(b *board.Board) int {
 			case board.WP:
 				score += PawnTable[sq]
 
-				doublePawn := (b.PieceBitBoards[pce] & FileMasks[sq]).CountBits()
-
 				// double pawn
-				if doublePawn > 1 {
-					score += doublePawn * doublePawnPenalty
+				if (b.PieceBitBoards[pce] & FileMasks[sq]).CountBits() > 1 {
+					score += doublePawnPenalty
 				}
 
 				// isolated pawn
@@ -70,11 +68,9 @@ func (h HCE) Evaluate(b *board.Board) int {
 			case board.BP:
 				score -= PawnTable[sq^56]
 
-				doublePawns := (b.PieceBitBoards[pce] & FileMasks[sq]).CountBits()
-
 				// double pawns
-				if doublePawns > 1 {
-					score -= doublePawns * doublePawnPenalty
+				if (b.PieceBitBoards[pce] & FileMasks[sq]).CountBits() > 1 {
+					score -= doublePawnPenalty
 				}
 
 				// isolated pawns
@@ -95,6 +91,7 @@ func (h HCE) Evaluate(b *board.Board) int {
 
 			case board.BR:
 				score -= RookTable[sq^56]
+				score -= board.GetRookAttacks(sq, b.Occupancies[board.Both]).CountBits()
 
 				// semi open file
 				if (b.PieceBitBoards[board.BP] & FileMasks[sq]) == 0 {
