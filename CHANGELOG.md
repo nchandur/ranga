@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased] 
 
+### Added
+* feat(evaluate): piece-squaret tables, mobility bonuses/penalties and king safety
+
 ## [v1.8] - 2026-09-02
 
 ### Added
