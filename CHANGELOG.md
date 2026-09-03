@@ -2,7 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.10] - 2026-09-02
+
+### Added
+* feat(evaluate): tapered evaluation [[#34](https://github.com/nchandur/ranga/pull/34)]
 
 ## [v1.9] - 2026-09-02 
 
