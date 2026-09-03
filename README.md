@@ -14,7 +14,7 @@
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/): `1.26.5` or above *(or Docker, if you'd rather skip a local install)*.
+- [Go](https://go.dev/dl/): `1.27.1` or above *(or Docker, if you'd rather skip a local install)*.
 - [Task](https://taskfile.dev/installation/)
 
 ### Local Installation
@@ -74,11 +74,7 @@ position startpos moves e2e4 e7e5
 go wtime 300000 btime 300000 winc 0 binc 0
 info depth 1 score cp 0 nodes 29 nps 244812 time 0
 info depth 2 score cp 0 nodes 114 nps 1405238 time 0
-info depth 3 score cp 0 nodes 1222 nps 1864581 time 0
-info depth 4 score cp 100 nodes 37338 nps 4873802 time 7
-info depth 5 score cp 0 nodes 189148 nps 5706489 time 33
-info depth 6 score cp 100 nodes 11813416 nps 15321989 time 771
-info depth 7 score cp 0 nodes 43542132 nps 12190628 time 3571
+...
 info depth 8 score cp 0 nodes 46904025 nps 15054504 time 3115
 bestmove a2a3
 ```
