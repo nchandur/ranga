@@ -34,7 +34,7 @@ Total time: 00:04:10 (h:m:s)
 
 **Date:** 2026-09-02
 
-**RC Engine:** ranga-1.9 | **Base Engine:** ranga-1.8
+**RC Engine:** ranga-1.10 | **Base Engine:** ranga-1.9
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
