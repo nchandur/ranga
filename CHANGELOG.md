@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(uci): support `go nodes <n>` to limit search by node count
+
 
 ## [v1.10] - 2026-09-02
 
