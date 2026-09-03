@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-* feat(uci): support `go nodes <n>` to limit search by node count
+* feat(uci): support `go nodes <n>` to limit search by node count [[#36](https://github.com/nchandur/ranga/pull/36)]
 
 
 ## [v1.10] - 2026-09-02

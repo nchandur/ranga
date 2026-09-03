@@ -8,6 +8,7 @@ import (
 	"ranga/internal/search"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // handles uci command
@@ -216,26 +217,29 @@ func (e *Engine) handleGo(args []string) {
 
 	var ctx context.Context
 	var cancel context.CancelFunc
+	var timeAllocation TimeAllocation
 
 	if !opts.infinite && !opts.metrics {
-		if timeAllocation := e.calculateTimeLimit(opts); timeAllocation > 0 {
-			ctx, cancel = context.WithTimeout(context.Background(), timeAllocation)
+		timeAllocation = e.calculateTimeLimit(opts)
+		if timeAllocation.Hard > 0 {
+			ctx, cancel = context.WithTimeout(context.Background(), timeAllocation.Hard)
 		}
 	}
 
 	if ctx == nil {
 		ctx, cancel = context.WithCancel(context.Background())
 	}
+
 	e.searchCancel = cancel
 
 	e.searchWg.Go(func() {
 		defer cancel()
-		e.runSearch(ctx, opts)
+		e.runSearch(ctx, opts, timeAllocation)
 	})
 }
 
 // helper function to run search and evaluation
-func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
+func (e *Engine) runSearch(ctx context.Context, opts goOptions, timeAllocation TimeAllocation) {
 	maxDepth := search.MAX_DEPTH
 	if opts.depth > 0 && !opts.infinite {
 		maxDepth = opts.depth
@@ -245,9 +249,18 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 	e.searcher.Cancel = e.searchCancel
 	e.searcher.Nodes = 0
 
-	bestMove := board.NOMOVE
+	bestMove, prevBestMove := board.NOMOVE, board.NOMOVE
+	stableIterations := 0
+	previousScore := 0
+	firstScore := true
+
+	searchStart := time.Now()
 
 	for d := 1; d <= maxDepth; d++ {
+		if timeAllocation.Soft > 0 && time.Since(searchStart) > timeAllocation.Soft {
+			break
+		}
+
 		move, score := e.searcher.Search(ctx, &e.board, d)
 
 		if ctx.Err() != nil {
@@ -257,6 +270,33 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 		if move != board.NOMOVE {
 			bestMove = move
 			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
+		}
+
+		// bank unused time once search has settled
+		if bestMove == prevBestMove {
+			stableIterations++
+		} else {
+			stableIterations = 0
+		}
+		prevBestMove = bestMove
+
+		if !firstScore && timeAllocation.Soft > 0 {
+			diff := score - previousScore
+
+			// score dropped sharply
+			if diff < -100 {
+				timeAllocation.Soft = timeAllocation.Hard
+			} else if abs(diff) > 50 {
+				// general volatility, capped at hard limit
+				extended := min(timeAllocation.Soft*3/2, timeAllocation.Hard)
+				timeAllocation.Soft = extended
+			}
+		}
+		previousScore = score
+		firstScore = false
+
+		if timeAllocation.Soft > 0 && d >= 6 && stableIterations >= 4 && time.Since(searchStart) > timeAllocation.Soft/3 {
+			break
 		}
 
 	}
