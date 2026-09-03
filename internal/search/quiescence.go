@@ -15,6 +15,12 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	// check timeout or cancel
 	if s.Nodes&2047 == 0 {
+
+		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+			s.Cancel()
+			return 0
+		}
+
 		if ctx.Err() != nil {
 			return 0
 		}

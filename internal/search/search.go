@@ -14,12 +14,22 @@ type Searcher struct {
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
 	Nodes              int                    // nodes visited that search
-	NodesLimit         int                    // max number of nodes to visit
+	NodeLimit          int                    // max number of nodes to visit
+	Cancel             context.CancelFunc     // search cancel
 }
 
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
-	s := Searcher{Evaluator: eval, PV: PVTable{}, TT: NewTranspositionTable(ttSize)}
+	s := Searcher{
+		Evaluator: eval,
+		PV:        PVTable{},
+		TT:        NewTranspositionTable(ttSize),
+		Killers:   [2][MAX_PLY]board.Move{},
+		History:   [12][64]int{},
+		Nodes:     0,
+		NodeLimit: 0,
+		Cancel:    nil,
+	}
 	return &s
 }
 
@@ -28,8 +38,6 @@ func (s *Searcher) Reset() {
 	s.PV.Clear()
 	s.Killers = [2][MAX_PLY]board.Move{}
 	s.History = [12][64]int{}
-	s.Nodes = 0
-	s.NodesLimit = 0
 }
 
 // checks whether current board position has occurred previously
@@ -54,6 +62,12 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// check timeout or cancel
 	if s.Nodes&2047 == 0 {
+
+		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+			s.Cancel()
+			return 0
+		}
+
 		if ctx.Err() != nil {
 			return 0
 		}
