@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const MoveOverhead int = 50
+
 // manages options for go command
 type goOptions struct {
 	depth     int
@@ -19,10 +21,17 @@ type goOptions struct {
 	nodes     int
 }
 
+type TimeAllocation struct {
+	Soft time.Duration // checked between iterations
+	Hard time.Duration // absolute cutoff
+}
+
 // helper function to manage time during games
-func (e *Engine) calculateTimeLimit(opts goOptions) time.Duration {
+func (e *Engine) calculateTimeLimit(opts goOptions) TimeAllocation {
 	if opts.moveTime > 0 {
-		return time.Duration(opts.moveTime) * time.Millisecond
+		allocatedMs := max(opts.moveTime-MoveOverhead, 10)
+		d := time.Duration(allocatedMs) * time.Millisecond
+		return TimeAllocation{Soft: d, Hard: d}
 	}
 
 	var timeLeft, increment int
@@ -35,7 +44,7 @@ func (e *Engine) calculateTimeLimit(opts goOptions) time.Duration {
 	}
 
 	if timeLeft <= 0 {
-		return 0
+		return TimeAllocation{}
 	}
 
 	movesToGo := 40
@@ -43,15 +52,28 @@ func (e *Engine) calculateTimeLimit(opts goOptions) time.Duration {
 		movesToGo = opts.movesToGo
 	}
 
-	allocatedMs := (timeLeft / movesToGo) + (increment * 3 / 4)
+	base := (timeLeft / movesToGo) + (increment * 3 / 4) - MoveOverhead
 
-	if allocatedMs > (timeLeft * 4 / 5) {
-		allocatedMs = timeLeft * 4 / 5
+	softMs := base
+	hardMs := base * 3 // allow overrun for a single hard iteration, bounded below
+
+	maxAllowed := timeLeft * 4 / 5
+	if hardMs > maxAllowed {
+		hardMs = maxAllowed
+	}
+	if softMs > hardMs {
+		softMs = hardMs
 	}
 
-	if allocatedMs < 10 {
-		allocatedMs = 10
+	if softMs < 10 {
+		softMs = 10
+	}
+	if hardMs < 10 {
+		hardMs = 10
 	}
 
-	return time.Duration(allocatedMs) * time.Millisecond
+	return TimeAllocation{
+		Soft: time.Duration(softMs) * time.Millisecond,
+		Hard: time.Duration(hardMs) * time.Millisecond,
+	}
 }
