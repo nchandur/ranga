@@ -97,11 +97,12 @@ bestmove a2a3
 
 ### Supported `go` parameters
  
-| Parameter               | Description                                      |
-|--------------------------|--------------------------------------------------|
-| `depth <n>`              | Search to a fixed depth                          |
-| `movetime <ms>`          | Search for a fixed amount of time                |
-| `wtime <ms>` / `btime <ms>` | Remaining clock time for white / black        |
-| `winc <ms>` / `binc <ms>`   | Increment per move for white / black          |
-| `movestogo <n>`          | Moves remaining until the next time control      |
-| `infinite`               | Search until an explicit `stop` command          |
+| Parameter                   | Description                                      |
+|-----------------------------|--------------------------------------------------|
+| `depth <n>`                 | Search to a fixed depth                          |
+| `movetime <ms>`             | Search for a fixed amount of time                |
+| `wtime <ms>` / `btime <ms>` | Remaining clock time for white / black           |
+| `winc <ms>` / `binc <ms>`   | Increment per move for white / black             |
+| `movestogo <n>`             | Moves remaining until the next time control      |
+| `infinite`                  | Search until an explicit `stop` command          |
+| `nodes`                     | Limit search by node count                       |

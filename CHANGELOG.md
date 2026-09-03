@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.11] - 2026-09-03
+
+### Added
+* feat(uci): support `go nodes <n>` to limit search by node count [[#36](https://github.com/nchandur/ranga/pull/36)]
+* feat(time-control): soft/hard limits for move allocation [[#37](https://github.com/nchandur/ranga/pull/37)]
+
 ## [v1.10] - 2026-09-02
 
 ### Added
