@@ -29,10 +29,7 @@ type TimeAllocation struct {
 // helper function to manage time during games
 func (e *Engine) calculateTimeLimit(opts goOptions) TimeAllocation {
 	if opts.moveTime > 0 {
-		allocatedMs := opts.moveTime - MoveOverhead
-		if allocatedMs < 10 {
-			allocatedMs = 10
-		}
+		allocatedMs := max(opts.moveTime-MoveOverhead, 10)
 		d := time.Duration(allocatedMs) * time.Millisecond
 		return TimeAllocation{Soft: d, Hard: d}
 	}
