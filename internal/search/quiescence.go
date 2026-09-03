@@ -6,7 +6,7 @@ import (
 )
 
 // performs a quiescence search to evaluate quiet positions and avoid horizon effect
-func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta int, nodes *int) int {
+func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta int) int {
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
@@ -14,13 +14,13 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 	}
 
 	// check timeout or cancel
-	if (*nodes)&2047 == 0 {
+	if s.Nodes&2047 == 0 {
 		if ctx.Err() != nil {
 			return 0
 		}
 	}
 
-	(*nodes)++
+	s.Nodes++
 
 	// evaluate repetition or 50 move rule
 	if (s.IsRepetition(b) || b.FiftyMove >= 100) && b.Ply != 0 {
@@ -81,7 +81,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 		legalMoves++
 
-		score := -s.Quiescence(ctx, b, -beta, -alpha, nodes)
+		score := -s.Quiescence(ctx, b, -beta, -alpha)
 
 		b.Ply--
 		b.Repetition.Idx--

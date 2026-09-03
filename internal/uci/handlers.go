@@ -237,7 +237,7 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 	bestMove := board.NOMOVE
 
 	for d := 1; d <= maxDepth; d++ {
-		move, score, nodes := e.searcher.Search(ctx, &e.board, d)
+		move, score := e.searcher.Search(ctx, &e.board, d)
 
 		if ctx.Err() != nil {
 			break
@@ -245,7 +245,7 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions) {
 
 		if move != board.NOMOVE {
 			bestMove = move
-			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, nodes, e.searcher.PV))
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
 		}
 
 	}
