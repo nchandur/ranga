@@ -1,4 +1,4 @@
-package evaluate
+package hce
 
 import "ranga/internal/board"
 
