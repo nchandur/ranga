@@ -16,7 +16,7 @@ type Network struct {
 	OutputBias     int32
 }
 
-//go:embed selftest-1.7.bin
+//go:embed selftest-12.bin
 var networkData []byte
 
 // reads binary quantized weights into the Network struct.

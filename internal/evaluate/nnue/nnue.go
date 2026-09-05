@@ -2,8 +2,11 @@ package nnue
 
 import "ranga/internal/board"
 
-type NNUE struct{}
+type NNUE struct {
+	*Network
+	*Accumulator
+}
 
 func (n NNUE) Evaluate(b *board.Board) int {
-	return 0
+	return n.Network.Evaluate(n.Accumulator, b.Side)
 }

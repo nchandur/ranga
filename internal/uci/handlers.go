@@ -69,7 +69,7 @@ func (e *Engine) handleStop() {
 // provides an evaluation of current position on board
 func (e *Engine) handleEvaluate() {
 	e.pauseSearch()
-	e.writeLine(fmt.Sprintf("score %.2f", float64(e.searcher.Evaluate(&e.board))/float64(100)))
+	e.writeLine(fmt.Sprintf("score %.2f", float64(e.searcher.Network.Evaluate(&e.searcher.Accumulators[e.board.Ply], e.board.Side))/float64(100)))
 }
 
 // handles position command

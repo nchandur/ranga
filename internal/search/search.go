@@ -3,29 +3,30 @@ package search
 import (
 	"context"
 	"ranga/internal/board"
-	"ranga/internal/evaluate"
+	"ranga/internal/evaluate/nnue"
 )
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator                        // static evaluation to score positions at leaf nodes
-	PV                 PVTable                // stores and tracks the pv line found during search
-	TT                 *TranspositionTable    // caches position evaluations and cutoffs
-	Killers            [2][MAX_PLY]board.Move // holds killer moves
-	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-	Nodes              int                    // nodes visited that search
-	NodeLimit          int                    // max number of nodes to visit
-	Cancel             context.CancelFunc     // search cancel
+	PV            PVTable                   // stores and tracks the pv line found during search
+	TT            *TranspositionTable       // caches position evaluations and cutoffs
+	Killers       [2][MAX_PLY]board.Move    // holds killer moves
+	History       [12][64]int               // maintains history heuristic scores [piece][targetSq]
+	Nodes         int                       // nodes visited that search
+	NodeLimit     int                       // max number of nodes to visit
+	*nnue.Network                           // reference to global weights
+	Accumulators  [MAX_PLY]nnue.Accumulator // nnue accumulators for each ply
+	Cancel        context.CancelFunc        // search cancel
 }
 
 // instantiates new searcher
-func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
+func NewSearcher(nn *nnue.Network, ttSize int) *Searcher {
 	s := Searcher{
-		Evaluator: eval,
 		PV:        PVTable{},
 		TT:        NewTranspositionTable(ttSize),
 		Killers:   [2][MAX_PLY]board.Move{},
 		History:   [12][64]int{},
+		Network:   nn,
 		Nodes:     0,
 		NodeLimit: 0,
 		Cancel:    nil,
@@ -57,7 +58,7 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
-		return s.Evaluate(b)
+		return s.Network.Evaluate(&s.Accumulators[b.Ply], b.Side)
 	}
 
 	// check timeout or cancel
@@ -107,7 +108,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		return s.Quiescence(ctx, b, alpha, beta)
 	}
 
-	staticEval := s.Evaluate(b)
+	staticEval := s.Network.Evaluate(&s.Accumulators[b.Ply], b.Side)
 
 	// null move pruning (pass turn to attempt early fail-high)
 	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, inCheck); prune {
@@ -138,6 +139,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	for _, move := range ml.Moves[:ml.Count] {
 
 		state := b.Preserve()
+		s.UpdateAccumulator(b, move)
 		b.Ply++
 
 		if !b.MakeMove(move, false) {
@@ -221,6 +223,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 // executes search on a given state, returns the best move found
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int) {
 	s.Reset()
+	s.Accumulators[0].Refresh(s.Network, b)
 	alpha, beta := -INFINITY, INFINITY
 
 	var bestMove board.Move
@@ -235,6 +238,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	for count, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()
+		s.UpdateAccumulator(b, move)
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Ply--
