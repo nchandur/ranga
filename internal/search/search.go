@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 	"ranga/internal/board"
-	"ranga/internal/evaluate/nnue"
+	"ranga/internal/nnue"
 )
 
 // coordinates search tree execution

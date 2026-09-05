@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"ranga/internal/board"
-	"ranga/internal/evaluate/nnue"
+	"ranga/internal/nnue"
 	"ranga/internal/search"
 	"strings"
 	"sync"
