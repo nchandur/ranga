@@ -3,64 +3,20 @@ import chess.pgn
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import IterableDataset, DataLoader
 import numpy as np
 import struct
 
-class FastChessDataset(Dataset):
+class StreamingChessDataset(IterableDataset):
     def __init__(self, pgn_file, max_games=None):
-        self.w_indices = []
-        self.b_indices = []
-        self.targets = []
-        self.stm = []
-
-        game_count = 0
-        pos_count = 0
-
-        with open(pgn_file, 'r') as f:
-            while True:
-                game = chess.pgn.read_game(f)
-                if game is None:
-                    break
-
-                result = game.headers.get("Result")
-                if result not in ["1-0", "0-1", "1/2-1/2"]:
-                    continue
-
-                wdl = 1.0 if result == "1-0" else (0.0 if result == "0-1" else 0.5)
-
-                board = game.board()
-                for move in game.mainline_moves():
-                    board.push(move)
-
-                    if len(board.move_stack) < 10 or board.is_check():
-                        continue
-
-                    w_idx, b_idx = self._get_feature_indices(board)
-                    self.w_indices.append(w_idx)
-                    self.b_indices.append(b_idx)
-
-                    stm_target = wdl if board.turn == chess.WHITE else (1.0 - wdl)
-                    self.targets.append(stm_target)
-                    self.stm.append(1.0 if board.turn == chess.WHITE else 0.0)
-
-                    pos_count += 1
-
-                game_count += 1
-                if game_count % 5000 == 0:
-                    print(f"Parsed {game_count} games ({pos_count} positions loaded)...")
-
-                if max_games and game_count >= max_games:
-                    break
-
-        print(f"Finished loading {game_count} games with {pos_count} total positions.")
+        self.pgn_file = pgn_file
+        self.max_games = max_games
 
     def _get_feature_indices(self, board):
         w_active = []
         b_active = []
         for sq, piece in board.piece_map().items():
             p_idx = (piece.piece_type - 1) + (0 if piece.color == chess.WHITE else 6)
-
             go_sq = sq ^ 56
 
             w_active.append(p_idx * 64 + go_sq)
@@ -70,20 +26,46 @@ class FastChessDataset(Dataset):
 
         return w_active, b_active
 
-    def __len__(self):
-        return len(self.targets)
+    def __iter__(self):
+        game_count = 0
+        with open(self.pgn_file, 'r') as f:
+            while True:
+                if self.max_games and game_count >= self.max_games:
+                    break
 
-    def __getitem__(self, idx):
-        w_tensor = torch.zeros(768, dtype=torch.float32)
-        b_tensor = torch.zeros(768, dtype=torch.float32)
+                game = chess.pgn.read_game(f)
+                if game is None:
+                    break
 
-        w_tensor[self.w_indices[idx]] = 1.0
-        b_tensor[self.b_indices[idx]] = 1.0
+                result = game.headers.get("Result")
+                if result not in ["1-0", "0-1", "1/2-1/2"]:
+                    continue
 
-        target = torch.tensor([self.targets[idx]], dtype=torch.float32)
-        stm = torch.tensor([self.stm[idx]], dtype=torch.float32)
+                wdl = 1.0 if result == "1-0" else (0.0 if result == "0-1" else 0.5)
+                board = game.board()
 
-        return w_tensor, b_tensor, target, stm
+                for move in game.mainline_moves():
+                    board.push(move)
+
+                    if len(board.move_stack) < 10 or board.is_check():
+                        continue
+
+                    w_idx, b_idx = self._get_feature_indices(board)
+
+                    w_tensor = torch.zeros(768, dtype=torch.float32)
+                    b_tensor = torch.zeros(768, dtype=torch.float32)
+
+                    w_tensor[w_idx] = 1.0
+                    b_tensor[b_idx] = 1.0
+
+                    stm_target = wdl if board.turn == chess.WHITE else (1.0 - wdl)
+
+                    target = torch.tensor([stm_target], dtype=torch.float32)
+                    stm = torch.tensor([1.0 if board.turn == chess.WHITE else 0.0], dtype=torch.float32)
+
+                    yield w_tensor, b_tensor, target, stm
+
+                game_count += 1
 
 class NNUE(nn.Module):
     def __init__(self):
@@ -100,51 +82,52 @@ class NNUE(nn.Module):
 
         return self.output(torch.cat([us, them], dim=1))
 
-print("Loading games...")
-dataset = FastChessDataset("./selftest-1.12.pgn")
-loader = DataLoader(dataset, batch_size=256, shuffle=True, num_workers=2)
+print("Starting streaming trainer...")
+dataset = StreamingChessDataset("./selftest-1.12.pgn")
+
+loader = DataLoader(dataset, batch_size=256, num_workers=0)
 
 model = NNUE()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 criterion = nn.BCEWithLogitsLoss()
 
-
 for epoch in range(10):
     total_loss = 0.0
+    batches = 0
+
     for w_feat, b_feat, target, stm in loader:
         optimizer.zero_grad()
         output = model(w_feat, b_feat, stm)
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
+
         total_loss += loss.item()
-    print(f"Epoch {epoch+1}, Loss: {total_loss/len(loader):.4f}")
+        batches += 1
+
+        if batches % 1000 == 0:
+            print(f"Epoch {epoch+1} | Batches: {batches} | Running Loss: {total_loss/batches:.4f}")
+
+    avg_loss = total_loss / batches if batches > 0 else 0
+    print(f"=== Epoch {epoch+1} Complete, Average Loss: {avg_loss:.4f} ===")
 
 torch.save(model.state_dict(), "nnue_float_weights.pt")
 
-
 state_dict = torch.load("nnue_float_weights.pt", weights_only=True)
-
-print("=== Layer Overview ===")
-for key, tensor in state_dict.items():
-    print(f"Layer: {key:20} | Shape: {str(list(tensor.shape)):15} | Min: {tensor.min().item():.4f} | Max: {tensor.max().item():.4f}")
-
-print("\n=== Sample Values (First 5 weights of Feature Layer) ===")
-print(state_dict["feature.weight"][0, :5])
 
 S1 = 255.0
 S2 = 64.0
 
-feature_w = (state_dict["feature.weight"].t().cpu().numpy() * S1).round().astype(np.int16)
-feature_b = (state_dict["feature.bias"].cpu().numpy() * S1).round().astype(np.int16)
+feature_w = (state_dict["feature.weight"].t().cpu().numpy() * S1).round().astype('<i2')
+feature_b = (state_dict["feature.bias"].cpu().numpy() * S1).round().astype('<i2')
 
-output_w = (state_dict["output.weight"].flatten().cpu().numpy() * S2).round().astype(np.int16)
+output_w = (state_dict["output.weight"].flatten().cpu().numpy() * S2).round().astype('<i2')
 output_b = int(np.round(state_dict["output.bias"].item() * S1 * S2))
 
-with open("selftest-1.7.bin", "wb") as f:
-    f.write(feature_w.tobytes()) # 768 * 256 * 2 bytes
-    f.write(feature_b.tobytes()) # 256 * 2 bytes
-    f.write(output_w.tobytes())  # 512 * 2 bytes
-    f.write(struct.pack("<i", output_b)) # 4 bytes (int32)
+with open("selftest-1.12.bin", "wb") as f:
+    f.write(feature_w.tobytes())
+    f.write(feature_b.tobytes())
+    f.write(output_w.tobytes())
+    f.write(struct.pack("<i", output_b))
 
-print("Successfully exported nn.bin!")
+print("Successfully exported Little Endian nn.bin!")

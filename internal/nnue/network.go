@@ -23,10 +23,8 @@ var networkData []byte
 func LoadEmbeddedNetwork() (*Network, error) {
 	nn := &Network{}
 
-	// Create a reader from the embedded byte slice
 	reader := bytes.NewReader(networkData)
 
-	// Read in LittleEndian to match the Python struct.pack output
 	if err := binary.Read(reader, binary.LittleEndian, &nn.FeatureWeights); err != nil {
 		return nil, err
 	}
@@ -95,5 +93,5 @@ func (nn *Network) Evaluate(acc *Accumulator, sideToMove board.Color) int {
 	}
 
 	// scale  down to roughly match standard centipawn scaling
-	return int(output / 128)
+	return int(output * EvalScale / (QA * QB))
 }

@@ -336,6 +336,7 @@ func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, de
 
 	b.EnPassant = board.NoSquare
 
+	s.Accumulators[b.Ply+1] = s.Accumulators[b.Ply]
 	b.Ply++
 
 	// adaptive depth reduction

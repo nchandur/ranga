@@ -74,6 +74,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 	for count := range ml.Count {
 
 		copy := b.Preserve()
+		s.UpdateAccumulator(b, ml.Moves[count])
 		b.Ply++
 
 		if !b.MakeMove(ml.Moves[count], false) {

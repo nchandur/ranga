@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"ranga/internal/board"
 	"ranga/internal/nnue"
 	"ranga/internal/search"
@@ -37,7 +36,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	nn, err := nnue.LoadEmbeddedNetwork()
 
 	if err != nil || nn == nil {
-		log.Fatalf("unable to load network: %v", err)
+		panic("unable to load network")
 	}
 
 	e := &Engine{
