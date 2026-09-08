@@ -7,7 +7,7 @@
 
 ### STC: 8+0.08
 
-**Date:** 2026-09-02
+**Date:** 2026-09-08
 
 **RC Engine:** ranga-1.9 | **Base Engine:** ranga-1.8
 
@@ -32,7 +32,7 @@ Total time: 00:02:02 (h:m:s)
 
 ### LTC: 40+0.04
 
-**Date:** 2026-09-02
+**Date:** 2026-09-08
 
 **RC Engine:** ranga-1.9 | **Base Engine:** ranga-1.8
 
