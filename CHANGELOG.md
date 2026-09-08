@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 * feat(evaluate): piece-square tables, mobility bonuses/penalties and king safety [[#32](https://github.com/nchandur/ranga/pull/32)]
 * chore(build): Go version bump to `1.27.1` [[#32](https://github.com/nchandur/ranga/pull/32)]
 
+### Fixed
+* fix(init): initialized evaluation masks
+
 ## [v1.8] - 2026-09-02
 
 ### Added
