@@ -92,7 +92,7 @@ var squareChar = [64]string{
 
 func (s Square) String() string {
 	if s == NoSquare {
-		return "."
+		return "-"
 	}
 
 	return squareChar[s]

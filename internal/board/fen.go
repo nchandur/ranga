@@ -145,3 +145,40 @@ func (b *Board) ParseFEN(fen string) error {
 
 	return nil
 }
+
+// returns FEN string from board state
+func (b *Board) FEN() string {
+	var builder strings.Builder
+
+	fenRanks := make([]string, 0)
+
+	for rank := range 8 {
+		var rankBuilder strings.Builder
+		empty := 0
+
+		for file := range 8 {
+			sq := FRtoSq(rank, file)
+			piece := b.Mailbox[sq]
+
+			if piece == Empty {
+				empty++
+			} else {
+				if empty > 0 {
+					fmt.Fprintf(&rankBuilder, "%d", empty)
+					empty = 0
+				}
+				fmt.Fprintf(&rankBuilder, "%c", PieceChar[piece])
+			}
+		}
+
+		if empty > 0 {
+			fmt.Fprintf(&rankBuilder, "%d", empty)
+		}
+		fenRanks = append(fenRanks, rankBuilder.String())
+	}
+
+	fmt.Fprint(&builder, strings.Join(fenRanks, "/"))
+	fmt.Fprintf(&builder, " %c %s %s %d %d", b.Side.String(), b.Castle.String(), b.EnPassant.String(), b.FiftyMove, b.Ply/2+1)
+
+	return builder.String()
+}
