@@ -173,4 +173,5 @@ func init() {
 	initSliderAttacks(true)
 	initSliderAttacks(false)
 	initHashKeys()
+	initEvaluationMasks()
 }
