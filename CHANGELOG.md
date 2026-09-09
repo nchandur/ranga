@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(pgn): feat(pgn): add scripts to parse PGN files and generate FEN slices for NNUE training
+
 ## [v1.11] - 2026-09-03
 
 ### Added
