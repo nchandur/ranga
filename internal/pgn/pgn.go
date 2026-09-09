@@ -1,7 +1,6 @@
 package pgn
 
 import (
-	"fmt"
 	"ranga/internal/board"
 	"strings"
 )
@@ -19,8 +18,6 @@ func ParseSAN(b *board.Board, san string) board.Move {
 	if san == "O-O-O" || san == "0-0-0" {
 		return findCastle(list, b.Side, false)
 	}
-
-	fmt.Println(list)
 
 	var promo byte
 	if i := strings.IndexByte(san, '='); i != -1 {
@@ -114,17 +111,20 @@ func findCastle(list *board.MoveList, side board.Color, kingside bool) board.Mov
 
 	for n := range list.Count {
 		m := list.Moves[n]
-		if m.Piece() != wantKing || m.Source() != home || !m.IsCapture() {
+		if m.Piece() != wantKing || m.Source() != home {
 			continue
 		}
 		tgtFile := m.Target() % 8
-		if kingside && tgtFile > srcFile {
+		diff := int(tgtFile - srcFile)
+
+		if kingside && diff == 2 {
 			return m
 		}
-		if !kingside && tgtFile < srcFile {
+		if !kingside && diff == -2 {
 			return m
 		}
 	}
+
 	return board.NOMOVE
 }
 

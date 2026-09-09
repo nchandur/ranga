@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"ranga/internal/board"
 	"ranga/internal/pgn"
@@ -23,10 +22,9 @@ func main() {
 
 	move := pgn.ParseSAN(&b, san)
 
-	fmt.Println("San: ", san, "-> Move: ", move.String())
+	b.MakeMove(move, false)
 
-	fmt.Println(move.IsCastle())
-	fmt.Println(move.Source(), move.Target())
+	b.Print()
 
 	// engine := uci.NewEngine(os.Stdin, os.Stdout, version)
 	// engine.Run()
