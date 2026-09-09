@@ -107,15 +107,15 @@ func findCastle(list *board.MoveList, side board.Color, kingside bool) board.Mov
 		wantKing = board.BK
 	}
 
-	srcFile := home % 8
+	srcFile := int(home) % 8
 
 	for n := range list.Count {
 		m := list.Moves[n]
 		if m.Piece() != wantKing || m.Source() != home {
 			continue
 		}
-		tgtFile := m.Target() % 8
-		diff := int(tgtFile - srcFile)
+		tgtFile := int(m.Target()) % 8
+		diff := tgtFile - srcFile
 
 		if kingside && diff == 2 {
 			return m

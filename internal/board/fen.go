@@ -178,7 +178,7 @@ func (b *Board) FEN() string {
 	}
 
 	fmt.Fprint(&builder, strings.Join(fenRanks, "/"))
-	fmt.Fprintf(&builder, " %c %s %s %d %d", b.Side.String(), b.Castle.String(), b.EnPassant.String(), b.FiftyMove, b.Ply)
+	fmt.Fprintf(&builder, " %c %s %s %d %d", b.Side.String(), b.Castle.String(), b.EnPassant.String(), b.FiftyMove, b.Ply/2+1)
 
 	return builder.String()
 }
