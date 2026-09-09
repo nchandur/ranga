@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-* feat(pgn): feat(pgn): add scripts to parse PGN files and generate FEN slices for NNUE training
+* feat(pgn): feat(pgn): add scripts to parse PGN files and generate FEN slices for NNUE training [[#40](https://github.com/nchandur/ranga/pull/40)]
 
 ## [v1.11] - 2026-09-03
 
