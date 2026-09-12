@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"ranga/internal/board"
+	"ranga/internal/evaluate/nnue"
 )
 
 // performs a quiescence search to evaluate quiet positions and avoid horizon effect
@@ -73,13 +74,23 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	for count := range ml.Count {
 
-		copy := b.Preserve()
+		state := b.Preserve()
+
+		var nnState nnue.Snapshot
+		if s.NN != nil {
+			nnState = s.NN.Preserve()
+		}
+
 		b.Ply++
 
 		if !b.MakeMove(ml.Moves[count], false) {
 			b.Ply--
-			b.Restore(&copy)
+			b.Restore(&state)
 			continue
+		}
+
+		if s.NN != nil {
+			s.NN.Update(&state, ml.Moves[count])
 		}
 
 		b.Repetition.Idx++
@@ -92,7 +103,11 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 		b.Ply--
 		b.Repetition.Idx--
 
-		b.Restore(&copy)
+		b.Restore(&state)
+
+		if s.NN != nil {
+			s.NN.Restore(nnState)
+		}
 
 		if score > alpha {
 			alpha = score

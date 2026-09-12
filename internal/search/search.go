@@ -4,11 +4,13 @@ import (
 	"context"
 	"ranga/internal/board"
 	"ranga/internal/evaluate"
+	"ranga/internal/evaluate/nnue"
 )
 
 // coordinates search tree execution
 type Searcher struct {
-	evaluate.Evaluator                        // static evaluation to score positions at leaf nodes
+	evaluate.Evaluator // static evaluation to score positions at leaf nodes
+	NN                 *nnue.NNUE
 	PV                 PVTable                // stores and tracks the pv line found during search
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
@@ -30,6 +32,12 @@ func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
 		NodeLimit: 0,
 		Cancel:    nil,
 	}
+
+	// only evaluator is NNUE
+	if nn, ok := eval.(*nnue.NNUE); ok {
+		s.NN = nn
+	}
+
 	return &s
 }
 
@@ -138,12 +146,22 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	for _, move := range ml.Moves[:ml.Count] {
 
 		state := b.Preserve()
+
+		var nnState nnue.Snapshot
+		if s.NN != nil {
+			nnState = s.NN.Preserve()
+		}
+
 		b.Ply++
 
 		if !b.MakeMove(move, false) {
 			b.Ply--
 			b.Restore(&state)
 			continue
+		}
+
+		if s.NN != nil {
+			s.NN.Update(&state, move)
 		}
 
 		b.Repetition.Idx++
@@ -157,6 +175,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		b.Ply--
 		b.Repetition.Idx--
 		b.Restore(&state)
+
+		if s.NN != nil {
+			s.NN.Restore(nnState)
+		}
+
 		movesSearched++
 
 		// abort on cancellation
@@ -235,11 +258,21 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 
 	for count, move := range ml.Moves[:ml.Count] {
 		state := b.Preserve()
+
+		var nnState nnue.Snapshot
+		if s.NN != nil {
+			nnState = s.NN.Preserve()
+		}
+
 		b.Ply++
 		if !b.MakeMove(move, false) {
 			b.Ply--
 			b.Restore(&state)
 			continue
+		}
+
+		if s.NN != nil {
+			s.NN.Update(&state, move)
 		}
 
 		// legal fallback in case of timeout
@@ -256,6 +289,10 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Ply--
 		b.Repetition.Idx--
 		b.Restore(&state)
+
+		if s.NN != nil {
+			s.NN.Restore(nnState)
+		}
 
 		if ctx.Err() != nil {
 			break
