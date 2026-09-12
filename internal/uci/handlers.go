@@ -78,6 +78,9 @@ func (e *Engine) handlePosition(args []string) {
 
 	e.pauseSearch()
 
+	// reset nn
+	e.searcher.NN.Reset(&e.board)
+
 	line := strings.Join(args, " ")
 
 	var fenStr string
