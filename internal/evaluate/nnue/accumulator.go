@@ -10,7 +10,7 @@ func NewAccumulator(net *Network) Accumulator {
 }
 
 // add feature to accumulator
-func (acc *Accumulator) AddFeature(featureIdx int, net *Network) {
+func (acc *Accumulator) AddFeature(net *Network, featureIdx int) {
 	for i := range acc.Values {
 		d := net.FeatureWeights[featureIdx].Values[i]
 		acc.Values[i] += d
@@ -18,7 +18,7 @@ func (acc *Accumulator) AddFeature(featureIdx int, net *Network) {
 }
 
 // remove feature from accumulator
-func (acc *Accumulator) RemoveFeature(featureIdx int, net *Network) {
+func (acc *Accumulator) RemoveFeature(net *Network, featureIdx int) {
 	for i := range acc.Values {
 		d := net.FeatureWeights[featureIdx].Values[i]
 		acc.Values[i] -= d
