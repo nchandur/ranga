@@ -44,7 +44,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
 	nn := nnue.NewRandom()
 	nn.Reset(&e.board)
-	e.searcher = search.NewSearcher(&nnue.NNUE{}, 24)
+	e.searcher = search.NewSearcher(nn, 24)
 
 	e.registerCommands()
 
