@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"ranga/internal/board"
-	"ranga/internal/evaluate/hce"
+	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
 	"strings"
 	"sync"
@@ -36,11 +36,15 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	e := &Engine{
 		in:       bufio.NewScanner(in),
 		out:      out,
-		board:    board.NewBoard(),
-		searcher: search.NewSearcher(hce.HCE{}, 24),
 		commands: make(map[string]Handler),
 		version:  version,
 	}
+
+	e.board = board.NewBoard()
+
+	nn := nnue.NewRandom()
+	nn.Reset(&e.board)
+	e.searcher = search.NewSearcher(&nnue.NNUE{}, 24)
 
 	e.registerCommands()
 
