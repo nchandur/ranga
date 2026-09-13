@@ -1,6 +1,8 @@
 package nnue
 
-import "ranga/internal/board"
+import (
+	"ranga/internal/board"
+)
 
 type perspectives struct {
 	White, Black Accumulator
@@ -96,12 +98,12 @@ func (n *NNUE) addPiece(piece board.Piece, sq board.Square) {
 	isWhite := int(piece) <= 5
 
 	n.acc.White.AddFeature(&n.Network, FeatureIndex(true, isWhite, piece, sq))
-	n.acc.Black.AddFeature(&n.Network, FeatureIndex(false, isWhite, piece, sq))
+	n.acc.Black.AddFeature(&n.Network, FeatureIndex(false, !isWhite, piece, sq))
 }
 
 func (n *NNUE) removePiece(piece board.Piece, sq board.Square) {
 	isWhite := int(piece) <= 5
 
 	n.acc.White.RemoveFeature(&n.Network, FeatureIndex(true, isWhite, piece, sq))
-	n.acc.Black.RemoveFeature(&n.Network, FeatureIndex(false, isWhite, piece, sq))
+	n.acc.Black.RemoveFeature(&n.Network, FeatureIndex(false, !isWhite, piece, sq))
 }

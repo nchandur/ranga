@@ -1,6 +1,8 @@
 package nnue
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 type Network struct {
 	FeatureWeights [768]Accumulator
