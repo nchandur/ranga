@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
@@ -42,7 +43,12 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
 	e.board = board.NewBoard()
 
-	nn := nnue.NewRandom()
+	net, err := nnue.LoadNetwork("/Users/nchandur/workspace/ranga/data/selftest-12/checkpoints/simple-10/quantised.bin")
+	if err != nil {
+		log.Fatalf("loading network: %v", err)
+	}
+	nn := &nnue.NNUE{Network: *net}
+
 	nn.Reset(&e.board)
 	e.searcher = search.NewSearcher(nn, 24)
 
