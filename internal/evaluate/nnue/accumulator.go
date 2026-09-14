@@ -1,7 +1,7 @@
 package nnue
 
 type Accumulator struct {
-	Values [HiddenSize]int16
+	Values [HiddenSize]int
 }
 
 // initialized with bias for efficient operations later

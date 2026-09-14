@@ -1,7 +1,7 @@
 package nnue
 
-func screlu(x int16) int32 {
-	y := int32(clamp(int(x), 0, QA))
+func screlu(x int) int {
+	y := clamp(int(x), 0, QA)
 	return y * y
 }
 

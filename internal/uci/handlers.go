@@ -78,9 +78,6 @@ func (e *Engine) handlePosition(args []string) {
 
 	e.pauseSearch()
 
-	// reset nn
-	e.searcher.NN.Reset(&e.board)
-
 	line := strings.Join(args, " ")
 
 	var fenStr string
@@ -138,6 +135,9 @@ func (e *Engine) handlePosition(args []string) {
 	}
 
 	e.board.Ply = 0
+
+	// reset nn
+	e.searcher.NN.Reset(&e.board)
 }
 
 // handles go command
