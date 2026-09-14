@@ -43,7 +43,8 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
 	e.board = board.NewBoard()
 
-	net, err := nnue.LoadNetwork("/Users/nchandur/workspace/ranga/data/selftest-12/checkpoints/simple-40/quantised.bin")
+	net, err := nnue.LoadEmbedded()
+
 	if err != nil {
 		log.Fatalf("loading network: %v", err)
 	}

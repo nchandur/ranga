@@ -13,8 +13,12 @@ func LoadNetwork(path string) (*Network, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading network file: %w", err)
 	}
+	return parseNetwork(data)
+}
+
+func parseNetwork(data []byte) (*Network, error) {
 	if len(data) < expectedNetworkBytes {
-		return nil, fmt.Errorf("network file too small: got %d bytes, want at least %d", len(data), expectedNetworkBytes)
+		return nil, fmt.Errorf("network data too small: got %d bytes, want at least %d", len(data), expectedNetworkBytes)
 	}
 
 	r := bytesReader(data[:expectedNetworkBytes])
@@ -36,7 +40,6 @@ func LoadNetwork(path string) (*Network, error) {
 	return &net, nil
 }
 
-// tiny helper to walk the byte slice without a full bufio.Reader
 type byteCursor struct {
 	data []byte
 	pos  int
