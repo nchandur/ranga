@@ -91,6 +91,11 @@ func ParseSAN(b *board.Board, san string) board.Move {
 			continue
 		}
 
+		copy := b.Preserve()
+		if isLegal := copy.MakeMove(m, false); !isLegal {
+			continue
+		}
+
 		return m
 	}
 	return board.NOMOVE
