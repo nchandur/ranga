@@ -6,8 +6,8 @@ import (
 
 func main() {
 
-	dir := "/Users/nchandur/workspace/ranga/data/games/"
-	source := dir + "games.pgn"
+	dir := "../../data/selftest-12/"
+	source := dir + "selftest-1.12.pgn"
 	destination := dir + "games.txt"
 
 	fens, errs := ParseGamesFromFile(source)

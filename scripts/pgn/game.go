@@ -22,7 +22,7 @@ var eventTagPattern = regexp.MustCompile(`(?m)^\[Event\s`)
 type Game struct {
 	White  string
 	Black  string
-	Result string
+	Result float32
 	FEN    string // starting fen position
 	Moves  []string
 	Scores []int
@@ -62,11 +62,11 @@ func (g *Game) parseResult(pgn string) {
 	if matches := resultRe.FindStringSubmatch(pgn); len(matches) > 0 {
 		switch matches[1] {
 		case "1-0":
-			g.Result = "1.0"
+			g.Result = 1.0
 		case "0-1":
-			g.Result = "0.0"
+			g.Result = 0.0
 		case "1/2-1/2":
-			g.Result = "0.5"
+			g.Result = 0.5
 		}
 	}
 }
@@ -114,11 +114,50 @@ func (g *Game) GenerateLines() ([]string, error) {
 		if m == board.NOMOVE {
 			return nil, fmt.Errorf("move %d (%q): unparseable in position\n%s", i+1, san, g.Board.FEN())
 		}
+
+		isTacticalMove := m.IsCapture() || m.Promoted() != board.Empty
+
 		if ok := g.Board.MakeMove(m, false); !ok {
 			return nil, fmt.Errorf("move %d (%q): illegal move\n%s", i+1, san, g.Board.FEN())
 		}
 		g.Board.Ply++
-		lines = append(lines, fmt.Sprintf("%s | %d | %s", g.Board.FEN(), g.Scores[i], g.Result))
+
+		// skip positions immediately following a capture or promotion
+		if isTacticalMove {
+			continue
+		}
+
+		// check for king safety
+		kingPiece := board.WK
+		attackerColor := board.Black
+		if g.Board.Side == board.Black {
+			kingPiece = board.BK
+			attackerColor = board.White
+		}
+
+		kingSq := board.Square(g.Board.PieceBitBoards[kingPiece].GetLSB())
+		inCheck := g.Board.IsSquareAttacked(kingSq, attackerColor)
+		if inCheck {
+			continue
+		}
+
+		// skip mate scores
+		rawScore := g.Scores[i]
+		if rawScore > 20000 || rawScore < -20000 {
+			continue
+		}
+
+		// align score and WDL strictly to stm
+		stmScore := rawScore
+		stmResult := g.Result
+
+		// if black's turn invert score
+		if g.Board.Side == board.Black {
+			stmScore = -rawScore
+			stmResult = 1.0 - g.Result
+		}
+
+		lines = append(lines, fmt.Sprintf("%s | %d | %.1f", g.Board.FEN(), stmScore, stmResult))
 	}
 
 	return lines, nil
