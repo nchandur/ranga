@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 * feat(pgn): add scripts to parse PGN files and generate FEN slices for NNUE training [[#40](https://github.com/nchandur/ranga/pull/40)]
+* feat(pgn): filter out bad positions [[#41](https://github.com/nchandur/ranga/pull/41)]
+
+### Fixed
+* fix(pgn): handle absolute pins [[#41](https://github.com/nchandur/ranga/pull/41)]
 
 ## [v1.11] - 2026-09-03
 
