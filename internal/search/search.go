@@ -244,6 +244,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 // executes search on a given state, returns the best move found
 func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int) {
 	s.Reset()
+
+	// if s.NN != nil {
+	// 	s.NN.Reset(b)
+	// }
+
 	alpha, beta := -INFINITY, INFINITY
 
 	var bestMove board.Move
