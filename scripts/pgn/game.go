@@ -151,12 +151,6 @@ func (g *Game) GenerateLines() ([]string, error) {
 		stmScore := rawScore
 		stmResult := g.Result
 
-		// if black's turn invert score
-		if g.Board.Side == board.Black {
-			stmScore = -rawScore
-			stmResult = 1.0 - g.Result
-		}
-
 		lines = append(lines, fmt.Sprintf("%s | %d | %.1f", g.Board.FEN(), stmScore, stmResult))
 	}
 
