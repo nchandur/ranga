@@ -148,12 +148,9 @@ func (g *Game) GenerateLines() ([]string, error) {
 		}
 
 		// align score and WDL strictly to stm
-		stmScore := rawScore
+		stmScore := -rawScore
 		stmResult := g.Result
-
-		// if black's turn invert score
 		if g.Board.Side == board.Black {
-			stmScore = -rawScore
 			stmResult = 1.0 - g.Result
 		}
 
