@@ -15,6 +15,7 @@ var blackRe = regexp.MustCompile(`\[Black\s*"(.+)"\]`)
 var resultRe = regexp.MustCompile(`\[Result\s*"(.+)"\]`)
 var fenRe = regexp.MustCompile(`\[FEN\s*"(.+)"\]`)
 var taglineRe = regexp.MustCompile(`(?m)^\s*\[.*\]\s*$`)
+var scoreRe = regexp.MustCompile(`^([+-]?)(M|#)?(\d+(?:\.\d+)?)`)
 
 // marks the start of a new game header block.
 var eventTagPattern = regexp.MustCompile(`(?m)^\[Event\s`)
