@@ -148,12 +148,9 @@ func (g *Game) GenerateLines() ([]string, error) {
 		}
 
 		// align score and WDL strictly to stm
-		stmScore := rawScore
+		stmScore := -rawScore
 		stmResult := g.Result
-
-		// if black's turn invert score
 		if g.Board.Side == board.Black {
-			stmScore = -rawScore
 			stmResult = 1.0 - g.Result
 		}
 
@@ -210,8 +207,10 @@ func ParseGamesFromFile(source string) ([]string, []error) {
 		}
 		allLines = append(allLines, lines...)
 		fmt.Printf("\r\033[K[game %d/%d] positions parsed: %d", i+1, totalGames, len(allLines))
-		os.Stdout.Sync()
 	}
+
+	fmt.Println()
+	os.Stdout.Sync()
 
 	return allLines, errs
 }
