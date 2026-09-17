@@ -1,14 +1,23 @@
 package main
 
 import (
+	"flag"
 	"log"
+	"path/filepath"
 )
 
 func main() {
 
-	dir := "../../data/selftest-12/"
-	source := dir + "games.pgn"
-	destination := dir + "games.txt"
+	dir := flag.String("dir", "", "path to games directory")
+	flag.Parse()
+
+	if *dir == "" {
+		log.Fatal("path to games directory required")
+	}
+
+	source := filepath.Join(*dir, "games.pgn")
+	destination := filepath.Join(*dir, "games.txt")
+	errors := filepath.Join(*dir, "errors.log")
 
 	fens, errs := ParseGamesFromFile(source)
 
@@ -22,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := WriteErrsToFile(dir+"errors.txt", errs); err != nil {
+	if err := WriteErrsToFile(errors, errs); err != nil {
 		log.Fatal(err)
 	}
 
