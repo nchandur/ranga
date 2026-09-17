@@ -207,8 +207,10 @@ func ParseGamesFromFile(source string) ([]string, []error) {
 		}
 		allLines = append(allLines, lines...)
 		fmt.Printf("\r\033[K[game %d/%d] positions parsed: %d", i+1, totalGames, len(allLines))
-		os.Stdout.Sync()
 	}
+
+	fmt.Println()
+	os.Stdout.Sync()
 
 	return allLines, errs
 }
