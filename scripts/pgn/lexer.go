@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -98,8 +97,6 @@ func isMoveNumber(s string) bool {
 }
 
 // pulls the leading signed eval number out of an engine comment,
-var scoreRe = regexp.MustCompile(`^([+-]?\d+(?:\.\d+)?)`)
-
 func extractScore(comment string) int {
 	comment = strings.TrimSpace(comment)
 	m := scoreRe.FindStringSubmatch(comment)
@@ -107,7 +104,18 @@ func extractScore(comment string) int {
 		return 0
 	}
 
-	pawns, err := strconv.ParseFloat(m[1], 64)
+	sign := m[1]
+	isMate := m[2] != ""
+	valStr := m[3]
+
+	if isMate {
+		if sign == "-" {
+			return -mateCap
+		}
+		return mateCap
+	}
+
+	pawns, err := strconv.ParseFloat(sign+valStr, 64)
 	if err != nil {
 		log.Fatal(err)
 	}
