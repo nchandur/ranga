@@ -7,7 +7,7 @@ import (
 func main() {
 
 	dir := "../../data/selftest-12/"
-	source := dir + "selftest-1.12.pgn"
+	source := dir + "games.pgn"
 	destination := dir + "games.txt"
 
 	fens, errs := ParseGamesFromFile(source)
