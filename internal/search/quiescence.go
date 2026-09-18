@@ -73,6 +73,11 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	for count := range ml.Count {
 
+		// delta pruning skip captures that can't possibly raise alpha
+		if s.deltaPruning(alpha, standPat, inCheck, b, ml.Moves[count]) {
+			continue
+		}
+
 		copy := b.Preserve()
 		b.Ply++
 
@@ -115,4 +120,37 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 	}
 
 	return alpha
+}
+
+// helper function for delta pruning
+func (s *Searcher) deltaPruning(alpha, evaluation int, inCheck bool, b *board.Board, move board.Move) bool {
+
+	if inCheck || !move.IsCapture() {
+		return false
+	}
+
+	// don't prune near mate scores
+	if alpha >= MATESCORE-MAX_PLY || alpha <= -MATESCORE+MAX_PLY {
+		return false
+	}
+
+	captured := b.Mailbox[move.Target()]
+
+	// en passant captures the pawn behind the target square
+	if move.IsEnpass() {
+		if b.Side == board.White {
+			captured = board.BP
+		} else {
+			captured = board.WP
+		}
+	}
+
+	gain := abs(board.PieceValue[captured])
+
+	// actual promoted piece value
+	if move.Promoted() != board.Empty {
+		gain += abs(board.PieceValue[move.Promoted()]) - abs(board.PieceValue[board.WP])
+	}
+
+	return evaluation+gain+BIG_DELTA < alpha
 }
