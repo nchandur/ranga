@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+* feat(search): delta pruning [[#44](https://github.com/nchandur/ranga/pull/44)]
 * feat(pgn): add scripts to parse PGN files and generate FEN slices for NNUE training [[#40](https://github.com/nchandur/ranga/pull/40)]
 * feat(pgn): filter out bad positions [[#41](https://github.com/nchandur/ranga/pull/41)]
 
