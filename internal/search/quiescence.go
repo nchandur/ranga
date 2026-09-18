@@ -73,6 +73,11 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	for count := range ml.Count {
 
+		// delta pruning skip captures that can't possibly raise alpha
+		if s.deltaPruning(alpha, standPat, inCheck, b, ml.Moves[count]) {
+			continue
+		}
+
 		copy := b.Preserve()
 		b.Ply++
 
@@ -115,4 +120,25 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 	}
 
 	return alpha
+}
+
+// helper function for delta pruning
+func (s *Searcher) deltaPruning(alpha, evaluation int, inCheck bool, b *board.Board, move board.Move) bool {
+
+	if inCheck || !move.IsCapture() {
+		return false
+	}
+
+	// don't prune near mate scores
+	if alpha >= MATESCORE-MAX_PLY || alpha <= -MATESCORE+MAX_PLY {
+		return false
+	}
+
+	gain := board.PieceValue[b.Mailbox[move.Target()]]
+
+	if move.Promoted() != board.Empty {
+		gain += board.PieceValue[board.WQ] - board.PieceValue[board.WP]
+	}
+
+	return evaluation+gain+BIG_DELTA < alpha
 }
