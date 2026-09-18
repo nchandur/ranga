@@ -7,8 +7,9 @@ func FeatureIndex(perspectiveIsWhite, isUs bool, piece board.Piece, square board
 	relSquare := int(square)
 
 	if !perspectiveIsWhite {
-		relSquare = int(square) ^ 56
+		relSquare ^= 56
 	}
+
 	offset := 0
 	if !isUs {
 		offset = 384
