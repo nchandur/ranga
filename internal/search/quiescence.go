@@ -134,10 +134,22 @@ func (s *Searcher) deltaPruning(alpha, evaluation int, inCheck bool, b *board.Bo
 		return false
 	}
 
-	gain := board.PieceValue[b.Mailbox[move.Target()]]
+	captured := b.Mailbox[move.Target()]
 
+	// en passant captures the pawn behind the target square
+	if move.IsEnpass() {
+		if b.Side == board.White {
+			captured = board.BP
+		} else {
+			captured = board.WP
+		}
+	}
+
+	gain := abs(board.PieceValue[captured])
+
+	// actual promoted piece value
 	if move.Promoted() != board.Empty {
-		gain += board.PieceValue[board.WQ] - board.PieceValue[board.WP]
+		gain += abs(board.PieceValue[move.Promoted()]) - abs(board.PieceValue[board.WP])
 	}
 
 	return evaluation+gain+BIG_DELTA < alpha
