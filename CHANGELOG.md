@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.12] - 2026-09-19
 
 ### Added
 * feat(search): delta pruning [[#44](https://github.com/nchandur/ranga/pull/44)]
