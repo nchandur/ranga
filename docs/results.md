@@ -34,7 +34,7 @@ Total time: 01:12:15 (h:m:s)
 
 **Date:** 2026-09-03
 
-**RC Engine:** ranga-1.11 | **Base Engine:** ranga-1.10
+**RC Engine:** ranga-1.12 | **Base Engine:** ranga-1.11
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
@@ -44,13 +44,13 @@ Total time: 01:12:15 (h:m:s)
 | Metric        | Value                                |
 |---------------|--------------------------------------|
 | Result        | **H1 accepted** (pass)               |
-| Elo           | 56.42 +/- 28.33                      |
-| nElo          | 68.32 +/- 33.63                      |
-| LOS           | 100.00%                              |
-| Games         | 410 (W: 191, L: 125, D: 94)          |
-| Score         | 238 / 410 (58.05%)                   |
-| Draw ratio    | 37.56%                               |
-| LLR           | 2.97 (100.9%) — bounds (-2.94, 2.94) |
-| Ptnml(0-2)    | [16, 27, 77, 45, 40]                 |
+| Elo           | 26.49 +/- 15.68                      |
+| nElo          | 30.82 +/- 18.16                      |
+| LOS           | 99.96%                               |
+| Games         | 1406 (W: 593, L: 486, D: 327)        |
+| Score         | 756.5 / 1406 (53.81%)                |
+| Draw ratio    | 36.70%                               |
+| LLR           | 2.98 (101.2%) — bounds (-2.94, 2.94) |
+| Ptnml(0-2)    | [82, 106, 258, 137, 120]             |
 
-Total time: 00:42:26 (h:m:s)
+Total time: 03:27:30 (h:m:s)
