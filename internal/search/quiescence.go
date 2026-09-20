@@ -74,16 +74,16 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 	for count := range ml.Count {
 
+		// delta pruning skip captures that can't possibly raise alpha
+		if s.deltaPruning(alpha, standPat, inCheck, b, ml.Moves[count]) {
+			continue
+		}
+
 		state := b.Preserve()
 
 		var nnState nnue.Snapshot
 		if s.NN != nil {
 			nnState = s.NN.Preserve()
-		}
-
-		// delta pruning skip captures that can't possibly raise alpha
-		if s.deltaPruning(alpha, standPat, inCheck, b, ml.Moves[count]) {
-			continue
 		}
 
 		b.Ply++
@@ -116,17 +116,14 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 		if score > alpha {
 			alpha = score
-
 			if score >= beta {
 				return beta
 			}
 		}
 
-		// abort on context cancellation
 		if ctx.Err() != nil {
 			return 0
 		}
-
 	}
 
 	// checkmate detection
