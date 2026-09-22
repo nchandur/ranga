@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
+	"log"
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
@@ -46,8 +46,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	net, err := nnue.LoadEmbedded()
 
 	if err != nil {
-		// log.Fatalf("loading network: %v", err)
-		os.Exit(1)
+		log.Fatalf("loading network: %v", err)
 	}
 	nn := &nnue.NNUE{Network: *net}
 
