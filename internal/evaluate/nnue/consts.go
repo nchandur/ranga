@@ -1,8 +1,8 @@
 package nnue
 
 const (
-	HiddenSize = 128
-	Scale      = 400
-	QA         = 255
-	QB         = 64
+	HiddenSize int64 = 128
+	Scale      int32 = 400
+	QA         int16 = 255
+	QB         int16 = 64
 )
