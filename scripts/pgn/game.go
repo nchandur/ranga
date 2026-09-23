@@ -148,14 +148,12 @@ func (g *Game) GenerateLines() ([]string, error) {
 			continue
 		}
 
-		// align score and WDL strictly to stm
-		stmScore := -rawScore
-		stmResult := g.Result
-		if g.Board.Side == board.Black {
-			stmResult = 1.0 - g.Result
+		whiteScore := rawScore
+		if g.Board.Side == board.White {
+			whiteScore = -rawScore
 		}
 
-		lines = append(lines, fmt.Sprintf("%s | %d | %.1f", g.Board.FEN(), stmScore, stmResult))
+		lines = append(lines, fmt.Sprintf("%s | %d | %.1f", g.Board.FEN(), whiteScore, g.Result))
 	}
 
 	return lines, nil
