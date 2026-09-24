@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-* fix(pgn): remove PGN parser [[]]
+* fix(pgn): remove PGN parser [[#46](https://github.com/nchandur/ranga/pull/46)]
 
 ## [v1.12] - 2026-09-19
 
