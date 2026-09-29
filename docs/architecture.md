@@ -17,27 +17,7 @@ The engine evaluates positions with an NNUE: a small, fully connected network wh
 
 ### Diagram
 
-```bash
-                    +--------------+      +--------------+
-                    | Side to move |      |  Other side  |
-                    | 768 inputs   |      | 768 inputs   |
-                    +--------------+      +--------------+
-                        |                     |
-                        v                     v
-                    +--------------+      +--------------+
-                    | Hidden layer |      | Hidden layer |
-                    | 32 (SCReLU)  |      | 32 (SCReLU)  |
-                    +--------------+      +--------------+
-                            \                 /
-                            v               v
-                            +-----------------+
-                            |  Output layer   |
-                            |     64 -> 1     |
-                            +-----------------+
-                                    |
-                                    v
-                            ( Evaluation (cp) )
-```
+![nnue](../assets/nnue.png)
 
 ### Layers
 

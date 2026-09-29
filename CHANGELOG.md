@@ -4,8 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+* feat(evaluate): add single-layer dual perspective NNUE with 768 piece square input layer [[#48](https://github.com/nchandur/ranga/pull/48)]
+
 ### Fixed
-* fix(perft): enhanced perft testing [[#47](https://github.com/nchandur/ranga/pull/47)]
+* fix(perft): enhance perft testing [[#47](https://github.com/nchandur/ranga/pull/47)]
 * fix(pgn): remove PGN parser [[#46](https://github.com/nchandur/ranga/pull/46)]
 
 ## [v1.12] - 2026-09-19
