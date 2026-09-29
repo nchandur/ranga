@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.13] - 2026-09-29
 
 ### Added
 * feat(evaluate): add single-layer dual perspective NNUE with 768 piece square input layer [[#48](https://github.com/nchandur/ranga/pull/48)]
