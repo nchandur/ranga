@@ -17,15 +17,41 @@ The engine evaluates positions with an NNUE: a small, fully connected network wh
 
 ### Diagram
 
-![nnue architecture](../assets/nnue.drawio.png)
+```bash
+                    +--------------+      +--------------+
+                    | Side to move |      |  Other side  |
+                    | 768 inputs   |      | 768 inputs   |
+                    +--------------+      +--------------+
+                        |                     |
+                        v                     v
+                    +--------------+      +--------------+
+                    | Hidden layer |      | Hidden layer |
+                    | 32 (SCReLU)  |      | 32 (SCReLU)  |
+                    +--------------+      +--------------+
+                            \                 /
+                            v               v
+                            +-----------------+
+                            |  Output layer   |
+                            |     64 -> 1     |
+                            +-----------------+
+                                    |
+                                    v
+                            ( Evaluation (cp) )
+```
 
 ### Layers
 
-**Feature layer (768 -> 32)** Each input is a binary flag for a specific piece of a specific color on a specific square. The same weights are used for both perspectives; the board is viewed from each side in turn, producing two 32-value accumulators.
+**Feature layer (768 -> 32):**
 
-**Activation (SCReLU)** Each accumulator value is clamped to `[0, QA]` and then squared.
+Each input is a binary flag for a specific piece of a specific color on a specific square. The same weights are used for both perspectives; the board is viewed from each side in turn, producing two 32-value accumulators.
 
-**Output layer (64 -> 1)** The two activated accumulators are concatenated, side-to-move first, and the result is a single dot product with the output weights plus a bias.
+**Activation (SCReLU):**
+
+Each accumulator value is clamped to `[0, QA]` and then squared.
+
+**Output layer (64 -> 1):** 
+
+The two activated accumulators are concatenated, side-to-move first, and the result is a single dot product with the output weights plus a bias.
 
 ### Quantization
 
