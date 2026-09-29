@@ -5,8 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"ranga/internal/board"
-	"ranga/internal/evaluate/hce"
+	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
 	"strings"
 	"sync"
@@ -36,11 +37,21 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	e := &Engine{
 		in:       bufio.NewScanner(in),
 		out:      out,
-		board:    board.NewBoard(),
-		searcher: search.NewSearcher(hce.HCE{}, 24),
 		commands: make(map[string]Handler),
 		version:  version,
 	}
+
+	e.board = board.NewBoard()
+
+	net, err := nnue.LoadEmbedded()
+
+	if err != nil {
+		log.Fatalf("loading network: %v", err)
+	}
+	nn := &nnue.NNUE{Network: *net}
+
+	nn.Reset(&e.board)
+	e.searcher = search.NewSearcher(nn, 24)
 
 	e.registerCommands()
 

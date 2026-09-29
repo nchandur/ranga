@@ -135,6 +135,9 @@ func (e *Engine) handlePosition(args []string) {
 	}
 
 	e.board.Ply = 0
+
+	// reset nn
+	e.searcher.NN.Reset(&e.board)
 }
 
 // handles go command

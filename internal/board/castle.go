@@ -9,6 +9,10 @@ const (
 	BQCA
 )
 
+func (c Castle) flip() Castle {
+	return (c<<2 | c>>2) & 0xF
+}
+
 func (c Castle) String() string {
 	var res string
 
