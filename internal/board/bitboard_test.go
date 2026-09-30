@@ -12,19 +12,19 @@ func TestBitBoard_GetBit(t *testing.T) {
 		expected BitBoard
 	}{
 		{
-			name:     "Empty BitBoard",
+			name:     "empty bitboard",
 			bb:       0x0,
 			sq:       E4,
 			expected: 0x0,
 		},
 		{
-			name:     "Piece on E4",
+			name:     "piece on E4",
 			bb:       0x1000000000,
 			sq:       E4,
 			expected: 0x1000000000,
 		},
 		{
-			name:     "No piece on A1",
+			name:     "no piece on A1",
 			bb:       0x1000000000,
 			sq:       A1,
 			expected: 0x0,
@@ -51,19 +51,19 @@ func TestBitBoard_SetBit(t *testing.T) {
 		expected BitBoard
 	}{
 		{
-			name:     "Set E4 on empty board",
+			name:     "set E4 on empty board",
 			initial:  0x0,
 			sq:       E4,
 			expected: 0x1000000000,
 		},
 		{
-			name:     "Set E4 on non-empty board",
+			name:     "set E4 on non-empty board",
 			initial:  0x8100000000000081,
 			sq:       E4,
 			expected: 0x8100001000000081,
 		},
 		{
-			name:     "Set E4 when already set",
+			name:     "set E4 when already set",
 			initial:  0x1000000000,
 			sq:       E4,
 			expected: 0x1000000000,

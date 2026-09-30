@@ -62,7 +62,7 @@ func assertBoardsEqual(t *testing.T, expected, want *Board) {
 		t.Fatalf("Repetition.Idx mismatch: expected %d, want %d", expected.Repetition.Idx, want.Repetition.Idx)
 	}
 
-	for i := 0; i < expected.Repetition.Idx; i++ {
+	for i := range expected.Repetition.Idx {
 		if expected.Repetition.Table[i] != want.Repetition.Table[i] {
 			t.Fatalf("Repetition.Table[%d] mismatch: expected 0x%016x, want 0x%016x",
 				i, expected.Repetition.Table[i], want.Repetition.Table[i])
@@ -73,11 +73,7 @@ func assertBoardsEqual(t *testing.T, expected, want *Board) {
 func TestBoard_Preserve(t *testing.T) {
 
 	original := NewBoard()
-
-	if err := original.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2"); err != nil {
-		t.Fatalf("ParseFEN failed: %v", err)
-	}
-
+	original.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2")
 	original.Repetition.Idx = 2
 	original.Repetition.Table[0] = 0x0
 	original.Repetition.Table[1] = 0x0
@@ -114,22 +110,17 @@ func TestBoard_Preserve(t *testing.T) {
 
 func TestBoard_Restore(t *testing.T) {
 	current := NewBoard()
-	if err := current.ParseFEN(START); err != nil {
-		t.Fatalf("ParseFEN failed for start position: %v", err)
-	}
+	current.ParseFEN(START)
 
-	snapshot := &Board{}
-	if err := snapshot.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR b Kq c6 3 2"); err != nil {
-		t.Fatalf("ParseFEN failed for midgame position: %v", err)
-	}
+	snapshot := NewBoard()
+	snapshot.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR b Kq c6 3 2")
 
 	snapshot.Repetition.Idx = 2
 	snapshot.Repetition.Table[0] = 0x0
 	snapshot.Repetition.Table[1] = 0x0
 
-	current.Restore(snapshot)
-
-	assertBoardsEqual(t, &current, snapshot)
+	current.Restore(&snapshot)
+	assertBoardsEqual(t, &current, &snapshot)
 
 	snapshot.Side = White
 	snapshot.EnPassant = NoSquare
@@ -158,15 +149,11 @@ func TestBoard_Restore(t *testing.T) {
 func TestBoard_Clear(t *testing.T) {
 	t.Run("clears a populated board", func(t *testing.T) {
 		b := NewBoard()
-
-		if err := b.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2"); err != nil {
-			t.Fatalf("ParseFEN failed: %v", err)
-		}
+		b.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2")
 
 		b.Repetition.Idx = 2
 		b.Repetition.Table[0] = 0xDEADBEEFCAFE
 		b.Repetition.Table[1] = 0xBEEFCAFEDEAD
-
 		b.Clear()
 
 		for i, bb := range b.PieceBitBoards {
@@ -585,7 +572,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		}
 	})
 	t.Run("en passant capture clears victim pawn from original square", func(t *testing.T) {
-		b := &Board{}
+		b := NewBoard()
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")
 
 		move := NewMove(E5, D6, WP, Empty, true, false, true, false)

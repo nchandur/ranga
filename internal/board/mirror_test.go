@@ -14,9 +14,7 @@ func TestBoard_Mirror(t *testing.T) {
 		for _, fen := range positions {
 			t.Run(fen, func(t *testing.T) {
 				b := NewBoard()
-				if err := b.ParseFEN(fen); err != nil {
-					t.Fatalf("ParseFEN failed: %v", err)
-				}
+				b.ParseFEN(fen)
 				original := b.Preserve()
 				b.Mirror()
 				b.Mirror()
@@ -27,10 +25,7 @@ func TestBoard_Mirror(t *testing.T) {
 	})
 	t.Run("mirrors piece placements and colors correctly", func(t *testing.T) {
 		b := NewBoard()
-		if err := b.ParseFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1"); err != nil {
-			t.Fatalf("ParseFEN failed: %v", err)
-		}
-
+		b.ParseFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1")
 		b.Mirror()
 
 		if b.Mailbox[E5] != BP || b.PieceBitBoards[BP].GetBit(E5) == 0 {
@@ -51,9 +46,7 @@ func TestBoard_Mirror(t *testing.T) {
 	})
 	t.Run("mirrors castling, en passant, and preserves counters", func(t *testing.T) {
 		b := NewBoard()
-		if err := b.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w Kq c6 5 12"); err != nil {
-			t.Fatalf("ParseFEN failed: %v", err)
-		}
+		b.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w Kq c6 5 12")
 
 		b.Mirror()
 		if b.Side != Black {
