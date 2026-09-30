@@ -648,3 +648,83 @@ func TestBoard_MakeMove(t *testing.T) {
 		}
 	})
 }
+
+func TestBoard_ParseMove(t *testing.T) {
+	t.Run("move out of bounds", func(t *testing.T) {
+		b := NewBoard()
+		b.ParseFEN(START)
+		moveStr := "a9b9"
+		move := b.ParseMove(moveStr)
+		if move != NOMOVE {
+			t.Errorf("%s should be out of bounds", moveStr)
+		}
+	})
+	t.Run("quiet move", func(t *testing.T) {
+		b := NewBoard()
+		b.ParseFEN(START)
+
+		moveStr := "e2e4"
+
+		move := b.ParseMove(moveStr)
+		expected := NewMove(E2, E4, WP, Empty, false, true, false, false)
+
+		if move != expected {
+			t.Errorf("expected: %s\noutput: %s\n", expected, move)
+		}
+
+	})
+	t.Run("captures", func(t *testing.T) {
+		b := NewBoard()
+		b.ParseFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+
+		moveStr := "f3f6"
+		expected := NewMove(F3, F6, WQ, Empty, true, false, false, false)
+		move := b.ParseMove(moveStr)
+
+		if move != expected {
+			t.Errorf("expected: %s\noutput: %s\n", expected, move)
+		}
+
+	})
+	t.Run("enpassant captures", func(t *testing.T) {
+		b := NewBoard()
+		b.ParseFEN("4k3/4p3/8/3pP3/8/8/8/4K3 w - d6 0 1")
+
+		moveStr := "e5d6"
+		expected := NewMove(E5, D6, WP, Empty, true, false, true, false)
+
+		move := b.ParseMove(moveStr)
+
+		if move != expected {
+			t.Errorf("expected: %s\noutput: %s\n", expected, move)
+		}
+
+	})
+	t.Run("promotions", func(t *testing.T) {
+		b := NewBoard()
+		b.ParseFEN("8/3P1k2/4p3/8/8/8/8/4K3 w - - 0 1")
+		moveStr := "d7d8q"
+		expected := NewMove(D7, D8, WP, WQ, false, false, false, false)
+
+		move := b.ParseMove(moveStr)
+
+		if move != expected {
+			b.Print()
+			t.Errorf("expected: %s\noutput: %s\n", expected, move)
+		}
+
+	})
+	t.Run("invalid move", func(t *testing.T) {
+		b := NewBoard()
+		b.ParseFEN(START)
+
+		moveStr := "a1a8"
+
+		move := b.ParseMove(moveStr)
+
+		if move != NOMOVE {
+			t.Errorf("expected: NOMOVE\noutput: %s", move)
+		}
+
+	})
+}
