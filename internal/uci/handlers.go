@@ -208,10 +208,11 @@ func (e *Engine) handleGo(args []string) {
 				}
 				i++
 			}
-		case "metrics":
+		case "perft":
 			if i+1 < len(args) {
 				if d, err := strconv.Atoi(args[i+1]); err == nil {
 					opts.depth = d
+					opts.perft = true
 				}
 				i++
 			}
@@ -222,11 +223,16 @@ func (e *Engine) handleGo(args []string) {
 	var cancel context.CancelFunc
 	var timeAllocation TimeAllocation
 
-	if !opts.infinite && !opts.metrics {
+	if !opts.infinite && !opts.perft {
 		timeAllocation = e.calculateTimeLimit(opts)
 		if timeAllocation.Hard > 0 {
 			ctx, cancel = context.WithTimeout(context.Background(), timeAllocation.Hard)
 		}
+	}
+
+	if opts.perft {
+		e.runPerft(context.Background(), opts.depth)
+		return
 	}
 
 	if ctx == nil {
@@ -239,6 +245,11 @@ func (e *Engine) handleGo(args []string) {
 		defer cancel()
 		e.runSearch(ctx, opts, timeAllocation)
 	})
+}
+
+// helper function to run perft on position
+func (e *Engine) runPerft(ctx context.Context, depth int) {
+	board.PerftDivide(ctx, &e.board, depth)
 }
 
 // helper function to run search and evaluation
