@@ -106,3 +106,4 @@ bestmove a2a3
 | `movestogo <n>`             | Moves remaining until the next time control      |
 | `infinite`                  | Search until an explicit `stop` command          |
 | `nodes`                     | Limit search by node count                       |
+| `perft`                     | Performs perft test                              |
