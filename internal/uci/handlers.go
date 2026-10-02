@@ -16,7 +16,14 @@ import (
 func (e *Engine) handleUCI() {
 	e.writeLine(fmt.Sprintf("id name ranga %s", e.version))
 	e.writeLine("id author nchandur")
+	e.options.Print()
 	e.writeLine("uciok")
+}
+
+// handles setoption command
+func (e *Engine) handleSetOption(command []string) {
+	payload := strings.Join(command, " ")
+	e.options.Set(payload)
 }
 
 // handles quit command
