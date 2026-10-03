@@ -9,7 +9,6 @@ import (
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -57,45 +56,21 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	e.searcher = search.NewSearcher(nn, 24)
 
 	e.options.Register(Option{
-		Name:       "FutilityMargin1",
+		Name:       "Hash",
 		Type:       "spin",
-		DefaultVal: fmt.Sprintf("%d", search.FutilityMargin[1]),
-		Min:        20,
-		Max:        250,
-		Apply: func(val string) error {
-			if v, err := strconv.Atoi(val); err == nil {
-				search.FutilityMargin[1] = v
-			}
-			return nil
-		},
+		DefaultVal: "24",
+		Min:        24,
+		Max:        24,
+		Apply:      nil,
 	})
 
 	e.options.Register(Option{
-		Name:       "FutilityMargin2",
+		Name:       "Threads",
 		Type:       "spin",
-		DefaultVal: fmt.Sprintf("%d", search.FutilityMargin[2]),
-		Min:        100,
-		Max:        600,
-		Apply: func(val string) error {
-			if v, err := strconv.Atoi(val); err == nil {
-				search.FutilityMargin[2] = v
-			}
-			return nil
-		},
-	})
-
-	e.options.Register(Option{
-		Name:       "FutilityMargin3",
-		Type:       "spin",
-		DefaultVal: fmt.Sprintf("%d", search.FutilityMargin[3]),
-		Min:        200,
-		Max:        1000,
-		Apply: func(val string) error {
-			if v, err := strconv.Atoi(val); err == nil {
-				search.FutilityMargin[3] = v
-			}
-			return nil
-		},
+		DefaultVal: "1",
+		Min:        1,
+		Max:        1,
+		Apply:      nil,
 	})
 
 	e.registerCommands()
