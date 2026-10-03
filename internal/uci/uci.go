@@ -28,6 +28,7 @@ type Engine struct {
 	board    board.Board
 	searcher *search.Searcher
 	commands map[string]Handler
+	options  *OptionRegistry
 	version  string
 }
 
@@ -38,6 +39,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		in:       bufio.NewScanner(in),
 		out:      out,
 		commands: make(map[string]Handler),
+		options:  NewOptionRegistry(),
 		version:  version,
 	}
 
@@ -53,6 +55,24 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	nn.Reset(&e.board)
 	e.searcher = search.NewSearcher(nn, 24)
 
+	e.options.Register(Option{
+		Name:       "Hash",
+		Type:       "spin",
+		DefaultVal: "24",
+		Min:        24,
+		Max:        24,
+		Apply:      nil,
+	})
+
+	e.options.Register(Option{
+		Name:       "Threads",
+		Type:       "spin",
+		DefaultVal: "1",
+		Min:        1,
+		Max:        1,
+		Apply:      nil,
+	})
+
 	e.registerCommands()
 
 	return e
@@ -67,6 +87,8 @@ func (e *Engine) registerCommands() {
 	e.commands["isready"] = func([]string) {
 		e.handleIsReady()
 	}
+
+	e.commands["setoption"] = e.handleSetOption
 
 	e.commands["show"] = func([]string) {
 		e.handleShow()
