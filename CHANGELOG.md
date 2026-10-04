@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.14] - 2026-10-04
 
 ### Added
 * feat(uci): add `setoption` command [[#57](https://github.com/nchandur/ranga/pull/57)]
