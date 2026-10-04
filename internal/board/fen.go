@@ -17,8 +17,8 @@ func (b *Board) ParseFEN(fen string) error {
 
 	// checks if FEN strings contain exactly 6 space-separated fields
 	fields := strings.Fields(fen)
-	if len(fields) < 4 {
-		return fmt.Errorf("failed to parse FEN: expected at least 4 fields, got %d", len(fields))
+	if len(fields) != 6 {
+		return fmt.Errorf("failed to parse FEN: expected 6 fields, got %d", len(fields))
 	}
 
 	b.Clear()

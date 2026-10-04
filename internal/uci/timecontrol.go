@@ -11,7 +11,7 @@ const MoveOverhead int = 50
 type goOptions struct {
 	depth     int
 	infinite  bool
-	metrics   bool
+	perft     bool
 	wtime     int
 	btime     int
 	winc      int

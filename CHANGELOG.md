@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.14] - 2026-10-04
+
+### Added
+* feat(uci): add `setoption` command [[#57](https://github.com/nchandur/ranga/pull/57)]
+* feat(search): add futility pruning [[#56](https://github.com/nchandur/ranga/pull/56)]
+* feat(uci): add `perft` command to `go` [[#51](https://github.com/nchandur/ranga/pull/51)]
+
 ## [v1.13] - 2026-09-29
 
 ### Added
