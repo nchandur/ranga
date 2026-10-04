@@ -30,3 +30,5 @@ go.work.sum
 data/
 bin/
 .task/
+.DS_Store
+ranga*
