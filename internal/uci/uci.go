@@ -61,9 +61,10 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		Type:       "spin",
 		DefaultVal: "16",
 		Min:        1,
-		Max:        512,
+		Max:        2048,
 		Apply: func(value string) error {
 			if v, err := strconv.Atoi(value); err == nil {
+				v := min(v, 2048)
 				e.searcher.TT.Resize(v)
 			}
 			return nil
