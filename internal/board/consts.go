@@ -1,8 +1,5 @@
 package board
 
-// random seed
-const SEED uint64 = 282000
-
 // file exclusion masks used to prevent wrapped across board edges
 const (
 	NotAFile  BitBoard = 0xfefefefefefefefe // masks out file A

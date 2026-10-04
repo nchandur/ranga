@@ -1,6 +1,7 @@
 package nnue
 
 import (
+	"fmt"
 	"ranga/internal/board"
 )
 
@@ -108,4 +109,64 @@ func (n *NNUE) removePiece(piece board.Piece, sq board.Square) {
 	bIdx := FeatureIndex(false, !isWhite, piece, sq)
 	n.acc.White.RemoveFeature(&n.Network, wIdx)
 	n.acc.Black.RemoveFeature(&n.Network, bIdx)
+}
+
+// PrintDebugInfo prints the internal state of the NNUE for a given position
+func (n *NNUE) PrintDebugInfo(b *board.Board, name string) {
+	fmt.Printf("### Debugging: %s\n", name)
+
+	// 1. File IO (Biases)
+	fmt.Printf("First 16 HL biases: ")
+	for i := 0; i < 16; i++ {
+		fmt.Printf("%d ", n.FeatureBias.Values[i])
+	}
+	fmt.Printf("\nOutput neuron bias: %d\n", n.OutputBias)
+
+	// 2. Active Indices
+	var wIndices, bIndices []int
+	for sq := range board.Square(64) {
+		piece := b.Mailbox[sq]
+		if piece == board.Empty {
+			continue
+		}
+		isWhite := int(piece) <= 5
+		wIdx := FeatureIndex(true, isWhite, piece, sq)
+		bIdx := FeatureIndex(false, !isWhite, piece, sq)
+		wIndices = append(wIndices, wIdx)
+		bIndices = append(bIndices, bIdx)
+	}
+	fmt.Printf("Active indices (White): %v\n", wIndices)
+	fmt.Printf("Active indices (Black): %v\n", bIndices)
+
+	// 3. Accumulator Values (Pre-activation)
+	fmt.Printf("First 16 accumulator values (White): ")
+	for i := 0; i < 16; i++ {
+		fmt.Printf("%d ", n.acc.White.Values[i])
+	}
+	fmt.Printf("\nFirst 16 accumulator values (Black): ")
+	for i := 0; i < 16; i++ {
+		fmt.Printf("%d ", n.acc.Black.Values[i])
+	}
+	fmt.Println()
+
+	// 4. Raw Unscaled Eval (before OutputBias and Scaling)
+	stmAcc := &n.acc.White
+	ntmAcc := &n.acc.Black
+	if b.Side == board.Black {
+		stmAcc = &n.acc.Black
+		ntmAcc = &n.acc.White
+	}
+
+	unscaled := int32(0)
+	for i := range HiddenSize {
+		unscaled += screlu(stmAcc.Values[i]) * int32(n.OutputWeights[i])
+	}
+	for i := range HiddenSize {
+		unscaled += screlu(ntmAcc.Values[i]) * int32(n.OutputWeights[HiddenSize+i])
+	}
+	fmt.Printf("Unscaled eval without output bias: %d\n", unscaled)
+
+	// 5. Final Evaluation
+	finalEval := n.Evaluate(b)
+	fmt.Printf("Final evaluation: %d\n\n", finalEval)
 }

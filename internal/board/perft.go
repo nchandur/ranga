@@ -44,10 +44,12 @@ func Perft(ctx context.Context, b *Board, depth int) int64 {
 	return nodes
 }
 
-func PerftDivide(ctx context.Context, b *Board, depth int) int64 {
+func PerftDivide(b *Board, depth int) int64 {
 	if depth == 0 {
 		return 1
 	}
+
+	ctx := context.Background()
 
 	var totalNodes int64 = 0
 	var list MoveList
@@ -70,6 +72,6 @@ func PerftDivide(ctx context.Context, b *Board, depth int) int64 {
 		fmt.Println(move, ":", nodes)
 	}
 
-	fmt.Println("\nNodes Searched:", totalNodes)
+	fmt.Println("\nTotal nodes:", totalNodes)
 	return totalNodes
 }

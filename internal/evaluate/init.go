@@ -1,7 +1,8 @@
-package hce
+package evaluate
 
 import (
 	"ranga/internal/board"
+	"ranga/internal/evaluate/hce"
 )
 
 func initEvaluationMasks() {
@@ -32,7 +33,7 @@ func initEvaluationMasks() {
 	for rank := range 8 {
 		for file := range 8 {
 			sq := board.FRtoSq(rank, file)
-			FileMasks[sq] |= setFileRankMask(-1, file)
+			hce.FileMasks[sq] |= setFileRankMask(-1, file)
 		}
 	}
 
@@ -40,7 +41,7 @@ func initEvaluationMasks() {
 	for rank := range 8 {
 		for file := range 8 {
 			sq := board.FRtoSq(rank, file)
-			RankMasks[sq] |= setFileRankMask(rank, -1)
+			hce.RankMasks[sq] |= setFileRankMask(rank, -1)
 		}
 	}
 
@@ -48,8 +49,8 @@ func initEvaluationMasks() {
 	for rank := range 8 {
 		for file := range 8 {
 			sq := board.FRtoSq(rank, file)
-			IsolatedMasks[sq] |= setFileRankMask(file-1, -1)
-			IsolatedMasks[sq] |= setFileRankMask(file+1, -1)
+			hce.IsolatedMasks[sq] |= setFileRankMask(file-1, -1)
+			hce.IsolatedMasks[sq] |= setFileRankMask(file+1, -1)
 		}
 	}
 
@@ -59,12 +60,12 @@ func initEvaluationMasks() {
 		for file := range 8 {
 			sq := board.FRtoSq(rank, file)
 
-			WhitePassedPawnMasks[sq] |= setFileRankMask(-1, file-1)
-			WhitePassedPawnMasks[sq] |= setFileRankMask(-1, file)
-			WhitePassedPawnMasks[sq] |= setFileRankMask(-1, file+1)
+			hce.WhitePassedPawnMasks[sq] |= setFileRankMask(-1, file-1)
+			hce.WhitePassedPawnMasks[sq] |= setFileRankMask(-1, file)
+			hce.WhitePassedPawnMasks[sq] |= setFileRankMask(-1, file+1)
 
 			for i := range 8 - rank {
-				WhitePassedPawnMasks[sq] &= ^RankMasks[(7-i)*8+file]
+				hce.WhitePassedPawnMasks[sq] &= ^hce.RankMasks[(7-i)*8+file]
 			}
 
 		}
@@ -74,12 +75,12 @@ func initEvaluationMasks() {
 		for file := range 8 {
 			sq := board.FRtoSq(rank, file)
 
-			BlackPassedPawnMasks[sq] |= setFileRankMask(-1, file-1)
-			BlackPassedPawnMasks[sq] |= setFileRankMask(-1, file)
-			BlackPassedPawnMasks[sq] |= setFileRankMask(-1, file+1)
+			hce.BlackPassedPawnMasks[sq] |= setFileRankMask(-1, file-1)
+			hce.BlackPassedPawnMasks[sq] |= setFileRankMask(-1, file)
+			hce.BlackPassedPawnMasks[sq] |= setFileRankMask(-1, file+1)
 
 			for i := range rank + 1 {
-				BlackPassedPawnMasks[sq] &= ^RankMasks[i*8+file]
+				hce.BlackPassedPawnMasks[sq] &= ^hce.RankMasks[i*8+file]
 			}
 
 		}
