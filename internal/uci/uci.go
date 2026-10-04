@@ -54,14 +54,14 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	nn := &nnue.NNUE{Network: *net}
 
 	nn.Reset(&e.board)
-	e.searcher = search.NewSearcher(nn, 24)
+	e.searcher = search.NewSearcher(nn, 16)
 
 	e.options.Register(Option{
 		Name:       "Hash",
 		Type:       "spin",
-		DefaultVal: "24",
-		Min:        24,
-		Max:        24,
+		DefaultVal: "16",
+		Min:        1,
+		Max:        512,
 		Apply: func(value string) error {
 			if v, err := strconv.Atoi(value); err == nil {
 				e.searcher.TT.Resize(v)
