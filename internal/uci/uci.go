@@ -9,6 +9,7 @@ import (
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -61,7 +62,12 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		DefaultVal: "24",
 		Min:        24,
 		Max:        24,
-		Apply:      nil,
+		Apply: func(value string) error {
+			if v, err := strconv.Atoi(value); err == nil {
+				e.searcher.TT.Resize(v)
+			}
+			return nil
+		},
 	})
 
 	e.options.Register(Option{

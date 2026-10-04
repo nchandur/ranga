@@ -1,7 +1,6 @@
 package search
 
 import (
-	"fmt"
 	"math/bits"
 	"ranga/internal/board"
 	"unsafe"
@@ -146,6 +145,4 @@ func (tt *TranspositionTable) Resize(size int) {
 
 	tt.Entries = make([]TranspositionTableEntry, numEntries)
 	tt.Length = numEntries
-
-	fmt.Printf("TT Resized: %d MB allocated, %d entries.\n", size, numEntries)
 }
