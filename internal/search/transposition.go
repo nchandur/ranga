@@ -1,6 +1,8 @@
 package search
 
 import (
+	"fmt"
+	"math/bits"
 	"ranga/internal/board"
 	"unsafe"
 )
@@ -129,4 +131,21 @@ func (tt *TranspositionTable) ProbeMove(key uint64) board.Move {
 	}
 
 	return board.NOMOVE
+}
+
+// allocates a new TT based on the requested size in MB
+func (tt *TranspositionTable) Resize(size int) {
+	size = max(size, 1)
+	sizeInBytes := uint64(size) * 1024 * 1024
+
+	entrySize := uint64(unsafe.Sizeof(TranspositionTableEntry{}))
+	maxEntries := sizeInBytes / entrySize
+
+	powerOfTwoIndex := bits.Len64(maxEntries) - 1
+	numEntries := int(uint64(1) << powerOfTwoIndex)
+
+	tt.Entries = make([]TranspositionTableEntry, numEntries)
+	tt.Length = numEntries
+
+	fmt.Printf("TT Resized: %d MB allocated, %d entries.\n", size, numEntries)
 }
