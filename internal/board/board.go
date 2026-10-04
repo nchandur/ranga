@@ -343,19 +343,19 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 func (b *Board) ParseMove(move string) Move {
 
 	if move[1] > '8' || move[1] < '1' {
-		return NOMOVE
+		return Move(0)
 	}
 
 	if move[3] > '8' || move[3] < '1' {
-		return NOMOVE
+		return Move(0)
 	}
 
 	if move[0] > 'h' || move[0] < 'a' {
-		return NOMOVE
+		return Move(0)
 	}
 
 	if move[2] > 'h' || move[2] < 'a' {
-		return NOMOVE
+		return Move(0)
 	}
 
 	from := FRtoSq(int('8'-move[1]), int(move[0]-'a'))
@@ -387,7 +387,7 @@ func (b *Board) ParseMove(move string) Move {
 		}
 
 	}
-	return NOMOVE
+	return Move(0)
 }
 
 func (b *Board) Print() {

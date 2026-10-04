@@ -44,6 +44,8 @@ func (b BitBoard) String() string {
 	fmt.Fprintf(&builder, "\n")
 
 	for rank := range 8 {
+		fmt.Fprintf(&builder, "  %d ", 8-rank)
+
 		for file := range 8 {
 			square := Square((rank * 8) + file)
 
@@ -59,6 +61,8 @@ func (b BitBoard) String() string {
 		}
 		fmt.Fprintf(&builder, "\n")
 	}
+
+	fmt.Fprintf(&builder, "\n     a  b  c  d  e  f  g  h\n\n")
 	fmt.Fprintf(&builder, "Value: 0x%x\n\n", uint64(b))
 	return builder.String()
 }

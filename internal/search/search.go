@@ -116,15 +116,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	}
 
 	staticEval := s.Evaluate(b)
-	pvNode := beta-alpha > 1
 
 	// null move pruning (pass turn to attempt early fail-high)
 	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, inCheck); prune {
 		return score
 	}
-
-	// futility pruning (discard moves with no potential of improving alpha)
-	isFP := s.isFutile(alpha, depth, staticEval, inCheck, pvNode)
 
 	legalMoves := 0
 	ml := board.NewMoveList()
@@ -148,13 +144,6 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	searchedQuiets := localArray[:0]
 
 	for _, move := range ml.Moves[:ml.Count] {
-
-		// check move futility
-		if isFP &&
-			movesSearched > 0 && // search at least one move
-			!move.IsCapture() && move.Promoted() == board.Empty {
-			continue
-		}
 
 		state := b.Preserve()
 
@@ -411,13 +400,4 @@ func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, de
 		return nullScore, true
 	}
 	return 0, false
-}
-
-// helper function for futlitity pruning
-func (s *Searcher) isFutile(alpha, depth, staticEval int, inCheck, pvNode bool) bool {
-	if depth > 3 || inCheck || pvNode || alpha <= -MATESCORE+MAX_PLY || alpha >= MATESCORE-MAX_PLY {
-		return false
-	}
-
-	return staticEval+FutilityMargin[depth] <= alpha
 }

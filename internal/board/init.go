@@ -61,28 +61,25 @@ func initSliderAttacks(isBishop bool) {
 // populates the Zobrist hashing tables with 64-bit pseudo-random numbers
 func initHashKeys() {
 
-	pcg := rand.NewPCG(SEED, 0)
-	r := rand.New(pcg)
-
 	// piece keys
 	for pce := WP; pce <= BK; pce++ {
 		for sq := range 64 {
-			PieceKeys[pce][sq] = r.Uint64()
+			PieceKeys[pce][sq] = rand.Uint64()
 		}
 	}
 
 	// castle keys
 	for pce := range 16 {
-		CastleKeys[pce] = r.Uint64()
+		CastleKeys[pce] = rand.Uint64()
 	}
 
 	// enpassant keys
 	for sq := range 64 {
-		EnpassantKeys[sq] = r.Uint64()
+		EnpassantKeys[sq] = rand.Uint64()
 	}
 
 	// side keys
-	SideKey = r.Uint64()
+	SideKey = rand.Uint64()
 
 }
 
