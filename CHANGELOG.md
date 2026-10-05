@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+* feat(search): option enabled to resize transposition table [[#56](https://github.com/nchandur/ranga/pull/65)]
 
 ## [v1.14] - 2026-10-04
 
