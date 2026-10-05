@@ -64,7 +64,7 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
-	if b.Ply > MAX_PLY-1 {
+	if b.Ply >= MAX_PLY-1 || b.Repetition.Idx >= len(b.Repetition.Table)-1 {
 		return s.Evaluate(b)
 	}
 
