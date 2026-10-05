@@ -118,6 +118,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	staticEval := s.Evaluate(b)
 	pvNode := beta-alpha > 1
 
+	// reverse futility pruning
+	if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
+		return score
+	}
+
 	// null move pruning (pass turn to attempt early fail-high)
 	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, inCheck); prune {
 		return score
@@ -420,4 +425,18 @@ func (s *Searcher) isFutile(alpha, depth, staticEval int, inCheck, pvNode bool) 
 	}
 
 	return staticEval+FutilityMargin[depth] <= alpha
+}
+
+// helper function for reverse futility pruning
+func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, isPVNode bool) (int, bool) {
+
+	if depth >= 8 || inCheck || isPVNode || beta <= -MATESCORE+MAX_PLY || beta >= MATESCORE-MAX_PLY {
+		return 0, false
+	}
+
+	if staticEval-(150*depth) >= beta {
+		return staticEval, true
+	}
+
+	return 0, false
 }
