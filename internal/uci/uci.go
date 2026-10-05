@@ -57,6 +57,15 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	e.searcher = search.NewSearcher(nn, 16)
 
 	e.options.Register(Option{
+		Name:       "Threads",
+		Type:       "spin",
+		DefaultVal: "1",
+		Min:        1,
+		Max:        1,
+		Apply:      nil,
+	})
+
+	e.options.Register(Option{
 		Name:       "Hash",
 		Type:       "spin",
 		DefaultVal: "16",
@@ -72,12 +81,14 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	})
 
 	e.options.Register(Option{
-		Name:       "Threads",
-		Type:       "spin",
-		DefaultVal: "1",
-		Min:        1,
-		Max:        1,
-		Apply:      nil,
+		Name: "Clear Hash",
+		Type: "button",
+		Apply: func(value string) error {
+			if value == "true" {
+				e.searcher.TT.Clear()
+			}
+			return nil
+		},
 	})
 
 	e.registerCommands()
