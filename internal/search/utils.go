@@ -1,6 +1,8 @@
 package search
 
-import "ranga/internal/board"
+import (
+	"ranga/internal/board"
+)
 
 // update history heuristic with gravity
 func (s *Searcher) updateHistory(move board.Move, bonus int) {

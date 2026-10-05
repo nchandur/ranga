@@ -132,4 +132,25 @@ func TestTranspositionTable(t *testing.T) {
 			t.Errorf("expected NOENTRY after Clear, got %d", score)
 		}
 	})
+	t.Run("Resize allocates new capacity", func(t *testing.T) {
+		tt := NewTranspositionTable(1)
+		oldLength := tt.Length
+		tt.Resize(2)
+
+		if tt.Length <= oldLength {
+			t.Errorf("expected resized length to be greater than old length, got %d <= %d", tt.Length, oldLength)
+		}
+		if (tt.Length & (tt.Length - 1)) != 0 {
+			t.Errorf("Resized Length %d is not a power of two", tt.Length)
+		}
+		if len(tt.Entries) != tt.Length {
+			t.Errorf("slice capacity mismatch after resize: len=%d, Length=%d", len(tt.Entries), tt.Length)
+		}
+
+		key := uint64(0x123456789ABCDEF0)
+		missScore := tt.Probe(-1000, 1000, 2, 4, key)
+		if missScore != NOENTRY {
+			t.Errorf("expected NOENTRY on probe after resize, got %d", missScore)
+		}
+	})
 }
