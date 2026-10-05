@@ -2,22 +2,29 @@ version: '3'
 
 vars:
   VERSION: "1.15"
-  BINARY_NAME: "ranga-{{.VERSION}}"
+  BIN_NAME: "ranga-{{.VERSION}}"
   BIN_DIR: "bin"
 
 tasks:
   build:
     desc: Build the Go binary for the engine
     cmds:
-      - go build -ldflags="-X main.version={{.VERSION}}" -o {{.BIN_DIR}}/{{.BINARY_NAME}} ./cmd
-      - chmod +x {{.BIN_DIR}}/{{.BINARY_NAME}}
+      - go build -ldflags="-X main.version={{.VERSION}}" -o {{.BIN_DIR}}/{{.BIN_NAME}} ./cmd
+      - chmod +x {{.BIN_DIR}}/{{.BIN_NAME}}
 
   run:
     desc: Build and execute the engine
     deps:
       - build
     cmds:
-      - ./{{.BIN_DIR}}/{{.BINARY_NAME}}
+      - ./{{.BIN_DIR}}/{{.BIN_NAME}}
+
+  bench:
+    desc: Run bench command on binary
+    deps:
+      - build
+    cmds:
+      - ./{{.BIN_DIR}}/{{.BIN_NAME}} bench
 
   test:
     desc: Run all tests in the repository
@@ -33,7 +40,7 @@ tasks:
   clean:
     desc: Remove binaries and clean the Go cache
     cmds:
-      - rm -rf {{.BIN_DIR}}/{{.BINARY_NAME}}
+      - rm -rf {{.BIN_DIR}}/{{.BIN_NAME}}
       - go clean -cache -testcache -modcache
 
   build-docker:
