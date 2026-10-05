@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-* feat(search): option enabled to resize transposition table [[#56](https://github.com/nchandur/ranga/pull/65)]
+* feat(search): added reverse futility pruning [[#66](https://github.com/nchandur/ranga/pull/66)]
+* feat(search): option enabled to resize transposition table [[#65](https://github.com/nchandur/ranga/pull/65)]
 
 ## [v1.14] - 2026-10-04
 
