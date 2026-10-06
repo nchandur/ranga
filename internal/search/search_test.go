@@ -39,9 +39,9 @@ func (m *mockEvaluator) Evaluate(b *board.Board) int {
 
 func TestSearcher(t *testing.T) {
 	eval := &mockEvaluator{}
-
+	tt := NewTranspositionTable(16)
 	t.Run("Finds mate in 1", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 4")
 
@@ -56,7 +56,7 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Stalemate evaluates to 0", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("k7/2Q5/1K6/8/8/8/8/8 b - - 0 1")
 
@@ -66,7 +66,7 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Fifty-move rule evaluates to 0", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 50")
 		b.Ply = 1
@@ -77,7 +77,7 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("IsRepetition detects repeated position keys", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
@@ -102,7 +102,7 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Beta cutoff records killer move and history bonus", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("8/8/8/8/4k3/8/4P3/4K3 w - - 0 1")
 		beta := -50000
@@ -124,7 +124,7 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Search stops promptly when context is cancelled", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
@@ -140,7 +140,7 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("NodeLimit terminates search traversal", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 

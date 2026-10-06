@@ -21,11 +21,11 @@ type Searcher struct {
 }
 
 // instantiates new searcher
-func NewSearcher(eval evaluate.Evaluator, ttSize int) *Searcher {
+func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable) *Searcher {
 	s := Searcher{
 		Evaluator: eval,
 		PV:        PVTable{},
-		TT:        NewTranspositionTable(ttSize),
+		TT:        tt,
 		Killers:   [2][MAX_PLY]board.Move{},
 		History:   [12][64]int{},
 		Nodes:     0,
