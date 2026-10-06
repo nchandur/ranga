@@ -64,7 +64,7 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
-	if b.Ply > MAX_PLY-1 {
+	if b.Ply >= MAX_PLY-1 || b.Repetition.Idx >= len(b.Repetition.Table)-1 {
 		return s.Evaluate(b)
 	}
 
@@ -117,6 +117,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	staticEval := s.Evaluate(b)
 	pvNode := beta-alpha > 1
+
+	// reverse futility pruning
+	if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
+		return score
+	}
 
 	// null move pruning (pass turn to attempt early fail-high)
 	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, inCheck); prune {
@@ -420,4 +425,18 @@ func (s *Searcher) isFutile(alpha, depth, staticEval int, inCheck, pvNode bool) 
 	}
 
 	return staticEval+FutilityMargin[depth] <= alpha
+}
+
+// helper function for reverse futility pruning
+func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, isPVNode bool) (int, bool) {
+
+	if depth >= 8 || inCheck || isPVNode || beta <= -MATESCORE+MAX_PLY || beta >= MATESCORE-MAX_PLY {
+		return 0, false
+	}
+
+	if staticEval-(150*depth) >= beta {
+		return staticEval, true
+	}
+
+	return 0, false
 }

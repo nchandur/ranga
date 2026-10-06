@@ -9,6 +9,7 @@ import (
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -53,16 +54,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	nn := &nnue.NNUE{Network: *net}
 
 	nn.Reset(&e.board)
-	e.searcher = search.NewSearcher(nn, 24)
-
-	e.options.Register(Option{
-		Name:       "Hash",
-		Type:       "spin",
-		DefaultVal: "24",
-		Min:        24,
-		Max:        24,
-		Apply:      nil,
-	})
+	e.searcher = search.NewSearcher(nn, 16)
 
 	e.options.Register(Option{
 		Name:       "Threads",
@@ -71,6 +63,32 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		Min:        1,
 		Max:        1,
 		Apply:      nil,
+	})
+
+	e.options.Register(Option{
+		Name:       "Hash",
+		Type:       "spin",
+		DefaultVal: "16",
+		Min:        1,
+		Max:        2048,
+		Apply: func(value string) error {
+			if v, err := strconv.Atoi(value); err == nil {
+				v := min(v, 2048)
+				e.searcher.TT.Resize(v)
+			}
+			return nil
+		},
+	})
+
+	e.options.Register(Option{
+		Name: "Clear Hash",
+		Type: "button",
+		Apply: func(value string) error {
+			if value == "true" {
+				e.searcher.TT.Clear()
+			}
+			return nil
+		},
 	})
 
 	e.registerCommands()
