@@ -9,7 +9,7 @@ tasks:
   build:
     desc: Build the Go binary for the engine
     cmds:
-      - go build -ldflags="-X main.version={{.VERSION}}" -o {{.BIN_DIR}}/{{.BIN_NAME}} ./cmd
+      - go build -race --ldflags="-X main.version={{.VERSION}}" -o {{.BIN_DIR}}/{{.BIN_NAME}} ./cmd
       - chmod +x {{.BIN_DIR}}/{{.BIN_NAME}}
 
   run:

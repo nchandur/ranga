@@ -10,7 +10,7 @@ const (
 	FULL_DEPTH_MOVES int = 4       // number of moves evaluated at full depth before LMR
 	REDUCTION_LIMIT  int = 3       // minimum remaining search depth required to trigger LMR
 	BIG_DELTA        int = 200
-	DEFAULT_TT_SIZE  int = 16
+	DEFAULT_TT_SIZE  int = 128
 )
 
 // assigns higher priorities to captures where lower-value piece captures higher-value piece,

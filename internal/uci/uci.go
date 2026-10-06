@@ -65,7 +65,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		Type:       "spin",
 		DefaultVal: "1",
 		Min:        1,
-		Max:        512,
+		Max:        8,
 		Apply: func(value string) error {
 			if v, err := strconv.Atoi(value); err == nil {
 				e.pauseSearch()
