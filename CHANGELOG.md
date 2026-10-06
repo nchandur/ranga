@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## Fixed
+* fix(uci): prevent clear and resize during seach [[#69](https://github.com/nchandur/ranga/pull/69)]
+
 ## [v1.15] - 2026-10-05
 * feat(search): added reverse futility pruning [[#66](https://github.com/nchandur/ranga/pull/66)]
 * feat(search): option enabled to resize transposition table [[#65](https://github.com/nchandur/ranga/pull/65)]
