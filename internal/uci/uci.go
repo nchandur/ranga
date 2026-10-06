@@ -74,7 +74,6 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		Apply: func(value string) error {
 			if v, err := strconv.Atoi(value); err == nil {
 				v := min(v, 2048)
-				e.pauseSearch()
 				e.searcher.TT.Resize(v)
 			}
 			return nil
@@ -86,7 +85,6 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		Type: "button",
 		Apply: func(value string) error {
 			if value == "true" {
-				e.pauseSearch()
 				e.searcher.TT.Clear()
 			}
 			return nil
