@@ -41,6 +41,14 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable) *Searcher {
 	return &s
 }
 
+func (s *Searcher) NewHelper() *Searcher {
+	var eval evaluate.Evaluator = s.Evaluator
+	if s.NN != nil {
+		eval = s.NN.Clone()
+	}
+	return NewSearcher(eval, s.TT)
+}
+
 // clears searcher state
 func (s *Searcher) Reset() {
 	s.PV.Clear()
