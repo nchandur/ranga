@@ -3,6 +3,7 @@ package search
 import (
 	"math/bits"
 	"ranga/internal/board"
+	"sync/atomic"
 	"unsafe"
 )
 
@@ -14,15 +15,20 @@ const (
 
 )
 
+// bits 0-31 move | 32-39 depth | 40-41 flag | 42-63 score (signed, 22 bits)
+const (
+	depthShift = 32
+	flagShift  = 40
+	scoreShift = 42
+	scoreMask  = 1<<22 - 1
+)
+
 const NOENTRY int = 99999 // indicate cache miss or uninitialized entry
 
 // holds tranposition table entries
 type TranspositionTableEntry struct {
-	board.Move
-	Score int
-	Depth int
-	Flag  int
-	Key   uint64
+	keyXor atomic.Uint64
+	data   atomic.Uint64
 }
 
 // transposition table
@@ -59,36 +65,29 @@ func (tt *TranspositionTable) Clear() {
 
 // checks transposition table for previously evaluated position
 func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int {
+	d, ok := tt.load(key)
+	if !ok {
+		return NOENTRY
+	}
 
-	idx := key % uint64(tt.Length)
+	score := d.score()
 
-	entry := (*tt).Entries[idx]
+	if score < -MATESCORE {
+		score += ply
+	}
 
-	if entry.Key == key {
+	if score > MATESCORE {
+		score -= ply
+	}
 
-		score := entry.Score
-
-		if score < -MATESCORE {
-			score += ply
-		}
-
-		if score > MATESCORE {
-			score -= ply
-		}
-
-		if entry.Depth >= depth {
-			if entry.Flag == FEXACT {
-				return score
-			}
-
-			if (entry.Flag == FALPHA) && (score <= alpha) {
-				return alpha
-			}
-
-			if (entry.Flag == FBETA) && (score >= beta) {
-				return beta
-			}
-
+	if d.depth() >= depth {
+		switch flag := d.flag(); {
+		case flag == FEXACT:
+			return score
+		case flag == FALPHA && score <= alpha:
+			return alpha
+		case flag == FBETA && score >= beta:
+			return beta
 		}
 	}
 
@@ -97,39 +96,34 @@ func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int
 
 // saves or updates entry in transposition table
 func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, move board.Move) {
+	e := &tt.Entries[key%uint64(tt.Length)]
 
-	entry := &(tt.Entries[key%uint64(tt.Length)])
-
-	if entry.Key != 0 && entry.Depth > depth {
+	oldD := e.data.Load()
+	oldKey := e.keyXor.Load() ^ oldD
+	if oldKey != 0 && ttData(oldD).depth() > depth {
 		return
 	}
 
 	if score < -MATESCORE {
 		score -= ply
 	}
-
 	if score > MATESCORE {
 		score += ply
 	}
 
-	entry.Key = key
-	entry.Score = score
-	entry.Flag = flag
-	entry.Depth = depth
-	entry.Move = move
-
+	d := uint64(packData(move, score, depth, flag))
+	e.data.Store(d)
+	e.keyXor.Store(key ^ d)
 }
 
 // returns move stored in transposition table
+// returns move stored in transposition table
 func (tt *TranspositionTable) ProbeMove(key uint64) board.Move {
-
-	entry := &tt.Entries[key%uint64(tt.Length)]
-
-	if entry.Key == key {
-		return entry.Move
+	d, ok := tt.load(key)
+	if !ok {
+		return board.NOMOVE
 	}
-
-	return board.NOMOVE
+	return d.move()
 }
 
 // allocates a new TT based on the requested size in MB
@@ -146,3 +140,25 @@ func (tt *TranspositionTable) Resize(size int) {
 	tt.Entries = make([]TranspositionTableEntry, numEntries)
 	tt.Length = numEntries
 }
+
+// returns the entry's data if the slot holds this key
+func (tt *TranspositionTable) load(key uint64) (ttData, bool) {
+	e := &tt.Entries[key%uint64(tt.Length)]
+	d := e.data.Load()
+	k := e.keyXor.Load()
+	return ttData(d), k^d == key
+}
+
+type ttData uint64
+
+func packData(move board.Move, score, depth, flag int) ttData {
+	return ttData(uint64(uint32(move)) |
+		uint64(uint8(depth))<<depthShift |
+		uint64(flag&3)<<flagShift |
+		(uint64(score)&scoreMask)<<scoreShift)
+}
+
+func (d ttData) move() board.Move { return board.Move(uint32(d)) }
+func (d ttData) depth() int       { return int(uint8(d >> depthShift)) }
+func (d ttData) flag() int        { return int(d>>flagShift) & 3 }
+func (d ttData) score() int       { return int(int64(d) >> scoreShift) }

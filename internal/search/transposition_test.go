@@ -97,12 +97,10 @@ func TestTranspositionTable(t *testing.T) {
 		storePly := 3
 		tt.Store(rawMate, 4, storePly, FEXACT, key, sampleMove)
 
-		idx := key % uint64(tt.Length)
-		if tt.Entries[idx].Score != rawMate+storePly {
-			t.Errorf("Stored mate score mismatch: got %d, want %d",
-				tt.Entries[idx].Score, rawMate+storePly)
+		e := &tt.Entries[key%uint64(tt.Length)]
+		if got := ttData(e.data.Load()).score(); got != rawMate+storePly {
+			t.Errorf("Stored mate score mismatch: got %d, want %d", got, rawMate+storePly)
 		}
-
 		probePly := 1
 		gotScore := tt.Probe(-INFINITY, INFINITY, probePly, 4, key)
 		wantScore := (rawMate + storePly) - probePly

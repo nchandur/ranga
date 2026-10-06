@@ -47,8 +47,8 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 
 // orders the legal moves in given move list
 func (s *Searcher) sortMove(b *board.Board, ml *board.MoveList, ttMove board.Move) {
-
-	score := make([]int, ml.Count)
+	var scoreBuf [256]int
+	score := scoreBuf[:ml.Count]
 	for i := 0; i < ml.Count; i++ {
 		score[i] = s.scoreMove(b, ml.Moves[i], ttMove)
 	}
