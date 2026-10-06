@@ -1,8 +1,8 @@
 package search
 
 import (
-	"context"
 	"ranga/internal/board"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -40,13 +40,14 @@ func (m *mockEvaluator) Evaluate(b *board.Board) int {
 func TestSearcher(t *testing.T) {
 	eval := &mockEvaluator{}
 	tt := NewTranspositionTable(DEFAULT_TT_SIZE)
-	
+
 	t.Run("Finds mate in 1", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN("r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 4")
 
-		move, score := s.Search(context.Background(), &b, 2)
+		move, score := s.Search(&b, 2)
 
 		wantMove := board.NewMove(board.F3, board.F7, board.WQ, board.Empty, true, false, false, false)
 		if move != wantMove {
@@ -57,28 +58,31 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Stalemate evaluates to 0", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN("k7/2Q5/1K6/8/8/8/8/8 b - - 0 1")
 
-		score := s.AlphaBeta(context.Background(), &b, -INFINITY, INFINITY, 1)
+		score := s.AlphaBeta(&b, -INFINITY, INFINITY, 1)
 		if score != 0 {
 			t.Errorf("expected stalemate score 0, got %d", score)
 		}
 	})
 	t.Run("Fifty-move rule evaluates to 0", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 50")
 		b.Ply = 1
 
-		score := s.AlphaBeta(context.Background(), &b, -INFINITY, INFINITY, 1)
+		score := s.AlphaBeta(&b, -INFINITY, INFINITY, 1)
 		if score != 0 {
 			t.Errorf("expected fifty-move draw score 0, got %d", score)
 		}
 	})
 	t.Run("IsRepetition detects repeated position keys", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
@@ -103,14 +107,15 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Beta cutoff records killer move and history bonus", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN("8/8/8/8/4k3/8/4P3/4K3 w - - 0 1")
 		beta := -50000
 		alpha := -100000
 		depth := 3
 
-		s.AlphaBeta(context.Background(), &b, alpha, beta, depth)
+		s.AlphaBeta(&b, alpha, beta, depth)
 
 		killer := s.Killers[0][b.Ply]
 		if killer == board.NOMOVE {
@@ -125,15 +130,13 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("Search stops promptly when context is cancelled", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
-		defer cancel()
-
 		start := time.Now()
-		s.Search(ctx, &b, 20)
+		s.Search(&b, 20)
 		elapsed := time.Since(start)
 
 		if elapsed > 200*time.Millisecond {
@@ -141,15 +144,14 @@ func TestSearcher(t *testing.T) {
 		}
 	})
 	t.Run("NodeLimit terminates search traversal", func(t *testing.T) {
-		s := NewSearcher(eval, tt)
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
-		ctx, cancel := context.WithCancel(context.Background())
-		s.Cancel = cancel
 		s.NodeLimit = 3000
 
-		s.Search(ctx, &b, 10)
+		s.Search(&b, 10)
 
 		if s.Nodes > 5000 {
 			t.Errorf("search visited %d nodes; expected cutoff near NodeLimit %d", s.Nodes, s.NodeLimit)

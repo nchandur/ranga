@@ -1,13 +1,13 @@
 package board
 
 import (
-	"context"
 	"fmt"
+	"sync/atomic"
 )
 
-func Perft(ctx context.Context, b *Board, depth int) int64 {
+func Perft(b *Board, depth int, stop *atomic.Bool) int64 {
 
-	if ctx.Err() != nil {
+	if stop.Load() {
 		return 0
 	}
 
@@ -30,12 +30,12 @@ func Perft(ctx context.Context, b *Board, depth int) int64 {
 			continue
 		}
 
-		count := Perft(ctx, b, depth-1)
+		count := Perft(b, depth-1, stop)
 		nodes += count
 
 		b.Restore(&copy)
 
-		if depth > 2 && ctx.Err() != nil {
+		if depth > 2 && stop.Load() {
 			return 0
 		}
 
@@ -44,7 +44,7 @@ func Perft(ctx context.Context, b *Board, depth int) int64 {
 	return nodes
 }
 
-func PerftDivide(ctx context.Context, b *Board, depth int) int64 {
+func PerftDivide(b *Board, depth int, stop *atomic.Bool) int64 {
 	if depth == 0 {
 		return 1
 	}
@@ -62,7 +62,7 @@ func PerftDivide(ctx context.Context, b *Board, depth int) int64 {
 			continue
 		}
 
-		nodes := Perft(ctx, b, depth-1)
+		nodes := Perft(b, depth-1, stop)
 		totalNodes += nodes
 
 		b.Restore(&copy)
