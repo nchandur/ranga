@@ -51,7 +51,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	if err != nil {
 		log.Fatalf("loading network: %v", err)
 	}
-	nn := &nnue.NNUE{Network: *net}
+	nn := &nnue.NNUE{Network: net}
 
 	nn.Reset(&e.board)
 
