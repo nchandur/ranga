@@ -54,7 +54,8 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	nn := &nnue.NNUE{Network: *net}
 
 	nn.Reset(&e.board)
-	e.searcher = search.NewSearcher(nn, 16)
+	tt := search.NewTranspositionTable(search.DEFAULT_TT_SIZE)
+	e.searcher = search.NewSearcher(nn, tt)
 
 	e.options.Register(Option{
 		Name:       "Threads",

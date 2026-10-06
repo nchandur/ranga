@@ -8,9 +8,10 @@ import (
 
 func TestQuiescence(t *testing.T) {
 	eval := &mockEvaluator{}
+	tt := NewTranspositionTable(DEFAULT_TT_SIZE)
 
 	t.Run("stand-pat fails high when eval >= beta", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
@@ -23,7 +24,7 @@ func TestQuiescence(t *testing.T) {
 		}
 	})
 	t.Run("stand-pat updates alpha when eval > alpha", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("4k3/8/8/8/8/8/8/Q3K3 w - - 0 1")
 
@@ -36,7 +37,7 @@ func TestQuiescence(t *testing.T) {
 		}
 	})
 	t.Run("resolves tactical captures instead of standing pat", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("4k3/8/8/3q4/4P3/8/8/4K3 w - - 0 1")
 
@@ -49,7 +50,7 @@ func TestQuiescence(t *testing.T) {
 		}
 	})
 	t.Run("searches quiet moves to escape check", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("4r3/8/8/8/8/8/8/4K2k w - - 0 1")
 
@@ -63,7 +64,7 @@ func TestQuiescence(t *testing.T) {
 		}
 	})
 	t.Run("detects checkmate when in check with no legal evasions", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("k7/8/8/8/8/8/1r6/r3K3 w - - 0 1")
 		b.Ply = 2
@@ -76,7 +77,7 @@ func TestQuiescence(t *testing.T) {
 		}
 	})
 	t.Run("deltaPruning identifies futile captures", func(t *testing.T) {
-		s := NewSearcher(eval, 1)
+		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
 		b.ParseFEN("4k3/8/8/3p4/4P3/8/8/4K3 w - - 0 1")
 
