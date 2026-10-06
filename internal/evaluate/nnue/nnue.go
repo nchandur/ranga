@@ -44,6 +44,10 @@ func (n *NNUE) Restore(s Snapshot) {
 	n.acc = perspectives(s)
 }
 
+func (n *NNUE) Clone() *NNUE {
+	return &NNUE{Network: n.Network, acc: n.acc}
+}
+
 // applies incremental accumulator changes for a move that has already been confirmed as legal
 func (n *NNUE) Update(before *board.Board, move board.Move) {
 	source, target := move.Source(), move.Target()
