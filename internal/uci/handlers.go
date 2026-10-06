@@ -8,6 +8,7 @@ import (
 	"ranga/internal/search"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -258,6 +259,19 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 
 	e.searcher.NodeLimit = opts.nodes
 	e.searcher.Nodes = 0
+	e.searcher.NodesPub.Store(0)
+
+	// launch helpers
+	var helpersWg sync.WaitGroup
+	for i, h := range e.helpers {
+		h.Stop = stop
+		h.NodeLimit = 0
+		h.Nodes = 0
+		h.NodesPub.Store(0)
+
+		hb := e.board
+		helpersWg.Go(func() { runHelper(h, hb, i+1, maxDepth, stop) })
+	}
 
 	bestMove, prevBestMove := board.NOMOVE, board.NOMOVE
 	stableIterations := 0
@@ -273,13 +287,13 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 
 		move, score := e.searcher.Search(&e.board, d)
 
-		if e.stop.Load() {
+		if stop.Load() {
 			break
 		}
 
 		if move != board.NOMOVE {
 			bestMove = move
-			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.totalNodes(), e.searcher.PV))
 		}
 
 		// bank unused time once search has settled
@@ -308,8 +322,12 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 		if timeAllocation.Soft > 0 && d >= 6 && stableIterations >= 4 && time.Since(searchStart) > timeAllocation.Soft/3 {
 			break
 		}
-
 	}
+
+	// thread 0 is done (depth, time, nodes or stop): halt helpers and wait for them
+	// before touching e.board or printing bestmove
+	stop.Store(true)
+	helpersWg.Wait()
 
 	if bestMove == board.NOMOVE {
 		ml := board.NewMoveList()
@@ -332,4 +350,29 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 func (e *Engine) pauseSearch() {
 	e.stop.Store(true)
 	e.searchWg.Wait()
+}
+
+func (e *Engine) totalNodes() int {
+	n := e.searcher.Nodes
+	for _, h := range e.helpers {
+		n += int(h.NodesPub.Load())
+	}
+	return n
+}
+
+func runHelper(h *search.Searcher, b board.Board, id, maxDepth int, stop *atomic.Bool) {
+	for d := 1; d <= maxDepth && !stop.Load(); d++ {
+		if skipDepth(id, d) {
+			continue
+		}
+		h.Search(&b, d)
+	}
+}
+
+var skipSize = [20]int{1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4}
+var skipPhase = [20]int{0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7}
+
+func skipDepth(id, d int) bool {
+	i := (id - 1) % 20
+	return ((d+skipPhase[i])/skipSize[i])%2 != 0
 }

@@ -28,6 +28,7 @@ type Engine struct {
 
 	board    board.Board
 	searcher *search.Searcher
+	helpers  []*search.Searcher // threads 1..N-1
 	commands map[string]Handler
 	options  *OptionRegistry
 	version  string
@@ -65,7 +66,17 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		DefaultVal: "1",
 		Min:        1,
 		Max:        1,
-		Apply:      nil,
+		Apply: func(value string) error {
+			if v, err := strconv.Atoi(value); err == nil {
+				e.pauseSearch()
+				v = max(v, 1)
+				for len(e.helpers) < v-1 {
+					e.helpers = append(e.helpers, e.searcher.NewHelper())
+				}
+				e.helpers = e.helpers[:v-1]
+			}
+			return nil
+		},
 	})
 
 	e.options.Register(Option{

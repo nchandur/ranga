@@ -17,7 +17,7 @@ type Searcher struct {
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
 	Nodes              int                    // nodes visited that search
 	NodeLimit          int                    // max number of nodes to visit
-	NodesPub           *atomic.Uint64         // last published node count
+	NodesPub           atomic.Uint64          // last published node count
 	Stop               *atomic.Bool           // shared stop flag across all threads
 }
 
