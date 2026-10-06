@@ -144,8 +144,12 @@ func (tt *TranspositionTable) Resize(size int) {
 // returns the entry's data if the slot holds this key
 func (tt *TranspositionTable) load(key uint64) (ttData, bool) {
 	e := &tt.Entries[key%uint64(tt.Length)]
-	d := e.data.Load()
 	k := e.keyXor.Load()
+	d := e.data.Load()
+
+	if k2 := e.keyXor.Load(); k != k2 {
+		return 0, false
+	}
 	return ttData(d), k^d == key
 }
 

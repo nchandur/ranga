@@ -292,11 +292,11 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 		}
 
 		ms := time.Since(searchStart).Milliseconds()
-		nps := e.totalNodes() * 1000 / int(ms)
+		nps := e.totalNodes() * 1000 / max(int(ms), 1)
 
 		if move != board.NOMOVE {
 			bestMove = move
-			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d time %d nps %d pv %s", d, score, e.totalNodes(), ms, nps, e.searcher.PV))
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d nps %d time %d pv %s", d, score, e.totalNodes(), nps, ms, e.searcher.PV))
 		}
 
 		// bank unused time once search has settled
@@ -322,13 +322,12 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 		previousScore = score
 		firstScore = false
 
-		if timeAllocation.Soft > 0 && d >= 6 && stableIterations >= 4 && time.Since(searchStart) > timeAllocation.Soft/3 {
+		if timeAllocation.Soft > 0 && d >= 6 && stableIterations >= 4 && (len(e.helpers) > 0 && time.Since(searchStart) > timeAllocation.Soft/3) {
 			break
 		}
 	}
 
-	// thread 0 is done (depth, time, nodes or stop): halt helpers and wait for them
-	// before touching e.board or printing bestmove
+	// halt helpers and wait for them
 	stop.Store(true)
 	helpersWg.Wait()
 
@@ -364,6 +363,9 @@ func (e *Engine) totalNodes() int {
 }
 
 func runHelper(h *search.Searcher, b board.Board, id, maxDepth int, stop *atomic.Bool) {
+	if h.NN != nil {
+		h.NN.Reset(&b)
+	}
 	for d := 1; d <= maxDepth && !stop.Load(); d++ {
 		if skipDepth(id, d) {
 			continue
@@ -376,6 +378,5 @@ var skipSize = [20]int{1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 
 var skipPhase = [20]int{0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7}
 
 func skipDepth(id, d int) bool {
-	i := (id - 1) % 20
-	return ((d+skipPhase[i])/skipSize[i])%2 != 0
+	return d > 1 && (d+id)%2 == 0
 }
