@@ -8,8 +8,8 @@ import (
 
 func TestQuiescence(t *testing.T) {
 	eval := &mockEvaluator{}
-	tt := NewTranspositionTable(16)
-	
+	tt := NewTranspositionTable(DEFAULT_TT_SIZE)
+
 	t.Run("stand-pat fails high when eval >= beta", func(t *testing.T) {
 		s := NewSearcher(eval, tt)
 		b := board.NewBoard()

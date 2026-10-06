@@ -55,7 +55,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 
 	nn.Reset(&e.board)
 
-	tt := search.NewTranspositionTable(16)
+	tt := search.NewTranspositionTable(search.DEFAULT_TT_SIZE)
 	e.searcher = search.NewSearcher(nn, tt)
 
 	e.options.Register(Option{
@@ -70,7 +70,7 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	e.options.Register(Option{
 		Name:       "Hash",
 		Type:       "spin",
-		DefaultVal: "16",
+		DefaultVal: fmt.Sprintf("%d", search.DEFAULT_TT_SIZE),
 		Min:        1,
 		Max:        2048,
 		Apply: func(value string) error {

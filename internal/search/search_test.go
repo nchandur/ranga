@@ -39,7 +39,7 @@ func (m *mockEvaluator) Evaluate(b *board.Board) int {
 
 func TestSearcher(t *testing.T) {
 	eval := &mockEvaluator{}
-	tt := NewTranspositionTable(16)
+	tt := NewTranspositionTable(DEFAULT_TT_SIZE)
 	t.Run("Finds mate in 1", func(t *testing.T) {
 		s := NewSearcher(eval, tt)
 		b := board.NewBoard()
