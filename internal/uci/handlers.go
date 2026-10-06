@@ -367,7 +367,7 @@ func runHelper(h *search.Searcher, b board.Board, id, maxDepth int, stop *atomic
 		h.NN.Reset(&b)
 	}
 	for d := 1; d <= maxDepth && !stop.Load(); d++ {
-		if skipDepth(id, d) {
+		if (d+id)%2 == 0 {
 			continue
 		}
 		h.Search(&b, d)

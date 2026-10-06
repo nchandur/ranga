@@ -27,8 +27,8 @@ const NOENTRY int = 99999 // indicate cache miss or uninitialized entry
 
 // holds tranposition table entries
 type TranspositionTableEntry struct {
-	keyXor atomic.Uint64
-	data   atomic.Uint64
+	key  atomic.Uint64
+	data atomic.Uint64
 }
 
 // transposition table
@@ -99,21 +99,20 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 	e := &tt.Entries[key%uint64(tt.Length)]
 
 	oldD := e.data.Load()
-	oldKey := e.keyXor.Load() ^ oldD
-	if oldKey != 0 && ttData(oldD).depth() > depth {
+	oldKey := e.key.Load()
+	if oldKey == key && ttData(oldD).depth() > depth {
 		return
 	}
 
 	if score < -MATESCORE {
 		score -= ply
-	}
-	if score > MATESCORE {
+	} else if score > MATESCORE {
 		score += ply
 	}
 
 	d := uint64(packData(move, score, depth, flag))
 	e.data.Store(d)
-	e.keyXor.Store(key ^ d)
+	e.key.Store(key)
 }
 
 // returns move stored in transposition table
@@ -144,13 +143,12 @@ func (tt *TranspositionTable) Resize(size int) {
 // returns the entry's data if the slot holds this key
 func (tt *TranspositionTable) load(key uint64) (ttData, bool) {
 	e := &tt.Entries[key%uint64(tt.Length)]
-	k := e.keyXor.Load()
 	d := e.data.Load()
-
-	if k2 := e.keyXor.Load(); k != k2 {
+	k := e.key.Load()
+	if k != key {
 		return 0, false
 	}
-	return ttData(d), k^d == key
+	return ttData(d), true
 }
 
 type ttData uint64
