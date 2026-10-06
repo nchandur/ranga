@@ -129,18 +129,28 @@ func TestSearcher(t *testing.T) {
 			}
 		}
 	})
-	t.Run("Search stops promptly when context is cancelled", func(t *testing.T) {
+	t.Run("Search stops promptly when stop flag is set", func(t *testing.T) {
 		var stop atomic.Bool
 		s := NewSearcher(eval, tt, &stop)
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
+		const stopAfter = 50 * time.Millisecond
+		timer := time.AfterFunc(stopAfter, func() { stop.Store(true) })
+		defer timer.Stop()
+
 		start := time.Now()
-		s.Search(&b, 20)
+		move, _ := s.Search(&b, 20)
 		elapsed := time.Since(start)
 
-		if elapsed > 200*time.Millisecond {
-			t.Errorf("search took %v; did not terminate promptly on context cancellation", elapsed)
+		if !stop.Load() {
+			t.Fatal("search returned before the stop flag was set; depth 20 should not finish in 50ms")
+		}
+		if elapsed > stopAfter+200*time.Millisecond {
+			t.Errorf("search took %v; did not terminate promptly after stop was set", elapsed)
+		}
+		if move == board.NOMOVE {
+			t.Error("aborted search must still return a legal fallback move")
 		}
 	})
 	t.Run("NodeLimit terminates search traversal", func(t *testing.T) {

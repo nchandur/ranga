@@ -37,6 +37,11 @@ tasks:
       - go test -coverprofile=cover.out ./...
       - go tool cover -html=cover.out
 
+  race:
+    desc: Run race condition tests
+    cmds:
+      - go test --race ./...
+
   clean:
     desc: Remove binaries and clean the Go cache
     cmds:
