@@ -17,6 +17,7 @@ type Searcher struct {
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
 	Nodes              int                    // nodes visited that search
 	NodeLimit          int                    // max number of nodes to visit
+	NodesPub           *atomic.Uint64         // last published node count
 	Stop               *atomic.Bool           // shared stop flag across all threads
 }
 
@@ -78,7 +79,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	// check timeout or cancel
 	if s.Nodes&2047 == 0 {
-
+		s.NodesPub.Store(uint64(s.Nodes))
 		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
 			s.Stop.Load()
 			return 0

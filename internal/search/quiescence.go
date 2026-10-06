@@ -15,6 +15,7 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 
 	// check timeout or cancel
 	if s.Nodes&2047 == 0 {
+		s.NodesPub.Store(uint64(s.Nodes))
 		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
 			s.Stop.Store(true)
 			return 0
