@@ -1,10 +1,10 @@
 package search
 
 import (
-	"context"
 	"ranga/internal/board"
 	"ranga/internal/evaluate"
 	"ranga/internal/evaluate/nnue"
+	"sync/atomic"
 )
 
 // coordinates search tree execution
@@ -17,11 +17,11 @@ type Searcher struct {
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
 	Nodes              int                    // nodes visited that search
 	NodeLimit          int                    // max number of nodes to visit
-	Cancel             context.CancelFunc     // search cancel
+	Stop               *atomic.Bool           // shared stop flag across all threads
 }
 
 // instantiates new searcher
-func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable) *Searcher {
+func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.Bool) *Searcher {
 	s := Searcher{
 		Evaluator: eval,
 		PV:        PVTable{},
@@ -30,7 +30,7 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable) *Searcher {
 		History:   [12][64]int{},
 		Nodes:     0,
 		NodeLimit: 0,
-		Cancel:    nil,
+		Stop:      stop,
 	}
 
 	// only evaluator is NNUE
@@ -46,7 +46,7 @@ func (s *Searcher) NewHelper() *Searcher {
 	if s.NN != nil {
 		eval = s.NN.Clone()
 	}
-	return NewSearcher(eval, s.TT)
+	return NewSearcher(eval, s.TT, s.Stop)
 }
 
 // clears searcher state
@@ -70,7 +70,7 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 }
 
 // executes main alpha-beta minimax search tree traversal
-func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, depth int) int {
+func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply >= MAX_PLY-1 || b.Repetition.Idx >= len(b.Repetition.Table)-1 {
 		return s.Evaluate(b)
@@ -80,11 +80,11 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	if s.Nodes&2047 == 0 {
 
 		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
-			s.Cancel()
+			s.Stop.Load()
 			return 0
 		}
 
-		if ctx.Err() != nil {
+		if s.stopped() {
 			return 0
 		}
 	}
@@ -120,7 +120,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 
 	// drop into quiescence search at leaf nodes
 	if depth == 0 {
-		return s.Quiescence(ctx, b, alpha, beta)
+		return s.Quiescence(b, alpha, beta)
 	}
 
 	staticEval := s.Evaluate(b)
@@ -132,7 +132,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 	}
 
 	// null move pruning (pass turn to attempt early fail-high)
-	if score, prune := s.nullMovePruning(ctx, b, beta, depth, staticEval, inCheck); prune {
+	if score, prune := s.nullMovePruning(b, beta, depth, staticEval, inCheck); prune {
 		return score
 	}
 
@@ -194,7 +194,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		legalMoves++
 
 		// late move reduction
-		score = s.lateMoveReduction(ctx, b, move, alpha, beta, depth, movesSearched, inCheck)
+		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -207,7 +207,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 		movesSearched++
 
 		// abort on cancellation
-		if ctx.Err() != nil {
+		if s.stopped() {
 			return 0
 		}
 
@@ -266,7 +266,7 @@ func (s *Searcher) AlphaBeta(ctx context.Context, b *board.Board, alpha, beta, d
 }
 
 // executes search on a given state, returns the best move found
-func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board.Move, int) {
+func (s *Searcher) Search(b *board.Board, depth int) (board.Move, int) {
 	s.Reset()
 
 	if s.NN != nil {
@@ -313,7 +313,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 		b.Repetition.Table[b.Repetition.Idx] = b.Key
 
 		s.PV.FollowPv = (count == 0)
-		score := -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+		score := -s.AlphaBeta(b, -beta, -alpha, depth-1)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -323,7 +323,7 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 			s.NN.Restore(nnState)
 		}
 
-		if ctx.Err() != nil {
+		if s.stopped() {
 			break
 		}
 
@@ -346,29 +346,29 @@ func (s *Searcher) Search(ctx context.Context, b *board.Board, depth int) (board
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(ctx context.Context, b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck bool) int {
+func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck bool) int {
 
 	var score int
 
 	if movesSearched == 0 {
-		score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+		score = -s.AlphaBeta(b, -beta, -alpha, depth-1)
 	} else {
 		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
 			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
 
 		if reduced {
-			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-2)
+			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-2)
 		} else {
-			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
+			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
 		}
 
 		// reduced search beat alpha
-		if reduced && ctx.Err() == nil && score > alpha {
-			score = -s.AlphaBeta(ctx, b, -alpha-1, -alpha, depth-1)
+		if reduced && !s.stopped() && score > alpha {
+			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
 		}
 
-		if ctx.Err() == nil && score > alpha && score < beta {
-			score = -s.AlphaBeta(ctx, b, -beta, -alpha, depth-1)
+		if !s.stopped() && score > alpha && score < beta {
+			score = -s.AlphaBeta(b, -beta, -alpha, depth-1)
 		}
 	}
 
@@ -376,7 +376,7 @@ func (s *Searcher) lateMoveReduction(ctx context.Context, b *board.Board, move b
 }
 
 // helper function for null move pruning
-func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, depth, staticeval int, inCheck bool) (int, bool) {
+func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, inCheck bool) (int, bool) {
 	if depth < 3 ||
 		inCheck ||
 		b.Ply == 0 ||
@@ -407,12 +407,12 @@ func (s *Searcher) nullMovePruning(ctx context.Context, b *board.Board, beta, de
 	}
 	reducedDepth := max(depth-R, 0)
 
-	nullScore := -s.AlphaBeta(ctx, b, -beta, -beta+1, reducedDepth)
+	nullScore := -s.AlphaBeta(b, -beta, -beta+1, reducedDepth)
 	b.Ply--
 
 	b.Restore(&copy)
 
-	if ctx.Err() != nil {
+	if s.stopped() {
 		return 0, false
 	}
 

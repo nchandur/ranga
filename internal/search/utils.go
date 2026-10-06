@@ -4,6 +4,11 @@ import (
 	"ranga/internal/board"
 )
 
+// helper function to terminate search
+func (s *Searcher) stopped() bool {
+	return s.Stop.Load()
+}
+
 // update history heuristic with gravity
 func (s *Searcher) updateHistory(move board.Move, bonus int) {
 	clamped := clamp(bonus, -MAX_HISTORY, MAX_HISTORY)
