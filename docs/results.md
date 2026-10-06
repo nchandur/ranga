@@ -7,7 +7,7 @@
 
 ### STC: 8+0.08
 
-**Date:** 2026-10-04
+**Date:** 2026-10-05
 
 **RC Engine:** ranga-1.5 | **Base Engine:** ranga-1.14
 
@@ -32,9 +32,9 @@ Total time: 00:35:02 (h:m:s)
 
 ### LTC: 40+0.04
 
-**Date:** 2026-10-04
+**Date:** 2026-10-05
 
-**RC Engine:** ranga-1.14 | **Base Engine:** ranga-1.13
+**RC Engine:** ranga-1.15 | **Base Engine:** ranga-1.14
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
