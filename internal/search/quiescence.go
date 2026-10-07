@@ -13,17 +13,15 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 		return s.Evaluate(b)
 	}
 
+	// node limit is checked on every node so it is exact
+	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+		s.Stop.Store(true)
+		return 0
+	}
+
 	// check timeout or cancel
-	if s.Nodes&2047 == 0 {
-
-		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
-			s.Stop.Load()
-			return 0
-		}
-
-		if s.Stop.Load() {
-			return 0
-		}
+	if s.Nodes&2047 == 0 && s.Stop.Load() {
+		return 0
 	}
 
 	s.Nodes++

@@ -76,6 +76,7 @@ func Bench(e *Engine, out io.Writer) {
 		e.searcher.History = [12][64]int{}
 
 		b.ParseFEN(fen)
+		e.searcher.Nodes = 0
 		e.searcher.Search(&b, benchDepth)
 
 		totalNodes += uint64(e.searcher.Nodes)
