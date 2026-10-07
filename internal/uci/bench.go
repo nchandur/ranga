@@ -1,7 +1,6 @@
 package uci
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"ranga/internal/board"
@@ -23,8 +22,6 @@ func Bench(e *Engine, out io.Writer) {
 	var totalNodes uint64
 	start := time.Now()
 
-	ctx := context.Background()
-
 	b := board.NewBoard()
 
 	for _, fen := range benchFENs {
@@ -34,7 +31,7 @@ func Bench(e *Engine, out io.Writer) {
 		e.searcher.History = [12][64]int{}
 
 		b.ParseFEN(fen)
-		e.searcher.Search(ctx, &b, benchDepth)
+		e.searcher.Search(&b, benchDepth)
 
 		totalNodes += uint64(e.searcher.Nodes)
 	}

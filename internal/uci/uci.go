@@ -2,7 +2,6 @@ package uci
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // manages functionality of each UCI command registered
@@ -23,8 +23,8 @@ type Engine struct {
 	out      io.Writer
 	writeMux sync.Mutex
 
-	searchCancel context.CancelFunc
-	searchWg     sync.WaitGroup
+	stop     *atomic.Bool
+	searchWg sync.WaitGroup
 
 	board    board.Board
 	searcher *search.Searcher
@@ -51,10 +51,13 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	if err != nil {
 		log.Fatalf("loading network: %v", err)
 	}
-	nn := &nnue.NNUE{Network: *net}
+	nn := &nnue.NNUE{Network: net}
 
 	nn.Reset(&e.board)
-	e.searcher = search.NewSearcher(nn, 16)
+
+	e.stop = new(atomic.Bool)
+	tt := search.NewTranspositionTable(search.DEFAULT_TT_SIZE)
+	e.searcher = search.NewSearcher(nn, tt, e.stop)
 
 	e.options.Register(Option{
 		Name:       "Threads",

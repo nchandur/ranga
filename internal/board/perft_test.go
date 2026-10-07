@@ -2,11 +2,11 @@ package board
 
 import (
 	"bufio"
-	"context"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -25,6 +25,7 @@ func TestPerft_EPDSuite(t *testing.T) {
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
+	stop := new(atomic.Bool)
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -68,7 +69,7 @@ func TestPerft_EPDSuite(t *testing.T) {
 					t.Fatalf("line %d: ParseFEN failed: %v", lineNum, err)
 				}
 
-				gotNodes := Perft(context.Background(), b, depth)
+				gotNodes := Perft(b, depth, stop)
 				if gotNodes != wantNodes {
 					t.Errorf("line %d: depth %d mismatch:\nFEN:  %s\nGot:  %d nodes\nWant: %d nodes",
 						lineNum, depth, fen, gotNodes, wantNodes)
