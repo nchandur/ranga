@@ -255,81 +255,138 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	return alpha
 }
 
-// executes search on a given state, returns the best move found
-func (s *Searcher) Search(b *board.Board, depth int) (board.Move, int) {
+// runs iterative deepening with aspiration windows up to maxDepth.
+func (s *Searcher) Search(b *board.Board, maxDepth int) (board.Move, int) {
+
+	// searches all root moves within (alpha, beta) at given depth
+	var searchRoot = func(b *board.Board, alpha, beta, depth int, prevBest board.Move) (board.Move, int) {
+		var bestMove board.Move
+		bestScore := -INFINITY
+
+		ml := board.NewMoveList()
+		ml.GenerateMoves(b)
+
+		ttMove := prevBest
+		if ttMove == board.NOMOVE {
+			ttMove = s.TT.ProbeMove(b.Key)
+		}
+
+		s.PV.FollowPv = true
+		s.PV.enablePVScoring(ml, 0)
+		s.sortMove(b, ml, ttMove)
+
+		first := true
+		for _, move := range ml.Moves[:ml.Count] {
+			state := b.Preserve()
+
+			var nnState nnue.Snapshot
+			if s.NN != nil {
+				nnState = s.NN.Preserve()
+			}
+
+			b.Ply++
+			if !b.MakeMove(move, false) {
+				b.Ply--
+				b.Restore(&state)
+				continue
+			}
+
+			if s.NN != nil {
+				s.NN.Update(&state, move)
+			}
+
+			if bestMove == board.NOMOVE {
+				bestMove = move // legal fallback
+			}
+
+			b.Repetition.Idx++
+			b.Repetition.Table[b.Repetition.Idx] = b.Key
+
+			s.PV.FollowPv = first
+			first = false
+			score := -s.AlphaBeta(b, -beta, -alpha, depth-1)
+
+			b.Ply--
+			b.Repetition.Idx--
+			b.Restore(&state)
+
+			if s.NN != nil {
+				s.NN.Restore(nnState)
+			}
+
+			if s.Stop.Load() {
+				break
+			}
+
+			if score > bestScore {
+				bestScore = score
+				bestMove = move
+			}
+			if score > alpha {
+				alpha = score
+				s.PV.updatePVLine(move, 0)
+			}
+			if alpha >= beta {
+				break // root beta cutoff (fail high)
+			}
+		}
+
+		return bestMove, bestScore
+	}
+
 	s.Reset()
 
 	if s.NN != nil {
 		s.NN.Reset(b)
 	}
 
-	alpha, beta := -INFINITY, INFINITY
-
 	var bestMove board.Move
 	bestScore := -INFINITY
 
-	ml := board.NewMoveList()
-	ml.GenerateMoves(b)
+	for depth := 1; depth <= maxDepth; depth++ {
+		alpha, beta := -INFINITY, INFINITY
+		delta := aspirationDelta
 
-	s.PV.FollowPv = true
-	s.PV.enablePVScoring(ml, 0)
-	s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
-
-	for count, move := range ml.Moves[:ml.Count] {
-		state := b.Preserve()
-
-		var nnState nnue.Snapshot
-		if s.NN != nil {
-			nnState = s.NN.Preserve()
+		if depth >= aspirationMinDepth {
+			alpha = max(bestScore-delta, -INFINITY)
+			beta = min(bestScore+delta, INFINITY)
 		}
 
-		b.Ply++
-		if !b.MakeMove(move, false) {
-			b.Ply--
-			b.Restore(&state)
-			continue
+		var move board.Move
+		var score int
+
+		for {
+			move, score = searchRoot(b, alpha, beta, depth, bestMove)
+
+			if s.Stop.Load() {
+				break
+			}
+
+			if score <= alpha && alpha > -INFINITY { // fail low
+				beta = (alpha + beta) / 2
+				alpha = max(score-delta, -INFINITY)
+			} else if score >= beta && beta < INFINITY { // fail high
+				beta = min(score+delta, INFINITY)
+				bestMove = move // fail-high move is still a good move
+			} else {
+				break // inside the window
+			}
+
+			delta += delta / 2
+			if delta > aspirationMaxDelta {
+				alpha, beta = -INFINITY, INFINITY
+			}
 		}
 
-		if s.NN != nil {
-			s.NN.Update(&state, move)
-		}
-
-		// legal fallback in case of timeout
-		if bestMove == board.NOMOVE {
-			bestMove = move
-		}
-
-		b.Repetition.Idx++
-		b.Repetition.Table[b.Repetition.Idx] = b.Key
-
-		s.PV.FollowPv = (count == 0)
-		score := -s.AlphaBeta(b, -beta, -alpha, depth-1)
-
-		b.Ply--
-		b.Repetition.Idx--
-		b.Restore(&state)
-
-		if s.NN != nil {
-			s.NN.Restore(nnState)
-		}
-
+		// keep the last completed iteration's result on timeout
 		if s.Stop.Load() {
+			if bestMove == board.NOMOVE {
+				bestMove = move // legal fallback if depth 1 never finished
+			}
 			break
 		}
 
-		if score > bestScore {
-			bestScore = score
-			bestMove = move
-		}
-		if score > alpha {
-			alpha = score
-			s.PV.updatePVLine(move, 0)
-		}
-
-	}
-
-	if s.PV.Length[0] > 0 {
-		bestMove = s.PV.Table[0][0]
+		bestMove, bestScore = move, score
 	}
 
 	return bestMove, bestScore
