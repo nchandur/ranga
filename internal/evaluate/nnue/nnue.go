@@ -17,7 +17,7 @@ type NNUE struct {
 }
 
 func NewRandom() *NNUE {
-	n := &NNUE{}
+	n := &NNUE{Network: &Network{}}
 	n.Network.Randomize()
 	return n
 }
