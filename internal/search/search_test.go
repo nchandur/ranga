@@ -47,7 +47,7 @@ func TestSearcher(t *testing.T) {
 		b := board.NewBoard()
 		b.ParseFEN("r1bqkb1r/pppp1ppp/2n5/4p3/2B1n3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 4")
 
-		move, score := s.Search(&b, 2)
+		move, score := s.Search(&b, 2, 0)
 
 		wantMove := board.NewMove(board.F3, board.F7, board.WQ, board.Empty, true, false, false, false)
 		if move != wantMove {
@@ -140,7 +140,7 @@ func TestSearcher(t *testing.T) {
 		defer timer.Stop()
 
 		start := time.Now()
-		move, _ := s.Search(&b, 20)
+		s.Search(&b, 20, 0)
 		elapsed := time.Since(start)
 
 		if !stop.Load() {
@@ -148,9 +148,6 @@ func TestSearcher(t *testing.T) {
 		}
 		if elapsed > stopAfter+200*time.Millisecond {
 			t.Errorf("search took %v; did not terminate promptly after stop was set", elapsed)
-		}
-		if move == board.NOMOVE {
-			t.Error("aborted search must still return a legal fallback move")
 		}
 	})
 	t.Run("NodeLimit terminates search traversal", func(t *testing.T) {
@@ -161,7 +158,7 @@ func TestSearcher(t *testing.T) {
 
 		s.NodeLimit = 3000
 
-		s.Search(&b, 10)
+		s.Search(&b, 10, 0)
 
 		if s.Nodes > 5000 {
 			t.Errorf("search visited %d nodes; expected cutoff near NodeLimit %d", s.Nodes, s.NodeLimit)

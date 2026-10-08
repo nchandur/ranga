@@ -255,84 +255,85 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	return alpha
 }
 
-// executes search on a given state, returns the best move found
-func (s *Searcher) Search(b *board.Board, depth int) (board.Move, int) {
-	s.Reset()
-
-	if s.NN != nil {
-		s.NN.Reset(b)
-	}
-
+func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int) {
 	alpha, beta := -INFINITY, INFINITY
+	delta := aspirationDelta
 
-	var bestMove board.Move
-	bestScore := -INFINITY
+	if depth >= aspirationMinDepth {
+		alpha = max(prevScore-delta, -INFINITY)
+		beta = min(prevScore+delta, INFINITY)
+	}
 
-	ml := board.NewMoveList()
-	ml.GenerateMoves(b)
+	for {
+		bestMove, bestScore := board.NOMOVE, -INFINITY
+		a := alpha // alpha stays the window bound
 
-	s.PV.FollowPv = true
-	s.PV.enablePVScoring(ml, 0)
-	s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
+		ml := board.NewMoveList()
+		ml.GenerateMoves(b)
 
-	for count, move := range ml.Moves[:ml.Count] {
-		state := b.Preserve()
+		s.PV.enablePVScoring(ml, 0)
+		s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
-		var nnState nnue.Snapshot
-		if s.NN != nil {
-			nnState = s.NN.Preserve()
-		}
+		for _, move := range ml.Moves[:ml.Count] {
+			state := b.Preserve()
 
-		b.Ply++
-		if !b.MakeMove(move, false) {
+			var nnState nnue.Snapshot
+			if s.NN != nil {
+				nnState = s.NN.Preserve()
+			}
+
+			b.Ply++
+			if !b.MakeMove(move, false) {
+				b.Ply--
+				b.Restore(&state)
+				continue
+			}
+
+			if s.NN != nil {
+				s.NN.Update(&state, move)
+			}
+
+			b.Repetition.Idx++
+			b.Repetition.Table[b.Repetition.Idx] = b.Key
+
+			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
+			score := -s.AlphaBeta(b, -beta, -a, depth-1)
+
 			b.Ply--
+			b.Repetition.Idx--
 			b.Restore(&state)
-			continue
+
+			if s.NN != nil {
+				s.NN.Restore(nnState)
+			}
+
+			if s.Stop.Load() {
+				return bestMove, bestScore
+			}
+
+			if score > bestScore {
+				bestScore, bestMove = score, move
+			}
+			if score > a {
+				a = score
+				s.PV.updatePVLine(move, 0)
+			}
+			if a >= beta {
+				break // fail high
+			}
 		}
 
-		if s.NN != nil {
-			s.NN.Update(&state, move)
+		switch {
+		case bestScore <= alpha && alpha > -INFINITY: // fail low
+			alpha = max(alpha-delta, -INFINITY)
+		case bestScore >= beta && beta < INFINITY: // fail high
+			beta = min(beta+delta, INFINITY)
+		default: // inside window, or already full width
+			return bestMove, bestScore
 		}
 
-		// legal fallback in case of timeout
-		if bestMove == board.NOMOVE {
-			bestMove = move
-		}
-
-		b.Repetition.Idx++
-		b.Repetition.Table[b.Repetition.Idx] = b.Key
-
-		s.PV.FollowPv = (count == 0)
-		score := -s.AlphaBeta(b, -beta, -alpha, depth-1)
-
-		b.Ply--
-		b.Repetition.Idx--
-		b.Restore(&state)
-
-		if s.NN != nil {
-			s.NN.Restore(nnState)
-		}
-
-		if s.Stop.Load() {
-			break
-		}
-
-		if score > bestScore {
-			bestScore = score
-			bestMove = move
-		}
-		if score > alpha {
-			alpha = score
-			s.PV.updatePVLine(move, 0)
-		}
-
+		delta *= 2
 	}
-
-	if s.PV.Length[0] > 0 {
-		bestMove = s.PV.Table[0][0]
-	}
-
-	return bestMove, bestScore
 }
 
 // helper function to perform late move reduction

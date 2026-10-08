@@ -13,6 +13,12 @@ const (
 	DEFAULT_TT_SIZE  int = 16
 )
 
+const (
+	aspirationMinDepth = 5
+	aspirationDelta    = 20
+	aspirationMaxDelta = 800 // beyond this, window fully open on that side
+)
+
 // assigns higher priorities to captures where lower-value piece captures higher-value piece,
 var MVVLVA = [12][12]int{
 	{105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},

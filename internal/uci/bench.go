@@ -77,7 +77,7 @@ func Bench(e *Engine, out io.Writer) {
 
 		b.ParseFEN(fen)
 		e.searcher.Nodes = 0
-		e.searcher.Search(&b, benchDepth)
+		e.searcher.Search(&b, benchDepth, 0)
 
 		totalNodes += uint64(e.searcher.Nodes)
 	}
