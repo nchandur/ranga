@@ -248,6 +248,7 @@ func (e *Engine) runPerft(depth int, stop *atomic.Bool) {
 }
 
 // helper function to run search and evaluation
+// helper function to run search and evaluation
 func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation TimeAllocation) {
 	maxDepth := search.MAX_DEPTH
 	if opts.depth > 0 && !opts.infinite {
@@ -256,11 +257,11 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 
 	e.searcher.NodeLimit = opts.nodes
 	e.searcher.Nodes = 0
+	e.searcher.Reset()
 
 	bestMove, prevBestMove := board.NOMOVE, board.NOMOVE
 	stableIterations := 0
 	previousScore := 0
-	firstScore := true
 
 	searchStart := time.Now()
 
@@ -269,7 +270,7 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 			break
 		}
 
-		move, score := e.searcher.Search(&e.board, d)
+		move, score := e.searcher.Search(&e.board, d, previousScore)
 
 		if stop.Load() {
 			break
@@ -278,35 +279,25 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 		if move != board.NOMOVE {
 			bestMove = move
 			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
-		}
 
-		// bank unused time once search has settled
-		if bestMove == prevBestMove {
-			stableIterations++
-		} else {
-			stableIterations = 0
-		}
-		prevBestMove = bestMove
-
-		if !firstScore && timeAllocation.Soft > 0 {
-			diff := score - previousScore
-
-			// score dropped sharply
-			if diff < -100 {
-				timeAllocation.Soft = timeAllocation.Hard
-			} else if abs(diff) > 50 {
-				// general volatility, capped at hard limit
-				extended := min(timeAllocation.Soft*3/2, timeAllocation.Hard)
-				timeAllocation.Soft = extended
+			// bank unused time once search has settled
+			if bestMove == prevBestMove {
+				stableIterations++
+			} else {
+				stableIterations = 0
 			}
+			prevBestMove = bestMove
+		}
+
+		// score dropped sharply, so spend the full hard limit
+		if d > 1 && timeAllocation.Soft > 0 && score-previousScore < -100 {
+			timeAllocation.Soft = timeAllocation.Hard
 		}
 		previousScore = score
-		firstScore = false
 
 		if timeAllocation.Soft > 0 && d >= 6 && stableIterations >= 4 && time.Since(searchStart) > timeAllocation.Soft/3 {
 			break
 		}
-
 	}
 
 	if bestMove == board.NOMOVE {

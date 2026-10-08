@@ -255,27 +255,25 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	return alpha
 }
 
-// runs iterative deepening with aspiration windows up to maxDepth.
-func (s *Searcher) Search(b *board.Board, maxDepth int) (board.Move, int) {
+func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int) {
+	alpha, beta := -INFINITY, INFINITY
+	delta := aspirationDelta
 
-	// searches all root moves within (alpha, beta) at given depth
-	var searchRoot = func(b *board.Board, alpha, beta, depth int, prevBest board.Move) (board.Move, int) {
-		var bestMove board.Move
-		bestScore := -INFINITY
+	if depth >= aspirationMinDepth {
+		alpha = max(prevScore-delta, -INFINITY)
+		beta = min(prevScore+delta, INFINITY)
+	}
+
+	for {
+		bestMove, bestScore := board.NOMOVE, -INFINITY
+		a := alpha // alpha stays the window bound
 
 		ml := board.NewMoveList()
 		ml.GenerateMoves(b)
 
-		ttMove := prevBest
-		if ttMove == board.NOMOVE {
-			ttMove = s.TT.ProbeMove(b.Key)
-		}
-
-		s.PV.FollowPv = true
 		s.PV.enablePVScoring(ml, 0)
-		s.sortMove(b, ml, ttMove)
+		s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
-		first := true
 		for _, move := range ml.Moves[:ml.Count] {
 			state := b.Preserve()
 
@@ -295,16 +293,11 @@ func (s *Searcher) Search(b *board.Board, maxDepth int) (board.Move, int) {
 				s.NN.Update(&state, move)
 			}
 
-			if bestMove == board.NOMOVE {
-				bestMove = move // legal fallback
-			}
-
 			b.Repetition.Idx++
 			b.Repetition.Table[b.Repetition.Idx] = b.Key
 
-			s.PV.FollowPv = first
-			first = false
-			score := -s.AlphaBeta(b, -beta, -alpha, depth-1)
+			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
+			score := -s.AlphaBeta(b, -beta, -a, depth-1)
 
 			b.Ply--
 			b.Repetition.Idx--
@@ -315,81 +308,32 @@ func (s *Searcher) Search(b *board.Board, maxDepth int) (board.Move, int) {
 			}
 
 			if s.Stop.Load() {
-				break
+				return bestMove, bestScore
 			}
 
 			if score > bestScore {
-				bestScore = score
-				bestMove = move
+				bestScore, bestMove = score, move
 			}
-			if score > alpha {
-				alpha = score
+			if score > a {
+				a = score
 				s.PV.updatePVLine(move, 0)
 			}
-			if alpha >= beta {
-				break // root beta cutoff (fail high)
+			if a >= beta {
+				break // fail high
 			}
 		}
 
-		return bestMove, bestScore
+		switch {
+		case bestScore <= alpha && alpha > -INFINITY: // fail low
+			alpha = max(alpha-delta, -INFINITY)
+		case bestScore >= beta && beta < INFINITY: // fail high
+			beta = min(beta+delta, INFINITY)
+		default: // inside window, or already full width
+			return bestMove, bestScore
+		}
+
+		delta *= 2
 	}
-
-	s.Reset()
-
-	if s.NN != nil {
-		s.NN.Reset(b)
-	}
-
-	var bestMove board.Move
-	bestScore := -INFINITY
-
-	for depth := 1; depth <= maxDepth; depth++ {
-		alpha, beta := -INFINITY, INFINITY
-		delta := aspirationDelta
-
-		if depth >= aspirationMinDepth {
-			alpha = max(bestScore-delta, -INFINITY)
-			beta = min(bestScore+delta, INFINITY)
-		}
-
-		var move board.Move
-		var score int
-
-		for {
-			move, score = searchRoot(b, alpha, beta, depth, bestMove)
-
-			if s.Stop.Load() {
-				break
-			}
-
-			if score <= alpha && alpha > -INFINITY { // fail low
-				beta = (alpha + beta) / 2
-				alpha = max(score-delta, -INFINITY)
-			} else if score >= beta && beta < INFINITY { // fail high
-				beta = min(score+delta, INFINITY)
-				bestMove = move // fail-high move is still a good move
-			} else {
-				break // inside the window
-			}
-
-			delta += delta / 2
-			if delta > aspirationMaxDelta {
-				alpha, beta = -INFINITY, INFINITY
-			}
-		}
-
-		// keep the last completed iteration's result on timeout
-		if s.Stop.Load() {
-			if bestMove == board.NOMOVE {
-				bestMove = move // legal fallback if depth 1 never finished
-			}
-			break
-		}
-
-		bestMove, bestScore = move, score
-	}
-
-	return bestMove, bestScore
 }
 
 // helper function to perform late move reduction
