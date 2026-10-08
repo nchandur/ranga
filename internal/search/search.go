@@ -255,6 +255,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	return alpha
 }
 
+// executes search on a given state, returns the best move found
 func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int) {
 	alpha, beta := -INFINITY, INFINITY
 	delta := aspirationDelta

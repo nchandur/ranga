@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## Added
+* feat(search): added aspiration windows to search [[#71](https://github.com/nchandur/ranga/pull/71)]
+
 ## Fixed
 * fix(uci): prevent clear and resize during seach [[#69](https://github.com/nchandur/ranga/pull/69)]
 
