@@ -71,6 +71,10 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 
 	for count := range ml.Count {
 
+		if s.SeeCapture(b, ml.Moves[count]) < 0 {
+			continue
+		}
+
 		// delta pruning skip captures that can't possibly raise alpha
 		if s.deltaPruning(alpha, standPat, inCheck, b, ml.Moves[count]) {
 			continue
