@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.16] - 2026-10-08
 
 ## Added
 * feat(search): added aspiration windows to search [[#71](https://github.com/nchandur/ranga/pull/71)]
