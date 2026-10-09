@@ -10,7 +10,7 @@
 
 **Date:** 2026-10-08
 
-**RC Engine:** ranga-1.6 | **Base Engine:** ranga-1.15
+**RC Engine:** ranga-1.16 | **Base Engine:** ranga-1.15
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
