@@ -1,7 +1,7 @@
 version: '3'
 
 vars:
-  VERSION: "1.15"
+  VERSION: "1.16"
   BIN_NAME: "ranga-{{.VERSION}}"
   BIN_DIR: "bin"
 
@@ -36,6 +36,11 @@ tasks:
     cmds:
       - go test -coverprofile=cover.out ./...
       - go tool cover -html=cover.out
+
+  race:
+    desc: Run race condition tests
+    cmds:
+      - go test --race ./...
 
   clean:
     desc: Remove binaries and clean the Go cache

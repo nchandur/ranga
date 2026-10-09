@@ -7,6 +7,7 @@ on:
       - 'release/**'
       - 'feature/**'
       - 'fix/**'
+      - 'chore/**'
   pull_request:
     branches:
       - 'main'
@@ -39,5 +40,14 @@ jobs:
       - name: Run Coverage
         run: task cover
 
+      - name: Run Race
+        run: task race
+
       - name: Build Engine Binary
         run: task build
+
+      - name: Run bench
+        run: task bench
+
+      - name: Cleanup
+        run: task clean

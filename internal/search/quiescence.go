@@ -1,30 +1,27 @@
 package search
 
 import (
-	"context"
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 )
 
 // performs a quiescence search to evaluate quiet positions and avoid horizon effect
-func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta int) int {
+func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
 		return s.Evaluate(b)
 	}
 
+	// node limit is checked on every node so it is exact
+	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+		s.Stop.Store(true)
+		return 0
+	}
+
 	// check timeout or cancel
-	if s.Nodes&2047 == 0 {
-
-		if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
-			s.Cancel()
-			return 0
-		}
-
-		if ctx.Err() != nil {
-			return 0
-		}
+	if s.Nodes&2047 == 0 && s.Stop.Load() {
+		return 0
 	}
 
 	s.Nodes++
@@ -103,7 +100,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 
 		legalMoves++
 
-		score := -s.Quiescence(ctx, b, -beta, -alpha)
+		score := -s.Quiescence(b, -beta, -alpha)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -121,7 +118,7 @@ func (s *Searcher) Quiescence(ctx context.Context, b *board.Board, alpha, beta i
 			}
 		}
 
-		if ctx.Err() != nil {
+		if s.Stop.Load() {
 			return 0
 		}
 	}

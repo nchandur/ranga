@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"ranga/internal/board"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -44,6 +44,8 @@ func PerftTestSuite(inputPath string, sample, threshold int) error {
 	successCount := 0
 	failCount := 0
 	var failedLines []string
+
+	stop := new(atomic.Bool)
 
 	runPerftTest := func(test string) error {
 		fields := strings.Split(test, "; ")
@@ -83,7 +85,7 @@ func PerftTestSuite(inputPath string, sample, threshold int) error {
 				return fmt.Errorf("failed to perft test: %v", err)
 			}
 
-			visited := board.Perft(context.Background(), &b, depth)
+			visited := board.Perft(&b, depth, stop)
 			if visited != int64(nodes) {
 				lineFailed = true
 			}

@@ -2,7 +2,7 @@ package search
 
 const (
 	MAX_DEPTH        int = 8       // defines maximum search depth in plies
-	MAX_PLY          int = 64      // defines the maximum distance from the root node
+	MAX_PLY          int = 256     // defines the maximum distance from the root node
 	MAX_HISTORY      int = 1 << 14 // cap for history bonus
 	ISMATE           int = 1000000 // base score used to identify mate condition
 	MATESCORE        int = 900000  // threshold above which scores represent guaranteed checkmate sequences within x plies
@@ -10,6 +10,13 @@ const (
 	FULL_DEPTH_MOVES int = 4       // number of moves evaluated at full depth before LMR
 	REDUCTION_LIMIT  int = 3       // minimum remaining search depth required to trigger LMR
 	BIG_DELTA        int = 200
+	DEFAULT_TT_SIZE  int = 16
+)
+
+const (
+	aspirationMinDepth = 5
+	aspirationDelta    = 20
+	aspirationMaxDelta = 800 // beyond this, window fully open on that side
 )
 
 // assigns higher priorities to captures where lower-value piece captures higher-value piece,

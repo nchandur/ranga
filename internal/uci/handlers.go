@@ -1,13 +1,13 @@
 package uci
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"ranga/internal/board"
 	"ranga/internal/search"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -29,11 +29,7 @@ func (e *Engine) handleSetOption(command []string) {
 // handles quit command
 // quits main loop and exits
 func (e *Engine) handleQuit() {
-	if e.searchCancel != nil {
-		e.searchCancel()
-	}
-
-	e.searchWg.Wait()
+	e.pauseSearch()
 }
 
 // handles show command
@@ -65,11 +61,7 @@ func (e *Engine) handleClear() {
 // handles stop command
 // stops searching tree and returns current best move
 func (e *Engine) handleStop() {
-	if e.searchCancel != nil {
-		e.searchCancel()
-	}
-	e.searchWg.Wait()
-	e.searchCancel = nil
+	e.pauseSearch()
 }
 
 // handles eval command
@@ -149,10 +141,7 @@ func (e *Engine) handlePosition(args []string) {
 
 // handles go command
 func (e *Engine) handleGo(args []string) {
-	if e.searchCancel != nil {
-		e.handleStop()
-	}
-
+	e.pauseSearch()
 	opts := goOptions{}
 
 	for i := 0; i < len(args); i++ {
@@ -225,55 +214,54 @@ func (e *Engine) handleGo(args []string) {
 			}
 		}
 	}
-
-	var ctx context.Context
-	var cancel context.CancelFunc
 	var timeAllocation TimeAllocation
-
 	if !opts.infinite && !opts.perft {
 		timeAllocation = e.calculateTimeLimit(opts)
-		if timeAllocation.Hard > 0 {
-			ctx, cancel = context.WithTimeout(context.Background(), timeAllocation.Hard)
-		}
 	}
 
 	if opts.perft {
-		e.runPerft(context.Background(), opts.depth)
+		e.runPerft(opts.depth, e.stop)
 		return
 	}
 
-	if ctx == nil {
-		ctx, cancel = context.WithCancel(context.Background())
+	stop := new(atomic.Bool)
+	e.stop = stop
+	e.searcher.Stop = stop
+
+	var timer *time.Timer
+	if timeAllocation.Hard > 0 {
+		timer = time.AfterFunc(timeAllocation.Hard, func() { stop.Store(true) })
 	}
 
-	e.searchCancel = cancel
-
 	e.searchWg.Go(func() {
-		defer cancel()
-		e.runSearch(ctx, opts, timeAllocation)
+		if timer != nil {
+			defer timer.Stop()
+		}
+		defer stop.Store(true)
+		e.runSearch(stop, opts, timeAllocation)
 	})
 }
 
 // helper function to run perft on position
-func (e *Engine) runPerft(ctx context.Context, depth int) {
-	board.PerftDivide(ctx, &e.board, depth)
+func (e *Engine) runPerft(depth int, stop *atomic.Bool) {
+	board.PerftDivide(&e.board, depth, stop)
 }
 
 // helper function to run search and evaluation
-func (e *Engine) runSearch(ctx context.Context, opts goOptions, timeAllocation TimeAllocation) {
+// helper function to run search and evaluation
+func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation TimeAllocation) {
 	maxDepth := search.MAX_DEPTH
 	if opts.depth > 0 && !opts.infinite {
 		maxDepth = opts.depth
 	}
 
 	e.searcher.NodeLimit = opts.nodes
-	e.searcher.Cancel = e.searchCancel
 	e.searcher.Nodes = 0
+	e.searcher.Reset()
 
 	bestMove, prevBestMove := board.NOMOVE, board.NOMOVE
 	stableIterations := 0
 	previousScore := 0
-	firstScore := true
 
 	searchStart := time.Now()
 
@@ -282,44 +270,34 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions, timeAllocation T
 			break
 		}
 
-		move, score := e.searcher.Search(ctx, &e.board, d)
+		move, score := e.searcher.Search(&e.board, d, previousScore)
 
-		if ctx.Err() != nil {
+		if stop.Load() {
 			break
 		}
 
 		if move != board.NOMOVE {
 			bestMove = move
 			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
-		}
 
-		// bank unused time once search has settled
-		if bestMove == prevBestMove {
-			stableIterations++
-		} else {
-			stableIterations = 0
-		}
-		prevBestMove = bestMove
-
-		if !firstScore && timeAllocation.Soft > 0 {
-			diff := score - previousScore
-
-			// score dropped sharply
-			if diff < -100 {
-				timeAllocation.Soft = timeAllocation.Hard
-			} else if abs(diff) > 50 {
-				// general volatility, capped at hard limit
-				extended := min(timeAllocation.Soft*3/2, timeAllocation.Hard)
-				timeAllocation.Soft = extended
+			// bank unused time once search has settled
+			if bestMove == prevBestMove {
+				stableIterations++
+			} else {
+				stableIterations = 0
 			}
+			prevBestMove = bestMove
+		}
+
+		// score dropped sharply, so spend the full hard limit
+		if d > 1 && timeAllocation.Soft > 0 && score-previousScore < -100 {
+			timeAllocation.Soft = timeAllocation.Hard
 		}
 		previousScore = score
-		firstScore = false
 
 		if timeAllocation.Soft > 0 && d >= 6 && stableIterations >= 4 && time.Since(searchStart) > timeAllocation.Soft/3 {
 			break
 		}
-
 	}
 
 	if bestMove == board.NOMOVE {
@@ -341,9 +319,6 @@ func (e *Engine) runSearch(ctx context.Context, opts goOptions, timeAllocation T
 
 // helper function to pause search
 func (e *Engine) pauseSearch() {
-	if e.searchCancel != nil {
-		e.searchCancel()
-		e.searchWg.Wait()
-		e.searchCancel = nil
-	}
+	e.stop.Store(true)
+	e.searchWg.Wait()
 }
