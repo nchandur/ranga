@@ -2,7 +2,7 @@ package search
 
 import "ranga/internal/board"
 
-// SeeCapture calculates the exact material exchange of a specific capture move.
+// calculates exact material exchange of specific capture move
 func (s *Searcher) SeeCapture(b *board.Board, move board.Move) int {
 	from := move.Source()
 	to := move.Target()
@@ -16,7 +16,7 @@ func (s *Searcher) SeeCapture(b *board.Board, move board.Move) int {
 
 	occupied := b.Occupancies[board.Both]
 
-	// Handle En Passant captures by removing the invisible target pawn
+	// en passnant captures by removing invisible target pawn
 	if move.IsEnpass() {
 		capturedVal = abs(board.PieceValue[board.WP])
 		if b.Side == board.White {
@@ -26,13 +26,12 @@ func (s *Searcher) SeeCapture(b *board.Board, move board.Move) int {
 		}
 	}
 
-	// Simulated 'make_capture' against the starting piece
 	occupied.PopBit(from)
 
 	return capturedVal - s.see(b, to, piece, b.Side^1, occupied)
 }
 
-// see executes the recursive evaluation of captures on a single square.
+// executes recursive evaluation of captures on single square
 func (s *Searcher) see(b *board.Board, sq board.Square, pieceOnSquare board.Piece, sideToMove board.Color, occupied board.BitBoard) int {
 	value := 0
 
@@ -40,13 +39,10 @@ func (s *Searcher) see(b *board.Board, sq board.Square, pieceOnSquare board.Piec
 
 	// skip if the square isn't attacked anymore by this side
 	if attacker != board.Empty {
-		// Simulated 'make_capture' to expose sliding pieces (x-rays) behind the attacker
 		occupied.PopBit(fromSq)
 
-		// The piece just captured is the unit sitting on the square during this iteration
 		capturedVal := abs(board.PieceValue[pieceOnSquare])
 
-		// max(0, piece_just_captured - see(square, other_side))
 		score := capturedVal - s.see(b, sq, attacker, sideToMove^1, occupied)
 		if score > 0 {
 			value = score
@@ -56,10 +52,9 @@ func (s *Searcher) see(b *board.Board, sq board.Square, pieceOnSquare board.Piec
 	return value
 }
 
-// getSmallestAttacker sequentially searches for the least valuable attacker of a square.
+// sequentially searches for least valuable attacker of square.
 func (s *Searcher) getSmallestAttacker(b *board.Board, sq board.Square, side board.Color, occupied board.BitBoard) (board.Piece, board.Square) {
 	if side == board.White {
-		// Evaluate reverse attacks for pawns to detect valid attackers
 		if pawns := board.MaskPawnAttacks(sq, board.Black) & b.PieceBitBoards[board.WP] & occupied; pawns != 0 {
 			return board.WP, board.Square(pawns.GetLSB())
 		}
