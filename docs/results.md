@@ -2,6 +2,7 @@
 
 ## Contents
 - [SPRT](#sequential-probability-ratio-test)
+- [Progression Test](#progression-test)
 
 ## Sequential Probability Ratio Test
 
@@ -54,3 +55,23 @@ Total time: 00:21:43 (h:m:s)
 | Ptnml(0-2)    | [23, 79, 143, 90, 63]                |
 
 Total time: 01:08:37 (h:m:s)
+
+## Progression Test
+
+### *ranga-1.16* v/s *stash-v21*
+**Rounds:** 2500 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
+
+**TC**: 10+0.01s
+
+| Metric        | Value                                |
+|---------------|--------------------------------------|
+| Elo           | -241.91 +/- 10.72                    |
+| nElo          | -294.97 +/- 9.63                     |
+| LOS           | 0.00%                                |
+| Games         | 5000 (W: 694, L: 3704, D: 602)       |
+| Score         | 995 / 5000 (19.90%)                  |
+| Draw ratio    | 22.36%                               |
+| WL/DD         | 17.63                                |
+| Ptnml(0-2)    | [1358, 459, 559, 83, 41]             |
+
+Total time: 01:24:35 (h:m:s)
