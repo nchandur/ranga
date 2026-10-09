@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"ranga/internal/board"
-	"ranga/internal/search"
 	"time"
 )
 
@@ -65,28 +64,41 @@ var benchFENs = []string{
 
 func Bench(e *Engine, out io.Writer) {
 	var totalNodes uint64
-	start := time.Now()
+	var searchTime time.Duration
 
 	b := board.NewBoard()
 
 	for _, fen := range benchFENs {
 		b.Clear()
-		e.searcher.TT.Clear()
-		e.searcher.Killers = [2][search.MAX_PLY]board.Move{}
-		e.searcher.History = [12][64]int{}
-
 		b.ParseFEN(fen)
+		b.Repetition.Idx = 0
+		b.Repetition.Table[0] = b.Key
+
+		e.searcher.TT.Clear()
+		e.searcher.Reset()
+		if e.searcher.NN != nil {
+			e.searcher.NN.Reset(&b)
+		}
 		e.searcher.Nodes = 0
-		e.searcher.Search(&b, benchDepth, 0)
+
+		start := time.Now()
+		score := 0
+		for d := 1; d <= benchDepth; d++ {
+			_, score = e.searcher.Search(&b, d, score)
+		}
+		searchTime += time.Since(start)
 
 		totalNodes += uint64(e.searcher.Nodes)
 	}
 
-	elapsed := time.Since(start)
+	if e.searcher.NN != nil {
+		e.searcher.NN.Reset(&e.board)
+	}
+
 	nps := uint64(0)
-	if ms := elapsed.Milliseconds(); ms > 0 {
+	if ms := searchTime.Milliseconds(); ms > 0 {
 		nps = totalNodes * 1000 / uint64(ms)
 	}
 
-	fmt.Fprintf(out, "%d nodes %d time %d nps\n", totalNodes, elapsed.Milliseconds(), nps)
+	fmt.Fprintf(out, "%d nodes %d time %d nps\n", totalNodes, searchTime.Milliseconds(), nps)
 }

@@ -83,7 +83,7 @@ bestmove g1f3
 
 ### `bench`
 
-Performs search on a fixed set of positions and reports total nodes searched and NPS. 
+Performs search on a fixed set of positions and reports total nodes searched, time taken and NPS. 
 
 ```bash
 ./path/to/bin bench
@@ -94,44 +94,44 @@ Performs search on a fixed set of positions and reports total nodes searched and
 
 ### Standard commands
 
-| Command                          | Description |
-|----------------------------------|-------------|
+| Command                          | Description                                                       |
+|----------------------------------|-------------------------------------------------------------------|
 | `uci`                            | Identifies the engine, lists its options and confirms UCI support |
-| `isready`                        | Replies `readyok` when engine is ready for further commands |
-| `setoption name <id> value <x>`  | Sets engine option (see below) |
-| `ucinewgame`                     | Resets board to the starting position |
-| `position startpos [moves ...]`  | Sets up starting position |
-| `position fen <fen> [moves ...]` | Sets up a position from FEN string |
-| `go [options]`                   | Starts a search (see parameters below) |
-| `stop`                           | Stops the current search and returns current best move |
-| `quit`                           | Stops any search and exits the engine |
+| `isready`                        | Replies `readyok` when engine is ready for further commands       |
+| `setoption name <id> value <x>`  | Sets engine option (see below)                                    |
+| `ucinewgame`                     | Resets board to the starting position                             |
+| `position startpos [moves ...]`  | Sets up starting position                                         |
+| `position fen <fen> [moves ...]` | Sets up a position from FEN string                                |
+| `go [options]`                   | Starts a search (see parameters below)                            |
+| `stop`                           | Stops the current search and returns current best move            |
+| `quit`                           | Stops any search and exits the engine                             |
 
 ### Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `Hash` | spin | Transposition table size in MB (default 16) |
-| `Clear Hash` | button | Clears transposition table |
+| Option       | Type   | Description                                 |
+|--------------|--------|---------------------------------------------|
+| `Hash`       | spin   | Transposition table size in MB (default 16) |
+| `Clear Hash` | button | Clears transposition table                  |
 
 ### `go` parameters
 
 | Parameter                   | Description                                 |
 |-----------------------------|---------------------------------------------|
-| `depth <n>`                 | Search to fixed depth                     |
-| `nodes <n>`                 | Limit search to a number of nodes       |
-| `movetime <ms>`             | Search for fixed amount of time           |
+| `depth <n>`                 | Search to fixed depth                       |
+| `nodes <n>`                 | Limit search to a number of nodes           |
+| `movetime <ms>`             | Search for fixed amount of time             |
 | `wtime <ms>` / `btime <ms>` | Remaining clock time for white / black      |
 | `winc <ms>` / `binc <ms>`   | Increment per move for white / black        |
-| `movestogo <n>`             | Moves remaining until next time control |
+| `movestogo <n>`             | Moves remaining until next time control     |
 | `infinite`                  | Search until an explicit `stop` command     |
 
 ### Debug commands
 
 These are not part of the UCI standard and are mainly useful when developing.
 
-| Command         | Description |
-|-----------------|-------------|
-| `eval`          | Prints the static evaluation of the current position in pawns |
-| `show`          | Prints an ASCII representation of the current board |
-| `clear`         | Removes all pieces from the board |
+| Command         | Description                                                          |
+|-----------------|----------------------------------------------------------------------|
+| `eval`          | Prints the static evaluation of the current position in pawns        |
+| `show`          | Prints an ASCII representation of the current board                  |
+| `clear`         | Removes all pieces from the board                                    |
 | `go perft <n>`  | Runs perft to depth `n` and prints the node count for each root move |
