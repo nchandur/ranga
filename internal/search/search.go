@@ -272,6 +272,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		ml := board.NewMoveList()
 		ml.GenerateMoves(b)
 
+		s.PV.FollowPv = true
 		s.PV.enablePVScoring(ml, 0)
 		s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
