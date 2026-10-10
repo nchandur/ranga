@@ -113,6 +113,14 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		return s.Quiescence(b, alpha, beta)
 	}
 
+	// look for move in transposition table
+	ttMove := s.TT.ProbeMove(b.Key)
+
+	// internal iterative reduction
+	if depth >= 4 && ttMove == board.NOMOVE && !inCheck {
+		depth--
+	}
+
 	staticEval := s.Evaluate(b)
 	pvNode := beta-alpha > 1
 
@@ -132,9 +140,6 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	legalMoves := 0
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
-
-	// look for move in transposition table
-	ttMove := s.TT.ProbeMove(b.Key)
 
 	if s.PV.FollowPv {
 		s.PV.enablePVScoring(ml, b.Ply)
