@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.17] - 2026-10-10
 
 ## Added 
 * feat(search): add static exchange evaluation to quiescence search [[#74](https://github.com/nchandur/ranga/pull/74)]
