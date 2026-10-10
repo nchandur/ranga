@@ -159,6 +159,25 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			continue
 		}
 
+		// SEE pruning
+		if movesSearched > 0 && !inCheck && move != ttMove && alpha > -MATESCORE+MAX_PLY && beta < MATESCORE-MAX_PLY {
+
+			// calculate material exchange for both captures and quiets
+			seeVal := s.SeeCapture(b, move)
+
+			if move.IsCapture() || move.Promoted() != board.Empty {
+				// prune if losing too much material relative to depth
+				if depth <= 8 && seeVal < -100*depth {
+					continue
+				}
+			} else {
+				// tighter depth restrictions to avoid horizon effect
+				if depth <= 4 && seeVal < -50*depth {
+					continue
+				}
+			}
+		}
+
 		state := b.Preserve()
 
 		var nnState nnue.Snapshot
