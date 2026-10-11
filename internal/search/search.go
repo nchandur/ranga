@@ -196,7 +196,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 		// late move reduction
 		givesCheck := s.isInCheck(b)
-		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck, givesCheck)
+		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck, givesCheck, pvNode)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -351,7 +351,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck, givesCheck bool) int {
+func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck, givesCheck, isPVNode bool) int {
 
 	var score int
 
@@ -365,6 +365,10 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			r := lmrTable[min(depth, 63)][min(movesSearched, 63)]
 
 			if givesCheck {
+				r--
+			}
+
+			if isPVNode {
 				r--
 			}
 
