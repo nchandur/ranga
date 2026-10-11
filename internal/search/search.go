@@ -369,7 +369,9 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
 
 		if reduced {
-			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-2)
+			r := lmrTable[min(depth, 63)][min(movesSearched, 63)]
+			r = clamp(r, 1, depth-2)
+			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1-r)
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
 		}
@@ -444,7 +446,7 @@ func (s *Searcher) isFutile(alpha, depth, staticEval int, inCheck, pvNode bool) 
 		return false
 	}
 
-	return staticEval+FutilityMargin[depth] <= alpha
+	return staticEval+futilityMargin[depth] <= alpha
 }
 
 // helper function for reverse futility pruning

@@ -37,4 +37,7 @@ var MVVLVA = [12][12]int{
 }
 
 // futility margin
-var FutilityMargin [4]int = [4]int{0, 100, 300, 500}
+var futilityMargin [4]int = [4]int{0, 100, 300, 500}
+
+// late move reduction
+var lmrTable [64][64]int
