@@ -93,15 +93,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		return score
 	}
 
-	var inCheck bool
-
-	// check if current side king is in check
-	switch b.Side {
-	case board.White:
-		inCheck = b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.WK].GetLSB()), board.Black)
-	case board.Black:
-		inCheck = b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.BK].GetLSB()), board.White)
-	}
+	inCheck := s.isInCheck(b)
 
 	// increase depth by 1 if in check
 	if inCheck {
@@ -203,7 +195,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		legalMoves++
 
 		// late move reduction
-		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck)
+		givesCheck := s.isInCheck(b)
+		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck, givesCheck)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -358,7 +351,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck bool) int {
+func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck, givesCheck bool) int {
 
 	var score int
 
@@ -370,6 +363,11 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 
 		if reduced {
 			r := lmrTable[min(depth, 63)][min(movesSearched, 63)]
+
+			if givesCheck {
+				r--
+			}
+
 			r = clamp(r, 1, depth-2)
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1-r)
 		} else {

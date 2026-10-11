@@ -4,6 +4,17 @@ import (
 	"ranga/internal/board"
 )
 
+func (s *Searcher) isInCheck(b *board.Board) bool {
+	// check if current side king is in check
+	switch b.Side {
+	case board.White:
+		return b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.WK].GetLSB()), board.Black)
+	case board.Black:
+		return b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.BK].GetLSB()), board.White)
+	}
+	return false
+}
+
 // update history heuristic with gravity
 func (s *Searcher) updateHistory(move board.Move, bonus int) {
 	clamped := clamp(bonus, -MAX_HISTORY, MAX_HISTORY)
