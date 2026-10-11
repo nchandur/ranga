@@ -15,6 +15,7 @@ type Searcher struct {
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
 	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
+	StaticEval         [MAX_PLY]int           // static eval at each ply
 	Nodes              int                    // nodes visited that search
 	NodeLimit          int                    // max number of nodes to visit
 	Stop               *atomic.Bool           // shared stop flag across all threads
@@ -27,6 +28,7 @@ type lmrCtx struct {
 	pvNode     bool
 	isKiller   bool
 	ttCapture  bool
+	improving  bool
 }
 
 // instantiates new searcher
@@ -115,6 +117,19 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	}
 
 	staticEval := s.Evaluate(b)
+
+	if inCheck {
+		s.StaticEval[b.Ply] = -INFINITY
+	} else {
+		s.StaticEval[b.Ply] = staticEval
+	}
+
+	improving := false
+	if !inCheck && b.Ply >= 2 {
+		prev := s.StaticEval[b.Ply-2]
+		improving = prev == -INFINITY || staticEval > prev
+	}
+
 	pvNode := beta-alpha > 1
 
 	// reverse futility pruning
@@ -214,6 +229,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			isKiller:   isKiller,
 			pvNode:     pvNode,
 			ttCapture:  ttMove != board.NOMOVE && ttMove.IsCapture(),
+			improving:  improving,
 		}
 
 		score = s.lateMoveReduction(b,
@@ -303,6 +319,8 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		alpha = max(prevScore-delta, -INFINITY)
 		beta = min(prevScore+delta, INFINITY)
 	}
+
+	s.StaticEval[0] = s.Evaluate(b)
 
 	for {
 		bestMove, bestScore := board.NOMOVE, -INFINITY
@@ -405,6 +423,10 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 
 			if ctx.ttCapture {
 				r--
+			}
+
+			if !ctx.improving {
+				r++
 			}
 
 			hist := s.History[move.Piece()][move.Target()]
