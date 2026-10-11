@@ -403,36 +403,34 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 	if movesSearched == 0 {
 		score = -s.AlphaBeta(b, -beta, -alpha, depth-1)
 	} else {
-		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
+
+		candidate := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
 			!ctx.inCheck && !move.IsCapture() && move.Promoted() == board.Empty
 
-		if reduced {
-			r := lmrTable[min(depth, 63)][min(movesSearched, 63)]
-
+		r := 0
+		if candidate {
+			r = lmrTable[min(depth, 63)][min(movesSearched, 63)]
 			if ctx.givesCheck {
 				r--
 			}
-
 			if ctx.pvNode {
 				r--
 			}
-
 			if ctx.isKiller {
 				r--
 			}
-
 			if ctx.ttCapture {
-				r--
+				r++
 			}
-
 			if !ctx.improving {
 				r++
 			}
+			r -= s.History[move.Piece()][move.Target()] / HISTORY_LMR_DIV
+			r = clamp(r, 0, depth-2)
+		}
+		reduced := r > 0
 
-			hist := s.History[move.Piece()][move.Target()]
-			r -= hist / HISTORY_LMR_DIV
-
-			r = clamp(r, 1, depth-2)
+		if reduced {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1-r)
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
