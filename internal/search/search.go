@@ -20,6 +20,15 @@ type Searcher struct {
 	Stop               *atomic.Bool           // shared stop flag across all threads
 }
 
+// LMR context
+type lmrCtx struct {
+	inCheck    bool
+	givesCheck bool
+	pvNode     bool
+	isKiller   bool
+	ttCapture  bool
+}
+
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.Bool) *Searcher {
 	s := Searcher{
@@ -177,6 +186,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			nnState = s.NN.Preserve()
 		}
 
+		isKiller := move == s.Killers[0][b.Ply] || move == s.Killers[1][b.Ply]
+
 		b.Ply++
 
 		if !b.MakeMove(move, false) {
@@ -196,7 +207,23 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 		// late move reduction
 		givesCheck := s.isInCheck(b)
-		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck, givesCheck, pvNode)
+
+		ctx := lmrCtx{
+			inCheck:    inCheck,
+			givesCheck: givesCheck,
+			isKiller:   isKiller,
+			pvNode:     pvNode,
+			ttCapture:  ttMove != board.NOMOVE && ttMove.IsCapture(),
+		}
+
+		score = s.lateMoveReduction(b,
+			move,
+			alpha,
+			beta,
+			depth,
+			movesSearched,
+			ctx,
+		)
 
 		b.Ply--
 		b.Repetition.Idx--
@@ -351,7 +378,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck, givesCheck, isPVNode bool) int {
+func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, ctx lmrCtx) int {
 
 	var score int
 
@@ -359,16 +386,24 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 		score = -s.AlphaBeta(b, -beta, -alpha, depth-1)
 	} else {
 		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
-			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
+			!ctx.inCheck && !move.IsCapture() && move.Promoted() == board.Empty
 
 		if reduced {
 			r := lmrTable[min(depth, 63)][min(movesSearched, 63)]
 
-			if givesCheck {
+			if ctx.givesCheck {
 				r--
 			}
 
-			if isPVNode {
+			if ctx.pvNode {
+				r--
+			}
+
+			if ctx.isKiller {
+				r--
+			}
+
+			if ctx.ttCapture {
 				r--
 			}
 
