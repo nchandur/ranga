@@ -372,6 +372,9 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 				r--
 			}
 
+			hist := s.History[move.Piece()][move.Target()]
+			r -= hist / HISTORY_LMR_DIV
+
 			r = clamp(r, 1, depth-2)
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1-r)
 		} else {

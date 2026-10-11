@@ -11,6 +11,7 @@ const (
 	REDUCTION_LIMIT  int = 3       // minimum remaining search depth required to trigger LMR
 	BIG_DELTA        int = 200
 	DEFAULT_TT_SIZE  int = 16
+	HISTORY_LMR_DIV  int = MAX_HISTORY / 2
 )
 
 const (
