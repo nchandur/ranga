@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 * feat(search): add PVS static exchange evaluation pruning [[#77](https://github.com/nchandur/ranga/pull/77)]
+* feat(search): enhance late move reduction heuristics [[#78](https://github.com/nchandur/ranga/pull/78)]
 
 ## [v1.17] - 2026-10-10
 
