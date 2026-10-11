@@ -146,3 +146,9 @@ func (tt *TranspositionTable) Resize(size int) {
 	tt.Entries = make([]TranspositionTableEntry, numEntries)
 	tt.Length = numEntries
 }
+
+// reports whether the table holds an entry for key
+func (tt *TranspositionTable) Hit(key uint64) bool {
+	e := &tt.Entries[key%uint64(len(tt.Entries))]
+	return e.Key == key
+}

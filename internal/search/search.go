@@ -115,14 +115,14 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	// look for move in transposition table
 	ttMove := s.TT.ProbeMove(b.Key)
+	pvNode := beta-alpha > 1
 
 	// internal iterative reduction
-	if depth >= 4 && ttMove == board.NOMOVE && !inCheck {
+	if pvNode && depth >= 4 && !s.TT.Hit(b.Key) {
 		depth--
 	}
 
 	staticEval := s.Evaluate(b)
-	pvNode := beta-alpha > 1
 
 	// reverse futility pruning
 	if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
