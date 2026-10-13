@@ -222,7 +222,7 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 	}
 
 	source, target := move.Source(), move.Target()
-	piece := move.Piece()
+	piece := b.Mailbox[source]
 
 	// preserves current board state
 	stateCopy := b.Preserve()
@@ -250,11 +250,11 @@ func (b *Board) MakeMove(move Move, onlyCaptures bool) bool {
 	b.Key ^= PieceKeys[piece][target]
 
 	// handles pawn promotion (replaces pawn with promoted piece)
-	if move.Promoted() != Empty {
+	if move.IsPromotion() {
 		b.RemovePiece(target)
 		b.Key ^= PieceKeys[piece][target]
 
-		promoted := move.Promoted()
+		promoted := move.Promoted(b.Side)
 		b.AddPiece(promoted, target)
 		b.Key ^= PieceKeys[promoted][target]
 	}
@@ -369,16 +369,8 @@ func (b *Board) ParseMove(move string) Move {
 		m := list.Moves[n]
 
 		if m.Source() == from && m.Target() == to {
-			prom := m.Promoted()
-
-			if prom != Empty {
-				if (prom == WR || prom == BR) && move[4] == 'r' {
-					return m
-				} else if (prom == WB || prom == BB) && move[4] == 'b' {
-					return m
-				} else if (prom == WQ || prom == BQ) && move[4] == 'q' {
-					return m
-				} else if (prom == WN || prom == BN) && move[4] == 'n' {
+			if m.IsPromotion() {
+				if len(move) > 4 && move[4] == m.PromotionChar() {
 					return m
 				}
 				continue

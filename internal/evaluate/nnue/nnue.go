@@ -47,7 +47,7 @@ func (n *NNUE) Restore(s Snapshot) {
 // applies incremental accumulator changes for a move that has already been confirmed as legal
 func (n *NNUE) Update(before *board.Board, move board.Move) {
 	source, target := move.Source(), move.Target()
-	piece := move.Piece()
+	piece := before.Mailbox[source]
 
 	n.removePiece(piece, source)
 
@@ -63,8 +63,8 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 		}
 	}
 
-	if move.Promoted() != board.Empty {
-		n.addPiece(move.Promoted(), target)
+	if move.IsPromotion() {
+		n.addPiece(move.Promoted(before.Side), target)
 	} else {
 		n.addPiece(piece, target)
 	}

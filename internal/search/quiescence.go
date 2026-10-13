@@ -161,8 +161,8 @@ func (s *Searcher) deltaPruning(alpha, evaluation int, inCheck bool, b *board.Bo
 	gain := abs(board.PieceValue[captured])
 
 	// actual promoted piece value
-	if move.Promoted() != board.Empty {
-		gain += abs(board.PieceValue[move.Promoted()]) - abs(board.PieceValue[board.WP])
+	if move.IsPromotion() {
+		gain += abs(board.PieceValue[move.Promoted(b.Side)]) - abs(board.PieceValue[board.WP])
 	}
 
 	return evaluation+gain+BIG_DELTA < alpha

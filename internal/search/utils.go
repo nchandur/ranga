@@ -5,9 +5,9 @@ import (
 )
 
 // update history heuristic with gravity
-func (s *Searcher) updateHistory(move board.Move, bonus int) {
+func (s *Searcher) updateHistory(b *board.Board, move board.Move, bonus int) {
 	clamped := clamp(bonus, -MAX_HISTORY, MAX_HISTORY)
-	s.History[move.Piece()][move.Target()] += (clamped - s.History[move.Piece()][move.Target()]*abs(clamped)/MAX_HISTORY)
+	s.History[b.Mailbox[move.Source()]][move.Target()] += (clamped - s.History[b.Mailbox[move.Source()]][move.Target()]*abs(clamped)/MAX_HISTORY)
 }
 
 // returns true for side with non-pawn material

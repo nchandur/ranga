@@ -6,7 +6,7 @@ import (
 )
 
 func TestTranspositionTable(t *testing.T) {
-	sampleMove := board.NewMove(board.E2, board.E4, board.WP, board.Empty, false, false, false, false)
+	sampleMove := board.NewMove(board.E2, board.E4, board.MoveQuiet)
 
 	t.Run("NewTranspositionTable allocates power-of-two capacity", func(t *testing.T) {
 		tt := NewTranspositionTable(1)
@@ -75,14 +75,14 @@ func TestTranspositionTable(t *testing.T) {
 
 		tt.Store(200, 5, 0, FEXACT, key, sampleMove)
 
-		shallowMove := board.NewMove(board.D2, board.D4, board.WP, board.Empty, false, false, false, false)
+		shallowMove := board.NewMove(board.D2, board.D4, board.MoveQuiet)
 		tt.Store(50, 2, 0, FEXACT, key, shallowMove)
 
 		if got := tt.ProbeMove(key); got != sampleMove {
 			t.Errorf("shallow store overwrote deeper entry: got %v, want %v", got, sampleMove)
 		}
 
-		deepMove := board.NewMove(board.C2, board.C4, board.WP, board.Empty, false, false, false, false)
+		deepMove := board.NewMove(board.C2, board.C4, board.MoveQuiet)
 		tt.Store(300, 6, 0, FEXACT, key, deepMove)
 
 		if got := tt.ProbeMove(key); got != deepMove {
