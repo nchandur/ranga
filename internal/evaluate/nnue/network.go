@@ -28,17 +28,8 @@ func (net *Network) Randomize() {
 }
 
 func (net *Network) Evaluate(us, them *Accumulator) int32 {
-	output := int32(0)
-
-	// side to move accumulator
-	for i := range HiddenSize {
-		output += screlu(us.Values[i]) * int32(net.OutputWeights[i])
-	}
-
-	// not side to move accumulator
-	for i := range HiddenSize {
-		output += screlu(them.Values[i]) * int32(net.OutputWeights[HiddenSize+i])
-	}
+	output := lizardDot(us.Values[:], net.OutputWeights[:HiddenSize])
+	output += lizardDot(them.Values[:], net.OutputWeights[HiddenSize:2*HiddenSize])
 
 	// reduce quantization
 	output /= int32(QA)
