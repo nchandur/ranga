@@ -3,12 +3,13 @@ package search
 import (
 	"math/bits"
 	"ranga/internal/board"
+	"sync/atomic"
 	"unsafe"
 )
 
 // evaluation flags for transposition table entries
 const (
-	FEXACT int = iota // indicates exact evaluation value.
+	FEXACT int = iota // indicates exact evaluation value
 	FALPHA            // indicates upper bound
 	FBETA             // indicates lower bound
 
@@ -16,57 +17,97 @@ const (
 
 const NOENTRY int = 99999 // indicate cache miss or uninitialized entry
 
-// holds tranposition table entries
-type TranspositionTableEntry struct {
-	board.Move
-	Score int
-	Depth int
-	Flag  int
-	Key   uint64
+// A TT entry is packed into one uint64:
+//
+//	bits  0-15  move                      (16 bits, board.Move as is)
+//	bits 16-37  score + scoreBias         (22 bits, range about +-2.09M)
+//	bits 38-45  depth                     (8 bits, 0..255)
+//	bits 46-47  flag + 1                  (2 bits, never 0)
+//	bits 48-63  key check                 (top 16 bits of the zobrist key)
+
+const (
+	moveBits  = 16
+	scoreBits = 22
+	depthBits = 8
+	flagBits  = 2
+
+	moveShift  = 0
+	scoreShift = moveShift + moveBits
+	depthShift = scoreShift + scoreBits
+	flagShift  = depthShift + depthBits
+	checkShift = flagShift + flagBits // 48
+
+	moveMask  = 1<<moveBits - 1
+	scoreMask = 1<<scoreBits - 1
+	depthMask = 1<<depthBits - 1
+	flagMask  = 1<<flagBits - 1
+
+	scoreBias = 1 << (scoreBits - 1)
+)
+
+type TranspositionTableEntry uint64
+
+func packEntry(key uint64, score, depth, flag int, move board.Move) TranspositionTableEntry {
+	score = max(-scoreBias+1, min(scoreBias-1, score))
+	depth = max(0, min(depthMask, depth))
+
+	return TranspositionTableEntry(
+		uint64(move)<<moveShift |
+			uint64(score+scoreBias)<<scoreShift |
+			uint64(depth)<<depthShift |
+			uint64(flag+1)<<flagShift |
+			(key>>checkShift)<<checkShift)
 }
 
-// transposition table
+func (e TranspositionTableEntry) Move() board.Move {
+	return board.Move((uint64(e) >> moveShift) & moveMask)
+}
+func (e TranspositionTableEntry) Score() int {
+	return int((uint64(e)>>scoreShift)&scoreMask) - scoreBias
+}
+func (e TranspositionTableEntry) Depth() int {
+	return int((uint64(e) >> depthShift) & depthMask)
+}
+func (e TranspositionTableEntry) Flag() int {
+	return int((uint64(e)>>flagShift)&flagMask) - 1
+}
+
+// reports whether entry is occupied and belongs to key
+func (e TranspositionTableEntry) matches(key uint64) bool {
+	return e != 0 && uint64(e)>>checkShift == key>>checkShift
+}
+
 // cache of previously evaluated chess positions
 type TranspositionTable struct {
-	Entries []TranspositionTableEntry // actual cached evaluation entries
-	Length  int                       // max capacity of transposition table
+	Entries []atomic.Uint64 // packed entries
+	Length  int             // max capacity of transposition table (power of two)
+}
+
+// returns table slot for key
+func (tt *TranspositionTable) slot(key uint64) *atomic.Uint64 {
+	return &tt.Entries[key&uint64(tt.Length-1)]
 }
 
 // instantiates new transposition table
-// size specifies the total memory allocated for the transposition table in MB
 func NewTranspositionTable(size int) *TranspositionTable {
-
-	size = max(size, 1)
-	bytes := size * 1024 * 1024
-
-	entrySize := int(unsafe.Sizeof(TranspositionTableEntry{}))
-	targetEntries := bytes / entrySize
-
-	entryCount := 1
-	for entryCount*2 <= targetEntries {
-		entryCount *= 2
-	}
-
-	return &TranspositionTable{Entries: make([]TranspositionTableEntry, entryCount), Length: entryCount}
+	tt := &TranspositionTable{}
+	tt.Resize(size)
+	return tt
 }
 
-// clears all entries in transposition table
+// clears all entries in transposition table.
 func (tt *TranspositionTable) Clear() {
-	for i := range tt.Length {
-		tt.Entries[i] = TranspositionTableEntry{}
-	}
+	clear(tt.Entries)
 }
 
 // checks transposition table for previously evaluated position
 func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int {
 
-	idx := key % uint64(tt.Length)
+	entry := TranspositionTableEntry(tt.slot(key).Load())
 
-	entry := (*tt).Entries[idx]
+	if entry.matches(key) {
 
-	if entry.Key == key {
-
-		score := entry.Score
+		score := entry.Score()
 
 		if score < -MATESCORE {
 			score += ply
@@ -76,16 +117,18 @@ func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int
 			score -= ply
 		}
 
-		if entry.Depth >= depth {
-			if entry.Flag == FEXACT {
+		if entry.Depth() >= depth {
+			flag := entry.Flag()
+
+			if flag == FEXACT {
 				return score
 			}
 
-			if (entry.Flag == FALPHA) && (score <= alpha) {
+			if (flag == FALPHA) && (score <= alpha) {
 				return alpha
 			}
 
-			if (entry.Flag == FBETA) && (score >= beta) {
+			if (flag == FBETA) && (score >= beta) {
 				return beta
 			}
 
@@ -98,9 +141,10 @@ func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int
 // saves or updates entry in transposition table
 func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, move board.Move) {
 
-	entry := &(tt.Entries[key%uint64(tt.Length)])
+	slot := tt.slot(key)
 
-	if entry.Key != 0 && entry.Depth > depth {
+	old := TranspositionTableEntry(slot.Load())
+	if old != 0 && old.Depth() > depth {
 		return
 	}
 
@@ -112,21 +156,16 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 		score += ply
 	}
 
-	entry.Key = key
-	entry.Score = score
-	entry.Flag = flag
-	entry.Depth = depth
-	entry.Move = move
-
+	slot.Store(uint64(packEntry(key, score, depth, flag, move)))
 }
 
 // returns move stored in transposition table
 func (tt *TranspositionTable) ProbeMove(key uint64) board.Move {
 
-	entry := &tt.Entries[key%uint64(tt.Length)]
+	entry := TranspositionTableEntry(tt.slot(key).Load())
 
-	if entry.Key == key {
-		return entry.Move
+	if entry.matches(key) {
+		return entry.Move()
 	}
 
 	return board.NOMOVE
@@ -137,12 +176,12 @@ func (tt *TranspositionTable) Resize(size int) {
 	size = max(size, 1)
 	sizeInBytes := uint64(size) * 1024 * 1024
 
-	entrySize := uint64(unsafe.Sizeof(TranspositionTableEntry{}))
+	entrySize := uint64(unsafe.Sizeof(atomic.Uint64{}))
 	maxEntries := sizeInBytes / entrySize
 
 	powerOfTwoIndex := bits.Len64(maxEntries) - 1
 	numEntries := int(uint64(1) << powerOfTwoIndex)
 
-	tt.Entries = make([]TranspositionTableEntry, numEntries)
+	tt.Entries = make([]atomic.Uint64, numEntries)
 	tt.Length = numEntries
 }

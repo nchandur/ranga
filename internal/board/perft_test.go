@@ -18,7 +18,7 @@ func TestPerft_EPDSuite(t *testing.T) {
 	}
 	defer file.Close()
 
-	maxNodes := int64(50000)
+	maxNodes := int64(100000)
 	if testing.Short() {
 		maxNodes = 20000
 	}
