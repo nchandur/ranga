@@ -20,9 +20,9 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 		list.generatePawnMoves(&b, false)
 
 		wantMoves := []Move{
-			NewMove(E2, E3, WP, Empty, false, false, false, false),
-			NewMove(E2, E4, WP, Empty, false, true, false, false),
-			NewMove(D3, D4, WP, Empty, false, false, false, false),
+			NewMove(E2, E3, MoveQuiet),
+			NewMove(E2, E4, MoveDouble),
+			NewMove(D3, D4, MoveQuiet),
 		}
 
 		if list.Count != len(wantMoves) {
@@ -42,9 +42,9 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 		list.generatePawnMoves(&b, false)
 
 		wantMoves := []Move{
-			NewMove(D7, D6, BP, Empty, false, false, false, false),
-			NewMove(D7, D5, BP, Empty, false, true, false, false),
-			NewMove(E6, E5, BP, Empty, false, false, false, false),
+			NewMove(D7, D6, MoveQuiet),
+			NewMove(D7, D5, MoveDouble),
+			NewMove(E6, E5, MoveQuiet),
 		}
 
 		if list.Count != len(wantMoves) {
@@ -63,10 +63,10 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 		var list MoveList
 		list.generatePawnMoves(&b, false)
 
-		if containsMove(&list, NewMove(E2, E3, WP, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(E2, E3, MoveQuiet)) {
 			t.Errorf("blocked pawn at e2 generated push to e3")
 		}
-		if containsMove(&list, NewMove(E2, E4, WP, Empty, false, true, false, false)) {
+		if containsMove(&list, NewMove(E2, E4, MoveDouble)) {
 			t.Errorf("blocked pawn at e2 generated double push to e4")
 		}
 	})
@@ -80,8 +80,8 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 		// 4 quiet promotions to e8 + 4 capture promotions to d8 = 8 moves
 		promoPieces := []Piece{WQ, WR, WB, WN}
 		for _, piece := range promoPieces {
-			quietPromo := NewMove(E7, E8, WP, piece, false, false, false, false)
-			capturePromo := NewMove(E7, D8, WP, piece, true, false, false, false)
+			quietPromo := NewMove(E7, E8, MovePromoQ)
+			capturePromo := NewMove(E7, D8, MovePromoCaptureQ)
 
 			if !containsMove(&list, quietPromo) {
 				t.Errorf("missing quiet promotion to %v", piece)
@@ -103,8 +103,8 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 
 		promoPieces := []Piece{BQ, BR, BB, BN}
 		for _, piece := range promoPieces {
-			quietPromo := NewMove(D2, D1, BP, piece, false, false, false, false)
-			capturePromo := NewMove(D2, E1, BP, piece, true, false, false, false)
+			quietPromo := NewMove(D2, D1, MovePromoQ)
+			capturePromo := NewMove(D2, E1, MovePromoCaptureQ)
 
 			if !containsMove(&list, quietPromo) {
 				t.Errorf("missing quiet promotion to %v", piece)
@@ -124,8 +124,8 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 		var list MoveList
 		list.generatePawnMoves(&b, false)
 
-		epMoveRight := NewMove(C5, D6, WP, Empty, true, false, true, false)
-		epMoveLeft := NewMove(E5, D6, WP, Empty, true, false, true, false)
+		epMoveRight := NewMove(C5, D6, MoveEnPass)
+		epMoveLeft := NewMove(E5, D6, MoveEnPass)
 
 		if !containsMove(&list, epMoveRight) {
 			t.Errorf("missing en passant move c5xd6")
@@ -141,18 +141,18 @@ func TestMoveList_GeneratePawnMoves(t *testing.T) {
 		var list MoveList
 		list.generatePawnMoves(&b, true)
 
-		if containsMove(&list, NewMove(E2, E3, WP, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(E2, E3, MoveQuiet)) {
 			t.Errorf("quiet push included when capturesOnly = true")
 		}
-		if containsMove(&list, NewMove(E7, E8, WP, WQ, false, false, false, false)) {
+		if containsMove(&list, NewMove(E7, E8, MoveQuiet)) {
 			t.Errorf("quiet promotion included when capturesOnly = true")
 		}
 
-		if !containsMove(&list, NewMove(E4, D5, WP, Empty, true, false, false, false)) {
+		if !containsMove(&list, NewMove(E4, D5, MoveCapture)) {
 			t.Errorf("expected capture e4xd5 missing")
 		}
 
-		if !containsMove(&list, NewMove(E7, D8, WP, WQ, true, false, false, false)) {
+		if !containsMove(&list, NewMove(E7, D8, MovePromoCaptureQ)) {
 			t.Errorf("expected capture promotion e7xd8 missing")
 		}
 	})
@@ -167,20 +167,20 @@ func TestMoveList_GenerateKnightMoves(t *testing.T) {
 		list.generateKnightMoves(&b, false)
 
 		wantMoves := []Move{
-			NewMove(D4, E6, WN, Empty, true, false, false, false),
-			NewMove(D4, B3, WN, Empty, false, false, false, false),
-			NewMove(D4, B5, WN, Empty, false, false, false, false),
-			NewMove(D4, C2, WN, Empty, false, false, false, false),
-			NewMove(D4, E2, WN, Empty, false, false, false, false),
-			NewMove(D4, F3, WN, Empty, false, false, false, false),
-			NewMove(D4, F5, WN, Empty, false, false, false, false),
+			NewMove(D4, E6, MoveCapture),
+			NewMove(D4, B3, MoveQuiet),
+			NewMove(D4, B5, MoveQuiet),
+			NewMove(D4, C2, MoveQuiet),
+			NewMove(D4, E2, MoveQuiet),
+			NewMove(D4, F3, MoveQuiet),
+			NewMove(D4, F5, MoveQuiet),
 		}
 
 		if list.Count != len(wantMoves) {
 			t.Fatalf("Move count = %d; want %d", list.Count, len(wantMoves))
 		}
 
-		blockedMove := NewMove(D4, C6, WN, Empty, false, false, false, false)
+		blockedMove := NewMove(D4, C6, MoveQuiet)
 		if containsMove(&list, blockedMove) {
 			t.Errorf("knight generated illegal move onto friendly blocker square c6")
 		}
@@ -198,12 +198,12 @@ func TestMoveList_GenerateKnightMoves(t *testing.T) {
 		var list MoveList
 		list.generateKnightMoves(&b, false)
 
-		captureMove := NewMove(E5, F7, BN, Empty, true, false, false, false)
+		captureMove := NewMove(E5, F7, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing black knight capture on f7: %v", captureMove)
 		}
 
-		blockedMove := NewMove(E5, D7, BN, Empty, false, false, false, false)
+		blockedMove := NewMove(E5, D7, MoveQuiet)
 		if containsMove(&list, blockedMove) {
 			t.Errorf("black knight generated move onto friendly pawn at d7")
 		}
@@ -216,8 +216,8 @@ func TestMoveList_GenerateKnightMoves(t *testing.T) {
 		list.generateKnightMoves(&b, false)
 
 		wantMoves := []Move{
-			NewMove(A1, B3, WN, Empty, false, false, false, false),
-			NewMove(A1, C2, WN, Empty, false, false, false, false),
+			NewMove(A1, B3, MoveQuiet),
+			NewMove(A1, C2, MoveQuiet),
 		}
 
 		if list.Count != len(wantMoves) {
@@ -240,14 +240,14 @@ func TestMoveList_GenerateKnightMoves(t *testing.T) {
 			t.Fatalf("expected exactly 2 captures, got %d", list.Count)
 		}
 
-		capture1 := NewMove(D4, C6, WN, Empty, true, false, false, false)
-		capture2 := NewMove(D4, E6, WN, Empty, true, false, false, false)
+		capture1 := NewMove(D4, C6, MoveCapture)
+		capture2 := NewMove(D4, E6, MoveCapture)
 
 		if !containsMove(&list, capture1) || !containsMove(&list, capture2) {
 			t.Errorf("missing expected knight captures")
 		}
 
-		quietMove := NewMove(D4, F5, WN, Empty, false, false, false, false)
+		quietMove := NewMove(D4, F5, MoveQuiet)
 		if containsMove(&list, quietMove) {
 			t.Errorf("quiet move generated when capturesOnly is true: %v", quietMove)
 		}
@@ -262,12 +262,12 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 		var list MoveList
 		list.generateKingMoves(&b, false)
 
-		captureMove := NewMove(E4, D5, WK, Empty, true, false, false, false)
+		captureMove := NewMove(E4, D5, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing expected king capture on d5: %v", captureMove)
 		}
 
-		blockedMove := NewMove(E4, E5, WK, Empty, false, false, false, false)
+		blockedMove := NewMove(E4, E5, MoveQuiet)
 		if containsMove(&list, blockedMove) {
 			t.Errorf("king generated illegal move onto friendly blocker square e5")
 		}
@@ -283,12 +283,12 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 		var list MoveList
 		list.generateKingMoves(&b, false)
 
-		captureMove := NewMove(E5, D4, BK, Empty, true, false, false, false)
+		captureMove := NewMove(E5, D4, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing black king capture on d4: %v", captureMove)
 		}
 
-		blockedMove := NewMove(E5, F4, BK, Empty, false, false, false, false)
+		blockedMove := NewMove(E5, F4, MoveQuiet)
 		if containsMove(&list, blockedMove) {
 			t.Errorf("black king generated move onto friendly pawn at f4")
 		}
@@ -300,8 +300,8 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 		var list MoveList
 		list.generateKingMoves(&b, false)
 
-		kingsideCastle := NewMove(E1, G1, WK, Empty, false, false, false, true)
-		queensideCastle := NewMove(E1, C1, WK, Empty, false, false, false, true)
+		kingsideCastle := NewMove(E1, G1, MoveCastle)
+		queensideCastle := NewMove(E1, C1, MoveCastle)
 
 		if !containsMove(&list, kingsideCastle) {
 			t.Errorf("missing legal white kingside castle (e1-g1)")
@@ -317,8 +317,8 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 		var list MoveList
 		list.generateKingMoves(&b, false)
 
-		kingsideCastle := NewMove(E1, G1, WK, Empty, false, false, false, true)
-		queensideCastle := NewMove(E1, C1, WK, Empty, false, false, false, true)
+		kingsideCastle := NewMove(E1, G1, MoveCastle)
+		queensideCastle := NewMove(E1, C1, MoveCastle)
 
 		if containsMove(&list, kingsideCastle) {
 			t.Errorf("white kingside castle generated despite f1 blocker")
@@ -334,8 +334,8 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 		var list MoveList
 		list.generateKingMoves(&b, false)
 
-		kingsideCastle := NewMove(E1, G1, WK, Empty, false, false, false, true)
-		queensideCastle := NewMove(E1, C1, WK, Empty, false, false, false, true)
+		kingsideCastle := NewMove(E1, G1, MoveCastle)
+		queensideCastle := NewMove(E1, C1, MoveCastle)
 
 		if containsMove(&list, kingsideCastle) || containsMove(&list, queensideCastle) {
 			t.Errorf("castling generated while king is in check at e1")
@@ -358,8 +358,8 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 		var list MoveList
 		list.generateKingMoves(&b, false)
 
-		kingsideCastle := NewMove(E8, G8, BK, Empty, false, false, false, true)
-		queensideCastle := NewMove(E8, C8, BK, Empty, false, false, false, true)
+		kingsideCastle := NewMove(E8, G8, MoveCastle)
+		queensideCastle := NewMove(E8, C8, MoveCastle)
 
 		if !containsMove(&list, kingsideCastle) {
 			t.Errorf("missing legal black kingside castle (e8-g8)")
@@ -389,12 +389,12 @@ func TestMoveList_GenerateKingMoves(t *testing.T) {
 			t.Fatalf("expected exactly 1 capture, got %d", list.Count)
 		}
 
-		captureMove := NewMove(E1, D2, WK, Empty, true, false, false, false)
+		captureMove := NewMove(E1, D2, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing king capture on d2")
 		}
 
-		kingsideCastle := NewMove(E1, G1, WK, Empty, false, false, false, true)
+		kingsideCastle := NewMove(E1, G1, MoveCastle)
 		if containsMove(&list, kingsideCastle) {
 			t.Errorf("castling generated when capturesOnly is true")
 		}
@@ -409,31 +409,31 @@ func TestMoveList_GenerateBishopMoves(t *testing.T) {
 		var list MoveList
 		list.generateBishopMoves(&b, false)
 
-		captureMove := NewMove(D4, F6, WB, Empty, true, false, false, false)
+		captureMove := NewMove(D4, F6, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing bishop capture on f6: %v", captureMove)
 		}
 
-		if containsMove(&list, NewMove(D4, G7, WB, Empty, false, false, false, false)) ||
-			containsMove(&list, NewMove(D4, H8, WB, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, G7, MoveQuiet)) ||
+			containsMove(&list, NewMove(D4, H8, MoveQuiet)) {
 			t.Errorf("bishop ray leaped through enemy blocker on f6")
 		}
 
-		if containsMove(&list, NewMove(D4, C5, WB, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, C5, MoveQuiet)) {
 			t.Errorf("bishop generated move onto friendly blocker on c5")
 		}
-		if containsMove(&list, NewMove(D4, B6, WB, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, B6, MoveQuiet)) {
 			t.Errorf("bishop ray leaped through friendly blocker on c5")
 		}
 
 		wantQuietMoves := []Move{
-			NewMove(D4, E5, WB, Empty, false, false, false, false),
-			NewMove(D4, C3, WB, Empty, false, false, false, false),
-			NewMove(D4, B2, WB, Empty, false, false, false, false),
-			NewMove(D4, A1, WB, Empty, false, false, false, false),
-			NewMove(D4, E3, WB, Empty, false, false, false, false),
-			NewMove(D4, F2, WB, Empty, false, false, false, false),
-			NewMove(D4, G1, WB, Empty, false, false, false, false),
+			NewMove(D4, E5, MoveQuiet),
+			NewMove(D4, C3, MoveQuiet),
+			NewMove(D4, B2, MoveQuiet),
+			NewMove(D4, A1, MoveQuiet),
+			NewMove(D4, E3, MoveQuiet),
+			NewMove(D4, F2, MoveQuiet),
+			NewMove(D4, G1, MoveQuiet),
 		}
 
 		for _, m := range wantQuietMoves {
@@ -453,12 +453,12 @@ func TestMoveList_GenerateBishopMoves(t *testing.T) {
 		var list MoveList
 		list.generateBishopMoves(&b, false)
 
-		captureMove := NewMove(E5, C7, BB, Empty, true, false, false, false)
+		captureMove := NewMove(E5, C7, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing black bishop capture on c7: %v", captureMove)
 		}
 
-		friendlyBlocker := NewMove(E5, G7, BB, Empty, false, false, false, false)
+		friendlyBlocker := NewMove(E5, G7, MoveQuiet)
 		if containsMove(&list, friendlyBlocker) {
 			t.Errorf("black bishop generated move onto friendly pawn at g7")
 		}
@@ -474,14 +474,14 @@ func TestMoveList_GenerateBishopMoves(t *testing.T) {
 			t.Fatalf("expected exactly 2 captures, got %d", list.Count)
 		}
 
-		cap1 := NewMove(D4, B6, WB, Empty, true, false, false, false)
-		cap2 := NewMove(D4, F6, WB, Empty, true, false, false, false)
+		cap1 := NewMove(D4, B6, MoveCapture)
+		cap2 := NewMove(D4, F6, MoveCapture)
 
 		if !containsMove(&list, cap1) || !containsMove(&list, cap2) {
 			t.Errorf("missing expected bishop captures when capturesOnly = true")
 		}
 
-		quietMove := NewMove(D4, C3, WB, Empty, false, false, false, false)
+		quietMove := NewMove(D4, C3, MoveQuiet)
 		if containsMove(&list, quietMove) {
 			t.Errorf("quiet move generated when capturesOnly is true: %v", quietMove)
 		}
@@ -496,32 +496,32 @@ func TestMoveList_GenerateRookMoves(t *testing.T) {
 		var list MoveList
 		list.generateRookMoves(&b, false)
 
-		captureMove := NewMove(D4, D6, WR, Empty, true, false, false, false)
+		captureMove := NewMove(D4, D6, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing rook capture on d6: %v", captureMove)
 		}
 
-		if containsMove(&list, NewMove(D4, D7, WR, Empty, false, false, false, false)) ||
-			containsMove(&list, NewMove(D4, D8, WR, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, D7, MoveQuiet)) ||
+			containsMove(&list, NewMove(D4, D8, MoveQuiet)) {
 			t.Errorf("rook ray leaped through enemy blocker on d6")
 		}
 
-		if containsMove(&list, NewMove(D4, D3, WR, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, D3, MoveQuiet)) {
 			t.Errorf("rook generated move onto friendly blocker on d3")
 		}
-		if containsMove(&list, NewMove(D4, D2, WR, Empty, false, false, false, false)) ||
-			containsMove(&list, NewMove(D4, D1, WR, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, D2, MoveQuiet)) ||
+			containsMove(&list, NewMove(D4, D1, MoveQuiet)) {
 			t.Errorf("rook ray leaped through friendly blocker on d3")
 		}
 		wantQuietMoves := []Move{
-			NewMove(D4, D5, WR, Empty, false, false, false, false),
-			NewMove(D4, C4, WR, Empty, false, false, false, false),
-			NewMove(D4, B4, WR, Empty, false, false, false, false),
-			NewMove(D4, A4, WR, Empty, false, false, false, false),
-			NewMove(D4, E4, WR, Empty, false, false, false, false),
-			NewMove(D4, F4, WR, Empty, false, false, false, false),
-			NewMove(D4, G4, WR, Empty, false, false, false, false),
-			NewMove(D4, H4, WR, Empty, false, false, false, false),
+			NewMove(D4, D5, MoveQuiet),
+			NewMove(D4, C4, MoveQuiet),
+			NewMove(D4, B4, MoveQuiet),
+			NewMove(D4, A4, MoveQuiet),
+			NewMove(D4, E4, MoveQuiet),
+			NewMove(D4, F4, MoveQuiet),
+			NewMove(D4, G4, MoveQuiet),
+			NewMove(D4, H4, MoveQuiet),
 		}
 
 		for _, m := range wantQuietMoves {
@@ -541,12 +541,12 @@ func TestMoveList_GenerateRookMoves(t *testing.T) {
 		var list MoveList
 		list.generateRookMoves(&b, false)
 
-		captureMove := NewMove(E5, E2, BR, Empty, true, false, false, false)
+		captureMove := NewMove(E5, E2, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing black rook capture on e2: %v", captureMove)
 		}
 
-		friendlyBlocker := NewMove(E5, E7, BR, Empty, false, false, false, false)
+		friendlyBlocker := NewMove(E5, E7, MoveQuiet)
 		if containsMove(&list, friendlyBlocker) {
 			t.Errorf("black rook generated move onto friendly pawn at e7")
 		}
@@ -562,15 +562,15 @@ func TestMoveList_GenerateRookMoves(t *testing.T) {
 			t.Fatalf("expected exactly 2 captures, got %d", list.Count)
 		}
 
-		cap1 := NewMove(D4, D7, WR, Empty, true, false, false, false)
-		cap2 := NewMove(D4, G4, WR, Empty, true, false, false, false)
+		cap1 := NewMove(D4, D7, MoveCapture)
+		cap2 := NewMove(D4, G4, MoveCapture)
 
 		if !containsMove(&list, cap1) || !containsMove(&list, cap2) {
 			t.Errorf("missing expected rook captures when capturesOnly = true")
 		}
 
 		// Ensure no quiet move leaked through
-		quietMove := NewMove(D4, D5, WR, Empty, false, false, false, false)
+		quietMove := NewMove(D4, D5, MoveQuiet)
 		if containsMove(&list, quietMove) {
 			t.Errorf("quiet move generated when capturesOnly is true: %v", quietMove)
 		}
@@ -585,32 +585,32 @@ func TestMoveList_GenerateQueenMoves(t *testing.T) {
 		var list MoveList
 		list.generateQueenMoves(&b, false)
 
-		captureMove := NewMove(D4, F6, WQ, Empty, true, false, false, false)
+		captureMove := NewMove(D4, F6, MoveCapture)
 		if !containsMove(&list, captureMove) {
 			t.Errorf("missing queen capture on f6: %v", captureMove)
 		}
 
-		if containsMove(&list, NewMove(D4, G7, WQ, Empty, false, false, false, false)) ||
-			containsMove(&list, NewMove(D4, H8, WQ, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, G7, MoveQuiet)) ||
+			containsMove(&list, NewMove(D4, H8, MoveQuiet)) {
 			t.Errorf("queen ray leaped through enemy blocker on f6")
 		}
 
-		if containsMove(&list, NewMove(D4, D3, WQ, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, D3, MoveQuiet)) {
 			t.Errorf("queen generated move onto friendly blocker on d3")
 		}
-		if containsMove(&list, NewMove(D4, D2, WQ, Empty, false, false, false, false)) ||
-			containsMove(&list, NewMove(D4, D1, WQ, Empty, false, false, false, false)) {
+		if containsMove(&list, NewMove(D4, D2, MoveQuiet)) ||
+			containsMove(&list, NewMove(D4, D1, MoveQuiet)) {
 			t.Errorf("queen ray leaped through friendly blocker on d3")
 		}
 
 		wantQuietMoves := []Move{
-			NewMove(D4, E5, WQ, Empty, false, false, false, false),
-			NewMove(D4, D5, WQ, Empty, false, false, false, false),
-			NewMove(D4, C4, WQ, Empty, false, false, false, false),
-			NewMove(D4, E4, WQ, Empty, false, false, false, false),
-			NewMove(D4, C5, WQ, Empty, false, false, false, false),
-			NewMove(D4, C3, WQ, Empty, false, false, false, false),
-			NewMove(D4, E3, WQ, Empty, false, false, false, false),
+			NewMove(D4, E5, MoveQuiet),
+			NewMove(D4, D5, MoveQuiet),
+			NewMove(D4, C4, MoveQuiet),
+			NewMove(D4, E4, MoveQuiet),
+			NewMove(D4, C5, MoveQuiet),
+			NewMove(D4, C3, MoveQuiet),
+			NewMove(D4, E3, MoveQuiet),
 		}
 
 		for _, m := range wantQuietMoves {
@@ -630,8 +630,8 @@ func TestMoveList_GenerateQueenMoves(t *testing.T) {
 		var list MoveList
 		list.generateQueenMoves(&b, false)
 
-		orthoCap := NewMove(E5, E2, BQ, Empty, true, false, false, false)
-		diagCap := NewMove(E5, C7, BQ, Empty, true, false, false, false)
+		orthoCap := NewMove(E5, E2, MoveCapture)
+		diagCap := NewMove(E5, C7, MoveCapture)
 
 		if !containsMove(&list, orthoCap) {
 			t.Errorf("missing orthogonal capture on e2: %v", orthoCap)
@@ -640,7 +640,7 @@ func TestMoveList_GenerateQueenMoves(t *testing.T) {
 			t.Errorf("missing diagonal capture on c7: %v", diagCap)
 		}
 
-		friendlyBlocker := NewMove(E5, E7, BQ, Empty, false, false, false, false)
+		friendlyBlocker := NewMove(E5, E7, MoveQuiet)
 		if containsMove(&list, friendlyBlocker) {
 			t.Errorf("black queen generated move onto friendly pawn at e7")
 		}
@@ -656,14 +656,14 @@ func TestMoveList_GenerateQueenMoves(t *testing.T) {
 			t.Fatalf("expected exactly 2 captures, got %d", list.Count)
 		}
 
-		cap1 := NewMove(D4, D7, WQ, Empty, true, false, false, false)
-		cap2 := NewMove(D4, G7, WQ, Empty, true, false, false, false)
+		cap1 := NewMove(D4, D7, MoveCapture)
+		cap2 := NewMove(D4, G7, MoveCapture)
 
 		if !containsMove(&list, cap1) || !containsMove(&list, cap2) {
 			t.Errorf("missing expected queen captures when capturesOnly = true")
 		}
 
-		quietMove := NewMove(D4, D5, WQ, Empty, false, false, false, false)
+		quietMove := NewMove(D4, D5, MoveQuiet)
 		if containsMove(&list, quietMove) {
 			t.Errorf("quiet move generated when capturesOnly is true: %v", quietMove)
 		}

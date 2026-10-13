@@ -87,7 +87,7 @@ func TestQuiescence(t *testing.T) {
 		b := board.NewBoard()
 		b.ParseFEN("4k3/8/8/3p4/4P3/8/8/4K3 w - - 0 1")
 
-		move := board.NewMove(board.E4, board.D5, board.WP, board.Empty, true, false, false, false)
+		move := board.NewMove(board.E4, board.D5, board.MoveCapture)
 
 		evaluation := -2000
 		alpha := 500

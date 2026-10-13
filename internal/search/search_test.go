@@ -49,7 +49,7 @@ func TestSearcher(t *testing.T) {
 
 		move, score := s.Search(&b, 2, 0)
 
-		wantMove := board.NewMove(board.F3, board.F7, board.WQ, board.Empty, true, false, false, false)
+		wantMove := board.NewMove(board.F3, board.F7, board.MoveCapture)
 		if move != wantMove {
 			t.Errorf("expected mate move %v (Qxf7#), got %v", wantMove, move)
 		}
@@ -123,7 +123,7 @@ func TestSearcher(t *testing.T) {
 		}
 
 		if !killer.IsCapture() {
-			histScore := s.History[killer.Piece()][killer.Target()]
+			histScore := s.History[b.Mailbox[killer.Source()]][killer.Target()]
 			if histScore <= 0 {
 				t.Errorf("expected positive history score for killer move %v, got %d", killer, histScore)
 			}

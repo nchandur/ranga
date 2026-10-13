@@ -24,7 +24,7 @@ func TestNNUE(t *testing.T) {
 		nn.Reset(&b)
 
 		snap := nn.Preserve()
-		move := board.NewMove(board.E2, board.E4, board.WP, board.Empty, false, false, false, false)
+		move := board.NewMove(board.E2, board.E4, board.MoveQuiet)
 
 		nn.Update(&b, move)
 

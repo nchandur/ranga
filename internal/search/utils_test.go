@@ -70,9 +70,11 @@ func TestSearchUtils(t *testing.T) {
 	})
 	t.Run("updateHistory updates score with gravity scaling", func(t *testing.T) {
 		s := &Searcher{}
-		move := board.NewMove(board.E2, board.E4, board.WP, board.Empty, false, false, false, false)
+		b := board.NewBoard()
+		b.ParseFEN(board.START)
+		move := board.NewMove(board.E2, board.E4, board.MoveQuiet)
 
-		piece := move.Piece()
+		piece := b.Mailbox[move.Source()]
 		target := move.Target()
 
 		if s.History[piece][target] != 0 {
@@ -80,27 +82,27 @@ func TestSearchUtils(t *testing.T) {
 		}
 
 		bonus := 100
-		s.updateHistory(move, bonus)
+		s.updateHistory(&b, move, bonus)
 
 		firstScore := s.History[piece][target]
 		if firstScore <= 0 {
 			t.Errorf("expected history score to increase, got %d", firstScore)
 		}
 
-		s.updateHistory(move, bonus)
+		s.updateHistory(&b, move, bonus)
 		secondScore := s.History[piece][target]
 		if secondScore <= firstScore {
 			t.Errorf("expected history score to increase further, got %d (prev: %d)", secondScore, firstScore)
 		}
 
 		hugeBonus := MAX_HISTORY * 5
-		s.updateHistory(move, hugeBonus)
+		s.updateHistory(&b, move, hugeBonus)
 		if s.History[piece][target] > MAX_HISTORY {
 			t.Errorf("history score %d exceeded MAX_HISTORY (%d)", s.History[piece][target], MAX_HISTORY)
 		}
 
 		prePenaltyScore := s.History[piece][target]
-		s.updateHistory(move, -500)
+		s.updateHistory(&b, move, -500)
 		if s.History[piece][target] >= prePenaltyScore {
 			t.Errorf("expected penalty to decrease history score from %d, got %d",
 				prePenaltyScore, s.History[piece][target])

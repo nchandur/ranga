@@ -7,9 +7,9 @@ import (
 )
 
 func TestPVTable(t *testing.T) {
-	m1 := board.NewMove(board.E2, board.E4, board.WP, board.Empty, false, false, false, false)
-	m2 := board.NewMove(board.E7, board.E5, board.BP, board.Empty, false, false, false, false)
-	m3 := board.NewMove(board.G1, board.F3, board.WN, board.Empty, false, false, false, false)
+	m1 := board.NewMove(board.E2, board.E4, board.MoveQuiet)
+	m2 := board.NewMove(board.E7, board.E5, board.MoveQuiet)
+	m3 := board.NewMove(board.G1, board.F3, board.MoveQuiet)
 
 	t.Run("Clear resets all table state and flags", func(t *testing.T) {
 		var pv PVTable

@@ -155,7 +155,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		// check move futility
 		if isFP &&
 			movesSearched > 0 && // search at least one move
-			!move.IsCapture() && move.Promoted() == board.Empty {
+			!move.IsCapture() && move.Promoted(b.Side) == board.Empty {
 			continue
 		}
 
@@ -212,11 +212,11 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)
-				s.updateHistory(move, bonus)
+				s.updateHistory(b, move, bonus)
 
 				// maluses for quiet moves already searched this node that didn't cut off
 				for _, m := range searchedQuiets {
-					s.updateHistory(m, -bonus)
+					s.updateHistory(b, m, -bonus)
 				}
 
 			}
@@ -347,7 +347,7 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 		score = -s.AlphaBeta(b, -beta, -alpha, depth-1)
 	} else {
 		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
-			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
+			!inCheck && !move.IsCapture() && move.Promoted(b.Side) == board.Empty
 
 		if reduced {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-2)
