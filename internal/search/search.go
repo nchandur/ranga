@@ -14,10 +14,11 @@ type Searcher struct {
 	PV                 PVTable                // stores and tracks the pv line found during search
 	TT                 *TranspositionTable    // caches position evaluations and cutoffs
 	Killers            [2][MAX_PLY]board.Move // holds killer moves
-	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-	Nodes              int                    // nodes visited that search
-	NodeLimit          int                    // max number of nodes to visit
-	Stop               *atomic.Bool           // shared stop flag across all threads
+	KillerPieces       [2][MAX_PLY]board.Piece
+	History            [12][64]int  // maintains history heuristic scores [piece][targetSq]
+	Nodes              int          // nodes visited that search
+	NodeLimit          int          // max number of nodes to visit
+	Stop               *atomic.Bool // shared stop flag across all threads
 }
 
 // instantiates new searcher
@@ -208,7 +209,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			// record killer moves
 			if !move.IsCapture() {
 				s.Killers[1][b.Ply] = s.Killers[0][b.Ply]
+				s.KillerPieces[1][b.Ply] = s.KillerPieces[0][b.Ply]
 				s.Killers[0][b.Ply] = move
+				s.KillerPieces[0][b.Ply] = b.Mailbox[move.Source()]
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)

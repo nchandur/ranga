@@ -33,9 +33,10 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 			return 9500
 		}
 
-		if s.Killers[0][b.Ply] == move {
+		piece := b.Mailbox[move.Source()]
+		if s.Killers[0][b.Ply] == move && s.KillerPieces[0][b.Ply] == piece {
 			return 9000
-		} else if s.Killers[1][b.Ply] == move {
+		} else if s.Killers[1][b.Ply] == move && s.KillerPieces[1][b.Ply] == piece {
 			return 8000
 		} else {
 			return s.History[b.Mailbox[move.Source()]][move.Target()]
