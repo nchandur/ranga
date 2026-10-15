@@ -71,9 +71,6 @@ func Bench(e *Engine, out io.Writer) {
 	for _, fen := range benchFENs {
 		b.Clear()
 		b.ParseFEN(fen)
-		b.Repetition.Idx = 0
-		b.Repetition.Table[0] = b.Key
-
 		e.searcher.TT.Clear()
 		e.searcher.Reset()
 		if e.searcher.NN != nil {

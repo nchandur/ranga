@@ -57,26 +57,12 @@ func assertBoardsEqual(t *testing.T, expected, want *Board) {
 	if expected.Key != want.Key {
 		t.Fatalf("Key mismatch: expected 0x%016x, want 0x%016x", expected.Key, want.Key)
 	}
-
-	if expected.Repetition.Idx != want.Repetition.Idx {
-		t.Fatalf("Repetition.Idx mismatch: expected %d, want %d", expected.Repetition.Idx, want.Repetition.Idx)
-	}
-
-	for i := range expected.Repetition.Idx {
-		if expected.Repetition.Table[i] != want.Repetition.Table[i] {
-			t.Fatalf("Repetition.Table[%d] mismatch: expected 0x%016x, want 0x%016x",
-				i, expected.Repetition.Table[i], want.Repetition.Table[i])
-		}
-	}
 }
 
 func TestBoard_Preserve(t *testing.T) {
 
 	original := NewBoard()
 	original.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2")
-	original.Repetition.Idx = 2
-	original.Repetition.Table[0] = 0x0
-	original.Repetition.Table[1] = 0x0
 
 	preserved := original.Preserve()
 	assertBoardsEqual(t, &preserved, &original)
@@ -88,8 +74,6 @@ func TestBoard_Preserve(t *testing.T) {
 	original.Mailbox[0] = Empty
 	original.PieceBitBoards[0] = 0
 	original.Occupancies[0] = 0
-	original.Repetition.Idx = 0x123
-	original.Repetition.Table[0] = 0x456
 
 	if preserved.Side != White {
 		t.Errorf("preserved.Side mutated: got %v, want White", preserved.Side)
@@ -103,9 +87,6 @@ func TestBoard_Preserve(t *testing.T) {
 	if preserved.Ply != 2 {
 		t.Errorf("preserved.Ply mutated: got %d, want 2", preserved.Ply)
 	}
-	if preserved.Repetition.Idx != 2 {
-		t.Errorf("preserved.Repetition.Idx mutated: got %d, want 2", preserved.Repetition.Idx)
-	}
 }
 
 func TestBoard_Restore(t *testing.T) {
@@ -115,10 +96,6 @@ func TestBoard_Restore(t *testing.T) {
 	snapshot := NewBoard()
 	snapshot.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR b Kq c6 3 2")
 
-	snapshot.Repetition.Idx = 2
-	snapshot.Repetition.Table[0] = 0x0
-	snapshot.Repetition.Table[1] = 0x0
-
 	current.Restore(&snapshot)
 	assertBoardsEqual(t, &current, &snapshot)
 
@@ -127,7 +104,6 @@ func TestBoard_Restore(t *testing.T) {
 	snapshot.FiftyMove = 99
 	snapshot.Ply = 100
 	snapshot.Mailbox[0] = Empty
-	snapshot.Repetition.Idx = 0
 
 	if current.Side != Black {
 		t.Errorf("current.Side mutated after snapshot change: got %v, want Black", current.Side)
@@ -141,19 +117,12 @@ func TestBoard_Restore(t *testing.T) {
 	if current.Ply != 3 {
 		t.Errorf("current.Ply mutated: got %d, want 3", current.Ply)
 	}
-	if current.Repetition.Idx != 2 {
-		t.Errorf("current.Repetition.Idx mutated: got %d, want 2", current.Repetition.Idx)
-	}
 }
 
 func TestBoard_Clear(t *testing.T) {
 	t.Run("clears a populated board", func(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2")
-
-		b.Repetition.Idx = 2
-		b.Repetition.Table[0] = 0xDEADBEEFCAFE
-		b.Repetition.Table[1] = 0xBEEFCAFEDEAD
 		b.Clear()
 
 		for i, bb := range b.PieceBitBoards {
@@ -190,15 +159,6 @@ func TestBoard_Clear(t *testing.T) {
 		}
 		if b.Key != 0 {
 			t.Errorf("Key = 0x%016x; want 0", b.Key)
-		}
-
-		if b.Repetition.Idx != 0 {
-			t.Errorf("Repetition.Idx = %d; want 0", b.Repetition.Idx)
-		}
-		for i, key := range b.Repetition.Table {
-			if key != 0 {
-				t.Fatalf("Repetition.Table[%d] = 0x%016x; want 0", i, key)
-			}
 		}
 	})
 	t.Run("idempotent on empty board", func(t *testing.T) {

@@ -18,6 +18,8 @@ type Searcher struct {
 	Nodes              int                    // nodes visited that search
 	NodeLimit          int                    // max number of nodes to visit
 	Stop               *atomic.Bool           // shared stop flag across all threads
+	path               [MAX_PLY + 1]uint64    // key of the node at each ply of the line being searched
+	game               []uint64               // positions before the root that can still repeat
 }
 
 // instantiates new searcher
@@ -48,25 +50,15 @@ func (s *Searcher) Reset() {
 	s.History = [12][64]int{}
 }
 
-// checks whether current board position has occurred previously
-func (s *Searcher) IsRepetition(b *board.Board) bool {
-	startIdx := max(b.Repetition.Idx-b.FiftyMove, 0)
-
-	for i := startIdx; i < b.Repetition.Idx; i++ {
-		if b.Repetition.Table[i] == b.Key {
-			return true
-		}
-	}
-
-	return false
-}
-
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
-	if b.Ply >= MAX_PLY-1 || b.Repetition.Idx >= len(b.Repetition.Table)-1 {
+	if b.Ply >= MAX_PLY-1 {
 		return s.Evaluate(b)
 	}
+
+	// record this node so deeper nodes can detect repetitions against it
+	s.path[b.Ply] = b.Key
 
 	// node limit is checked on every node so it is exact
 	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
@@ -178,16 +170,12 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			s.NN.Update(&state, move)
 		}
 
-		b.Repetition.Idx++
-		b.Repetition.Table[b.Repetition.Idx] = b.Key
-
 		legalMoves++
 
 		// late move reduction
 		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck)
 
 		b.Ply--
-		b.Repetition.Idx--
 		b.Restore(&state)
 
 		if s.NN != nil {
@@ -260,6 +248,8 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 	alpha, beta := -INFINITY, INFINITY
 	delta := aspirationDelta
 
+	s.path[0] = b.Key // root of the line; its children compare against it
+
 	if depth >= aspirationMinDepth {
 		alpha = max(prevScore-delta, -INFINITY)
 		beta = min(prevScore+delta, INFINITY)
@@ -295,14 +285,10 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				s.NN.Update(&state, move)
 			}
 
-			b.Repetition.Idx++
-			b.Repetition.Table[b.Repetition.Idx] = b.Key
-
 			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
 			score := -s.AlphaBeta(b, -beta, -a, depth-1)
 
 			b.Ply--
-			b.Repetition.Idx--
 			b.Restore(&state)
 
 			if s.NN != nil {

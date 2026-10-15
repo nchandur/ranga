@@ -56,6 +56,7 @@ func (e *Engine) handleNewGame() {
 func (e *Engine) handleClear() {
 	e.pauseSearch()
 	e.board.Clear()
+	e.searcher.ClearGame()
 }
 
 // handles stop command
@@ -109,8 +110,8 @@ func (e *Engine) handlePosition(args []string) {
 		return
 	}
 
-	e.board.Repetition.Idx = 0
-	e.board.Repetition.Table[e.board.Repetition.Idx] = e.board.Key
+	// forget the previous game; moves below are added to it as they are played
+	e.searcher.ClearGame()
 
 	movesStr = strings.TrimSpace(movesStr)
 	if movesStr != "" {
@@ -121,15 +122,15 @@ func (e *Engine) handlePosition(args []string) {
 				break
 			}
 
+			prevKey := e.board.Key
+
 			ok := e.board.MakeMove(move, false)
 			if !ok {
 				fmt.Fprintf(os.Stderr, "illegal move encountered in setup: %s\n", moveStr)
 				return
 			}
 
-			e.board.Repetition.Idx++
-			e.board.Repetition.Table[e.board.Repetition.Idx] = e.board.Key
-
+			e.searcher.AddGameMove(prevKey, e.board.FiftyMove)
 		}
 	}
 
