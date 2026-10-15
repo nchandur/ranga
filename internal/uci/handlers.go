@@ -229,6 +229,9 @@ func (e *Engine) handleGo(args []string) {
 	e.stop = stop
 	e.searcher.Stop = stop
 
+	// helper threads search a copy of the root position until stop is set
+	e.searcher.StartHelpers(&e.board, opts.nodes, &e.searchWg)
+
 	var timer *time.Timer
 	if timeAllocation.Hard > 0 {
 		timer = time.AfterFunc(timeAllocation.Hard, func() { stop.Store(true) })
@@ -279,7 +282,7 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 
 		if move != board.NOMOVE {
 			bestMove = move
-			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.Nodes, e.searcher.PV))
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d pv %s", d, score, e.searcher.TotalNodes(), e.searcher.PV))
 
 			// bank unused time once search has settled
 			if bestMove == prevBestMove {
@@ -300,6 +303,9 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 			break
 		}
 	}
+
+	// the main thread has finished, so the helpers have nothing left to do
+	stop.Store(true)
 
 	if bestMove == board.NOMOVE {
 		ml := board.NewMoveList()

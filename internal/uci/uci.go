@@ -64,8 +64,14 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 		Type:       "spin",
 		DefaultVal: "1",
 		Min:        1,
-		Max:        1,
-		Apply:      nil,
+		Max:        search.MAX_THREADS,
+		Apply: func(value string) error {
+			if v, err := strconv.Atoi(value); err == nil {
+				e.pauseSearch()
+				e.searcher.SetThreads(v)
+			}
+			return nil
+		},
 	})
 
 	e.options.Register(Option{

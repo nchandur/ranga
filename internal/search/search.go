@@ -20,6 +20,9 @@ type Searcher struct {
 	Stop               *atomic.Bool           // shared stop flag across all threads
 	path               [MAX_PLY + 1]uint64    // key of the node at each ply of the line being searched
 	game               []uint64               // positions before the root that can still repeat
+	published          atomic.Int64           // nodes as of the last poll
+	helpers            []*Searcher            // helper threads
+	lead               *Searcher              // the main searcher
 }
 
 // instantiates new searcher
@@ -66,8 +69,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		return 0
 	}
 
-	// check timeout or cancel
-	if s.Nodes&2047 == 0 && s.Stop.Load() {
+	// publish the node count and check for cancellation
+	if s.Nodes&(pollInterval-1) == 0 && s.poll() {
 		return 0
 	}
 
