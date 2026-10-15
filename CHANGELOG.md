@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * feat(evaluate): change activation to Lizard SCReLU [[#79](https://github.com/nchandur/ranga/pull/79)]
+* refactor(board): enchance move packing [[#81](https://github.com/nchandur/ranga/pull/81)]
+* refactor(search): enhance TT entry storage [[#82](https://github.com/nchandur/ranga/pull/82)]
+* refactor(search): move repetition detection off Board into Searcher
 
 ## [v1.17] - 2026-10-10
 
