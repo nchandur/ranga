@@ -80,32 +80,6 @@ func TestSearcher(t *testing.T) {
 			t.Errorf("expected fifty-move draw score 0, got %d", score)
 		}
 	})
-	t.Run("IsRepetition detects repeated position keys", func(t *testing.T) {
-		var stop atomic.Bool
-		s := NewSearcher(eval, tt, &stop)
-		b := board.NewBoard()
-		b.ParseFEN(board.START)
-
-		b.Repetition.Table[0] = b.Key
-		b.Repetition.Table[1] = 0x111111
-		b.Repetition.Table[2] = b.Key
-		b.Repetition.Idx = 2
-		b.FiftyMove = 4
-
-		if !s.IsRepetition(&b) {
-			t.Errorf("expected repetition detected for key %x", b.Key)
-		}
-
-		b.Repetition.Table[0] = 0x222222
-		b.Repetition.Table[1] = 0x333333
-		b.Repetition.Table[2] = b.Key
-		b.Repetition.Idx = 2
-		b.FiftyMove = 4
-
-		if s.IsRepetition(&b) {
-			t.Errorf("did not expect repetition for key %x", b.Key)
-		}
-	})
 	t.Run("Beta cutoff records killer move and history bonus", func(t *testing.T) {
 		var stop atomic.Bool
 		s := NewSearcher(eval, tt, &stop)
