@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const benchDepth = 8
+const benchDepth = 10
 
 var benchFENs = []string{
 	"r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq a6 0 14",
