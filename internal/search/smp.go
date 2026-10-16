@@ -103,7 +103,7 @@ func (s *Searcher) runHelper(root board.Board, id int) {
 
 	score := 0
 
-	for d := 1; d <= MAX_DEPTH; d++ {
+	for d := 1; d <= helperMaxDepth; d++ {
 		if skipDepth(id, d) {
 			continue
 		}
