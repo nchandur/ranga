@@ -2,118 +2,105 @@ package search
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 )
 
-// reports whether helper number id skips iteration depth
-func skipDepth(id, depth int) bool {
-	i := (id - 1) % len(skipSize)
-	return ((depth+skipPhase[i])/skipSize[i])%2 == 1
+// state of the helper threads
+type smpState struct {
+	helpers []*Searcher
+	abort   atomic.Bool // set to stop helpers at end of a root search
+	wg      sync.WaitGroup
 }
 
-// publishes this searcher's node count for the main thread and reports whether the search must stop
-func (s *Searcher) poll() bool {
-	s.published.Store(int64(s.Nodes))
-
-	if s.NodeLimit > 0 {
-		lead := s
-		if s.lead != nil {
-			lead = s.lead
-		}
-
-		if len(lead.helpers) > 0 && lead.publishedNodes() >= s.NodeLimit {
-			s.Stop.Store(true)
-		}
-	}
-
-	return s.Stop.Load()
-}
-
-// sum of published node counts of this searcher and its helpers
-func (s *Searcher) publishedNodes() int {
-	total := int(s.published.Load())
-	for _, h := range s.helpers {
-		total += int(h.published.Load())
-	}
-	return total
-}
-
-// nodes searched by this searcher and its helpers
-func (s *Searcher) TotalNodes() int {
-	total := s.Nodes
-	for _, h := range s.helpers {
-		total += int(h.published.Load())
-	}
-	return total
-}
-
-// sets number of search threads (this searcher counts as one)
+// sets number of search threads
 func (s *Searcher) SetThreads(n int) {
 	if s.NN == nil {
 		return
 	}
 
 	want := min(max(n, 1), MAX_THREADS) - 1
+	helpers := s.smp.helpers
 
-	if want < len(s.helpers) {
-		clear(s.helpers[want:]) // let removed searchers be collected
-		s.helpers = s.helpers[:want]
+	if want < len(helpers) {
+		clear(helpers[want:])
+		helpers = helpers[:want]
 	}
 
-	for len(s.helpers) < want {
+	for len(helpers) < want {
 		nn := &nnue.NNUE{Network: s.NN.Network}
-		s.helpers = append(s.helpers, NewSearcher(nn, s.TT, s.Stop))
+		helpers = append(helpers, NewSearcher(nn, s.TT, &s.smp.abort))
 	}
+
+	s.smp.helpers = helpers
 }
 
 // number of search threads, including this one
 func (s *Searcher) Threads() int {
-	return len(s.helpers) + 1
+	return len(s.smp.helpers) + 1
 }
 
-// starts the helper threads on a copy of the position b and returns at once
-func (s *Searcher) StartHelpers(b *board.Board, nodeLimit int, wg *sync.WaitGroup) {
-	for i, h := range s.helpers {
-		// sync with the main thread's current state
-		h.TT = s.TT
-		h.Stop = s.Stop
-		h.NodeLimit = nodeLimit
-		h.lead = s
+// clears state of the helper threads along with main thread's
+func (s *Searcher) resetHelpers() {
+	for _, h := range s.smp.helpers {
+		h.Reset()
 		h.Nodes = 0
-		h.published.Store(0)
+	}
+}
+
+// nodes searched by this searcher and its helpers
+func (s *Searcher) TotalNodes() int {
+	total := s.Nodes
+	for _, h := range s.smp.helpers {
+		total += h.Nodes
+	}
+	return total
+}
+
+// depth that helper number i (0-based) searches
+func helperDepth(i, depth int) int {
+	if i%2 == 0 {
+		return depth + 1
+	}
+	return depth
+}
+
+// starts the helper threads on a copy of the position
+func (s *Searcher) startHelpers(b *board.Board, depth, alpha, beta int) {
+	if len(s.smp.helpers) == 0 || depth < 2 {
+		return
+	}
+
+	s.smp.abort.Store(false)
+
+	for i, h := range s.smp.helpers {
+		h.TT = s.TT
+		h.History = s.History
 		h.SetGame(s.game)
 
 		root := *b
-		id := i + 1
+		hd := helperDepth(i, depth)
 
-		wg.Go(func() {
-			h.runHelper(root, id)
+		s.smp.wg.Go(func() {
+			h.searchHelper(root, hd, alpha, beta)
 		})
 
 	}
 }
 
-// iterative deepening for a helper thread
-func (s *Searcher) runHelper(root board.Board, id int) {
+// aborts helpers and waits until every one of them has stopped
+func (s *Searcher) stopHelpers() {
+	s.smp.abort.Store(true)
+	s.smp.wg.Wait()
+}
+
+// root search of a helper thread
+func (s *Searcher) searchHelper(root board.Board, depth, alpha, beta int) {
 	b := root
 	s.NN.Reset(&b)
-	s.Reset()
+	s.path[0] = b.Key
 
-	score := 0
-
-	for d := 1; d <= helperMaxDepth; d++ {
-		if skipDepth(id, d) {
-			continue
-		}
-
-		_, sc := s.Search(&b, d, score)
-
-		if s.Stop.Load() {
-			return
-		}
-
-		score = sc
-	}
+	s.searchRoot(&b, depth, alpha, beta)
 }

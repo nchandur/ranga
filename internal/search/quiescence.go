@@ -22,8 +22,8 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 		return 0
 	}
 
-	// publish the node count and check for cancellation
-	if s.Nodes&(pollInterval-1) == 0 && s.poll() {
+	// check timeout or cancel
+	if s.Nodes&2047 == 0 && s.Stop.Load() {
 		return 0
 	}
 

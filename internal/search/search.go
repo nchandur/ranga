@@ -20,9 +20,7 @@ type Searcher struct {
 	Stop               *atomic.Bool           // shared stop flag across all threads
 	path               [MAX_PLY + 1]uint64    // key of the node at each ply of the line being searched
 	game               []uint64               // positions before the root that can still repeat
-	published          atomic.Int64           // nodes as of the last poll
-	helpers            []*Searcher            // helper threads
-	lead               *Searcher              // the main searcher
+	smp                smpState               // helper threads (main searcher only, see smp.go)
 }
 
 // instantiates new searcher
@@ -51,6 +49,7 @@ func (s *Searcher) Reset() {
 	s.PV.Clear()
 	s.Killers = [2][MAX_PLY]board.Move{}
 	s.History = [12][64]int{}
+	s.resetHelpers()
 }
 
 // executes main alpha-beta minimax search tree traversal
@@ -69,8 +68,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		return 0
 	}
 
-	// publish the node count and check for cancellation
-	if s.Nodes&(pollInterval-1) == 0 && s.poll() {
+	// check timeout or cancel
+	if s.Nodes&2047 == 0 && s.Stop.Load() {
 		return 0
 	}
 
@@ -259,59 +258,13 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 	}
 
 	for {
-		bestMove, bestScore := board.NOMOVE, -INFINITY
-		a := alpha // alpha stays the window bound
+		// helper threads search the same window while the main thread does
+		s.startHelpers(b, depth, alpha, beta)
+		bestMove, bestScore := s.searchRoot(b, depth, alpha, beta)
+		s.stopHelpers()
 
-		ml := board.NewMoveList()
-		ml.GenerateMoves(b)
-
-		s.PV.FollowPv = true
-		s.PV.enablePVScoring(ml, 0)
-		s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
-
-		for _, move := range ml.Moves[:ml.Count] {
-			state := b.Preserve()
-
-			var nnState nnue.Snapshot
-			if s.NN != nil {
-				nnState = s.NN.Preserve()
-			}
-
-			b.Ply++
-			if !b.MakeMove(move, false) {
-				b.Ply--
-				b.Restore(&state)
-				continue
-			}
-
-			if s.NN != nil {
-				s.NN.Update(&state, move)
-			}
-
-			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
-			score := -s.AlphaBeta(b, -beta, -a, depth-1)
-
-			b.Ply--
-			b.Restore(&state)
-
-			if s.NN != nil {
-				s.NN.Restore(nnState)
-			}
-
-			if s.Stop.Load() {
-				return bestMove, bestScore
-			}
-
-			if score > bestScore {
-				bestScore, bestMove = score, move
-			}
-			if score > a {
-				a = score
-				s.PV.updatePVLine(move, 0)
-			}
-			if a >= beta {
-				break // fail high
-			}
+		if s.Stop.Load() {
+			return bestMove, bestScore
 		}
 
 		switch {
@@ -325,6 +278,65 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 
 		delta *= 2
 	}
+}
+
+func (s *Searcher) searchRoot(b *board.Board, depth, alpha, beta int) (board.Move, int) {
+	bestMove, bestScore := board.NOMOVE, -INFINITY
+	a := alpha // alpha stays the window bound
+
+	ml := board.NewMoveList()
+	ml.GenerateMoves(b)
+
+	s.PV.FollowPv = true
+	s.PV.enablePVScoring(ml, 0)
+	s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
+
+	for _, move := range ml.Moves[:ml.Count] {
+		state := b.Preserve()
+
+		var nnState nnue.Snapshot
+		if s.NN != nil {
+			nnState = s.NN.Preserve()
+		}
+
+		b.Ply++
+		if !b.MakeMove(move, false) {
+			b.Ply--
+			b.Restore(&state)
+			continue
+		}
+
+		if s.NN != nil {
+			s.NN.Update(&state, move)
+		}
+
+		s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
+		score := -s.AlphaBeta(b, -beta, -a, depth-1)
+
+		b.Ply--
+		b.Restore(&state)
+
+		if s.NN != nil {
+			s.NN.Restore(nnState)
+		}
+
+		if s.Stop.Load() {
+			return bestMove, bestScore
+		}
+
+		if score > bestScore {
+			bestScore, bestMove = score, move
+		}
+		if score > a {
+			a = score
+			s.PV.updatePVLine(move, 0)
+		}
+		if a >= beta {
+			break // fail high
+		}
+	}
+
+	return bestMove, bestScore
 }
 
 // helper function to perform late move reduction
