@@ -8,7 +8,6 @@ import (
 	"ranga/internal/board"
 	"ranga/internal/evaluate/nnue"
 	"ranga/internal/search"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -60,18 +59,16 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	tt := search.NewTranspositionTable(search.DEFAULT_TT_SIZE)
 	e.searcher = search.NewSearcher(nn, tt, e.stop)
 
-	maxThreads := min(search.MAX_THREADS, runtime.NumCPU())
-
 	e.options.Register(Option{
 		Name:       "Threads",
 		Type:       "spin",
 		DefaultVal: "1",
 		Min:        1,
-		Max:        maxThreads,
+		Max:        search.MAX_THREADS,
 		Apply: func(value string) error {
 			if v, err := strconv.Atoi(value); err == nil {
 				e.pauseSearch()
-				e.searcher.SetThreads(min(v, maxThreads))
+				e.searcher.SetThreads(min(v, search.MAX_THREADS))
 			}
 			return nil
 		},

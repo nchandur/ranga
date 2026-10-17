@@ -41,14 +41,3 @@ var FutilityMargin [4]int = [4]int{0, 100, 300, 500}
 
 // the most threads the Threads option allows
 const MAX_THREADS = 8
-
-// how often a searcher publishes its node count and looks at the stop flag
-const pollInterval = 2048
-
-// helpers spread over different depths instead of repeating the main thread's work
-var (
-	skipSize  = [...]int{1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4}
-	skipPhase = [...]int{0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7}
-)
-
-const helperMaxDepth = 100
