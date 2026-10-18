@@ -185,3 +185,24 @@ func (tt *TranspositionTable) Resize(size int) {
 	tt.Entries = make([]atomic.Uint64, numEntries)
 	tt.Length = numEntries
 }
+
+// returns full entry for key with score adjusted for mate distance at ply
+func (tt *TranspositionTable) ProbeEntry(key uint64, ply int) (move board.Move, score, depth, flag int, ok bool) {
+	entry := TranspositionTableEntry(tt.slot(key).Load())
+
+	if !entry.matches(key) {
+		return board.NOMOVE, 0, 0, 0, false
+	}
+
+	score = entry.Score()
+
+	if score < -MATESCORE {
+		score += ply
+	}
+
+	if score > MATESCORE {
+		score -= ply
+	}
+
+	return entry.Move(), score, entry.Depth(), entry.Flag(), true
+}

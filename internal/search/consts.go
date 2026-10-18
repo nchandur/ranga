@@ -38,3 +38,9 @@ var MVVLVA = [12][12]int{
 
 // futility margin
 var FutilityMargin [4]int = [4]int{0, 100, 300, 500}
+
+const (
+	SINGULAR_MIN_DEPTH   = 8
+	SINGULAR_TT_DEPTH    = 3 // tt entry must be within this many plies of current depth
+	SINGULAR_MARGIN_MULT = 2
+)
