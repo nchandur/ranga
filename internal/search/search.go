@@ -141,44 +141,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	s.sortMove(b, ml, ttMove)
 
-	singularExt := 0
-
-	if b.Ply != 0 &&
-		!isSingularSearch &&
-		depth >= SINGULAR_MIN_DEPTH &&
-		ttMove != board.NOMOVE {
-
-		entryMove, ttScore, ttDepth, ttFlag, ok := s.TT.ProbeEntry(b.Key, b.Ply)
-
-		if ok &&
-			entryMove == ttMove &&
-			(ttFlag == FBETA || ttFlag == FEXACT) && // score is lower bound
-			ttDepth >= depth-SINGULAR_TT_DEPTH &&
-			ttScore > -MATESCORE+MAX_PLY && ttScore < MATESCORE-MAX_PLY {
-
-			singularBeta := ttScore - SINGULAR_MARGIN_MULT*depth
-			singularDepth := (depth - 1) / 2
-
-			// the pv-following flag must not leak into verification search
-			followPv := s.PV.FollowPv
-			s.PV.FollowPv = false
-
-			s.excluded[b.Ply] = ttMove
-			score := s.AlphaBeta(b, singularBeta-1, singularBeta, singularDepth)
-			s.excluded[b.Ply] = board.NOMOVE
-
-			s.PV.FollowPv = followPv
-
-			if s.Stop.Load() {
-				return 0
-			}
-
-			// every other move failed low
-			if score < singularBeta {
-				singularExt = 1
-			}
-		}
-	}
+	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch)
 
 	flag := FALPHA
 	score := 0
@@ -490,4 +453,48 @@ func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, 
 	}
 
 	return 0, false
+}
+
+// helper function for singular search extension
+func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch bool) int {
+
+	var singularExt int
+
+	if b.Ply != 0 &&
+		!isSingularSearch &&
+		depth >= SINGULAR_MIN_DEPTH &&
+		ttMove != board.NOMOVE {
+
+		entryMove, ttScore, ttDepth, ttFlag, ok := s.TT.ProbeEntry(b.Key, b.Ply)
+
+		if ok &&
+			entryMove == ttMove &&
+			(ttFlag == FBETA || ttFlag == FEXACT) && // score is lower bound
+			ttDepth >= depth-SINGULAR_TT_DEPTH &&
+			ttScore > -MATESCORE+MAX_PLY && ttScore < MATESCORE-MAX_PLY {
+
+			singularBeta := ttScore - SINGULAR_MARGIN_MULT*depth
+			singularDepth := (depth - 1) / 2
+
+			// the pv-following flag must not leak into verification search
+			followPv := s.PV.FollowPv
+			s.PV.FollowPv = false
+
+			s.excluded[b.Ply] = ttMove
+			score := s.AlphaBeta(b, singularBeta-1, singularBeta, singularDepth)
+			s.excluded[b.Ply] = board.NOMOVE
+
+			s.PV.FollowPv = followPv
+
+			if s.Stop.Load() {
+				return 0
+			}
+
+			// every other move failed low
+			if score < singularBeta {
+				singularExt = 1
+			}
+		}
+	}
+	return singularExt
 }
