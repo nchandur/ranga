@@ -34,13 +34,6 @@ func parseNetwork(data []byte) (*Network, error) {
 		net.FeatureBias.Values[i] = int16(binary.LittleEndian.Uint16(r.next(2)))
 	}
 
-	// output weights are bucket-major]
-	// for b := range OutputBuckets {
-	// 	for i := range net.OutputWeights[b] {
-	// 		net.OutputWeights[b][i] = int16(binary.LittleEndian.Uint16(r.next(2)))
-	// 	}
-	// }
-
 	for i := range 2 * HiddenSize {
 		for b := range OutputBuckets {
 			net.OutputWeights[b][i] = int16(binary.LittleEndian.Uint16(r.next(2)))
