@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.18] - 2026-10-18
+
+## Added
+* feat(evaluate): change activation to Lizard SCReLU [[#79](https://github.com/nchandur/ranga/pull/79)]
+* refactor(board): enchance move packing [[#81](https://github.com/nchandur/ranga/pull/81)]
+* refactor(search): enhance TT entry storage [[#82](https://github.com/nchandur/ranga/pull/82)]
+* refactor(search): move repetition detection off Board into Searcher [[#83](https://github.com/nchandur/ranga/pull/83)]
+* feat(search): add singular extension [[#84](https://github.com/nchandur/ranga/pull/84)]
+
 ## [v1.17] - 2026-10-10
 
 ## Added 
@@ -18,7 +27,7 @@ All notable changes to this project will be documented in this file.
 ## [v1.15] - 2026-10-05
 
 ### Added
-* feat(search): added reverse futility pruning [[#66](https://github.com/nchandur/ranga/pull/66)]
+* feat(search): add reverse futility pruning [[#66](https://github.com/nchandur/ranga/pull/66)]
 * feat(search): option enabled to resize transposition table [[#65](https://github.com/nchandur/ranga/pull/65)]
 
 ## [v1.14] - 2026-10-04
@@ -40,7 +49,7 @@ All notable changes to this project will be documented in this file.
 ## [v1.12] - 2026-09-19
 
 ### Added
-* feat(search): delta pruning [[#44](https://github.com/nchandur/ranga/pull/44)]
+* feat(search): add delta pruning [[#44](https://github.com/nchandur/ranga/pull/44)]
 * feat(pgn): add scripts to parse PGN files and generate FEN slices for NNUE training [[#40](https://github.com/nchandur/ranga/pull/40)]
 * feat(pgn): filter out bad positions [[#41](https://github.com/nchandur/ranga/pull/41)]
 
@@ -56,18 +65,18 @@ All notable changes to this project will be documented in this file.
 ## [v1.10] - 2026-09-02
 
 ### Added
-* feat(evaluate): tapered evaluation [[#34](https://github.com/nchandur/ranga/pull/34)]
+* feat(evaluate): add tapered evaluation [[#34](https://github.com/nchandur/ranga/pull/34)]
 
 ## [v1.9] - 2026-09-02 
 
 ### Added
-* feat(evaluate): piece-square tables, mobility bonuses/penalties and king safety [[#32](https://github.com/nchandur/ranga/pull/32)]
+* feat(evaluate): add piece-square tables, mobility bonuses/penalties and king safety [[#32](https://github.com/nchandur/ranga/pull/32)]
 * chore(build): Go version bump to `1.27.1` [[#32](https://github.com/nchandur/ranga/pull/32)]
 
 ## [v1.8] - 2026-09-02
 
 ### Added
-* feat(search): null move pruning [[#30](https://github.com/nchandur/ranga/pull/30)]
+* feat(search): add null move pruning [[#30](https://github.com/nchandur/ranga/pull/30)]
 
 ### Fixed
 * fix(search): no LMR on first move [[#29](https://github.com/nchandur/ranga/pull/29)]
@@ -75,16 +84,16 @@ All notable changes to this project will be documented in this file.
 * fix(search): store checkmate/stalemate scores in transposition table [[#29](https://github.com/nchandur/ranga/pull/29)]
 
 ## [v1.7] - 2026-09-01
-* feat(search): late move reduction (LMR) with PVS re-search [[#26](https://github.com/nchandur/ranga/pull/26)]
+* feat(search): add late move reduction (LMR) with PVS re-search [[#26](https://github.com/nchandur/ranga/pull/26)]
 
 ## [v1.6] - 2026-08-27 
 
 ### Added
-* feat(search): killer moves and history heuristics [[#20](https://github.com/nchandur/ranga/pull/20)]
+* feat(search): add killer moves and history heuristics [[#20](https://github.com/nchandur/ranga/pull/20)]
 
 ### Fixed
-* fix(search): pv root node corruption [[#21](https://github.com/nchandur/ranga/pull/21)]
-* fix(search): history heuristic on strictly legal quiet moves [[#21](https://github.com/nchandur/ranga/pull/21)]
+* fix(search): add pv root node corruption [[#21](https://github.com/nchandur/ranga/pull/21)]
+* fix(search): add history heuristic on strictly legal quiet moves [[#21](https://github.com/nchandur/ranga/pull/21)]
 * fix(time-management): time crash vulnerability [[#21](https://github.com/nchandur/ranga/pull/21)]
 
 ## [v1.5] - 2026-08-25

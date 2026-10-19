@@ -49,7 +49,7 @@ func TestSearcher(t *testing.T) {
 
 		move, score := s.Search(&b, 2, 0)
 
-		wantMove := board.NewMove(board.F3, board.F7, board.WQ, board.Empty, true, false, false, false)
+		wantMove := board.NewMove(board.F3, board.F7, board.MoveCapture)
 		if move != wantMove {
 			t.Errorf("expected mate move %v (Qxf7#), got %v", wantMove, move)
 		}
@@ -80,32 +80,6 @@ func TestSearcher(t *testing.T) {
 			t.Errorf("expected fifty-move draw score 0, got %d", score)
 		}
 	})
-	t.Run("IsRepetition detects repeated position keys", func(t *testing.T) {
-		var stop atomic.Bool
-		s := NewSearcher(eval, tt, &stop)
-		b := board.NewBoard()
-		b.ParseFEN(board.START)
-
-		b.Repetition.Table[0] = b.Key
-		b.Repetition.Table[1] = 0x111111
-		b.Repetition.Table[2] = b.Key
-		b.Repetition.Idx = 2
-		b.FiftyMove = 4
-
-		if !s.IsRepetition(&b) {
-			t.Errorf("expected repetition detected for key %x", b.Key)
-		}
-
-		b.Repetition.Table[0] = 0x222222
-		b.Repetition.Table[1] = 0x333333
-		b.Repetition.Table[2] = b.Key
-		b.Repetition.Idx = 2
-		b.FiftyMove = 4
-
-		if s.IsRepetition(&b) {
-			t.Errorf("did not expect repetition for key %x", b.Key)
-		}
-	})
 	t.Run("Beta cutoff records killer move and history bonus", func(t *testing.T) {
 		var stop atomic.Bool
 		s := NewSearcher(eval, tt, &stop)
@@ -123,7 +97,7 @@ func TestSearcher(t *testing.T) {
 		}
 
 		if !killer.IsCapture() {
-			histScore := s.History[killer.Piece()][killer.Target()]
+			histScore := s.History[b.Mailbox[killer.Source()]][killer.Target()]
 			if histScore <= 0 {
 				t.Errorf("expected positive history score for killer move %v, got %d", killer, histScore)
 			}

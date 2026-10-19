@@ -6,12 +6,12 @@ import (
 )
 
 func TestMoveOrdering(t *testing.T) {
-	mTT := board.NewMove(board.E2, board.E4, board.WP, board.Empty, false, false, false, false)
-	mPV := board.NewMove(board.D2, board.D4, board.WP, board.Empty, false, false, false, false)
-	mPromoQ := board.NewMove(board.E7, board.E8, board.WP, board.WQ, false, false, false, false)
-	mKiller1 := board.NewMove(board.G1, board.F3, board.WN, board.Empty, false, false, false, false)
-	mKiller2 := board.NewMove(board.B1, board.C3, board.WN, board.Empty, false, false, false, false)
-	mHistory := board.NewMove(board.A2, board.A3, board.WP, board.Empty, false, false, false, false)
+	mTT := board.NewMove(board.E2, board.E4, board.MoveQuiet)
+	mPV := board.NewMove(board.D2, board.D4, board.MoveQuiet)
+	mPromoQ := board.NewMove(board.E7, board.E8, board.MovePromoQ)
+	mKiller1 := board.NewMove(board.G1, board.F3, board.MoveQuiet)
+	mKiller2 := board.NewMove(board.B1, board.C3, board.MoveQuiet)
+	mHistory := board.NewMove(board.A2, board.A3, board.MoveQuiet)
 
 	t.Run("scoreMove assigns scores following priority tiers", func(t *testing.T) {
 		s := &Searcher{}
@@ -32,7 +32,7 @@ func TestMoveOrdering(t *testing.T) {
 			t.Errorf("ScorePV was not reset to false after scoring PV move")
 		}
 
-		mCapture := board.NewMove(board.E4, board.D5, board.WP, board.Empty, true, false, false, false)
+		mCapture := board.NewMove(board.E4, board.D5, board.MoveCapture)
 		expectedCapScore := MVVLVA[board.WP][board.BP] + 10000
 		if score := s.scoreMove(&b, mCapture, board.NOMOVE); score != expectedCapScore {
 			t.Errorf("Capture score = %d; want %d", score, expectedCapScore)
@@ -61,7 +61,7 @@ func TestMoveOrdering(t *testing.T) {
 		b := board.NewBoard()
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2")
 
-		mEP := board.NewMove(board.E5, board.D6, board.WP, board.Empty, true, false, true, false)
+		mEP := board.NewMove(board.E5, board.D6, board.MoveEnPass)
 		score := s.scoreMove(&b, mEP, board.NOMOVE)
 
 		wantScore := MVVLVA[board.WP][board.BP] + 10000
@@ -78,7 +78,7 @@ func TestMoveOrdering(t *testing.T) {
 		s.Killers[0][b.Ply] = mKiller1
 		s.History[board.WP][board.A3] = 120
 
-		mCapture := board.NewMove(board.E4, board.D5, board.WP, board.Empty, true, false, false, false)
+		mCapture := board.NewMove(board.E4, board.D5, board.MoveCapture)
 
 		var ml board.MoveList
 		ml.AddMove(mHistory)

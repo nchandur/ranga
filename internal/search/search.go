@@ -11,13 +11,16 @@ import (
 type Searcher struct {
 	evaluate.Evaluator // static evaluation to score positions at leaf nodes
 	NN                 *nnue.NNUE
-	PV                 PVTable                // stores and tracks the pv line found during search
-	TT                 *TranspositionTable    // caches position evaluations and cutoffs
-	Killers            [2][MAX_PLY]board.Move // holds killer moves
-	History            [12][64]int            // maintains history heuristic scores [piece][targetSq]
-	Nodes              int                    // nodes visited that search
-	NodeLimit          int                    // max number of nodes to visit
-	Stop               *atomic.Bool           // shared stop flag across all threads
+	PV                 PVTable                 // stores and tracks the pv line found during search
+	TT                 *TranspositionTable     // caches position evaluations and cutoffs
+	Killers            [2][MAX_PLY]board.Move  // holds killer moves
+	History            [12][64]int             // maintains history heuristic scores [piece][targetSq]
+	Nodes              int                     // nodes visited that search
+	NodeLimit          int                     // max number of nodes to visit
+	Stop               *atomic.Bool            // shared stop flag across all threads
+	path               [MAX_PLY + 1]uint64     // key of the node at each ply of the line being searched
+	game               []uint64                // positions before the root that can still repeat
+	excluded           [MAX_PLY + 1]board.Move // move to skip at each ply
 }
 
 // instantiates new searcher
@@ -48,25 +51,15 @@ func (s *Searcher) Reset() {
 	s.History = [12][64]int{}
 }
 
-// checks whether current board position has occurred previously
-func (s *Searcher) IsRepetition(b *board.Board) bool {
-	startIdx := max(b.Repetition.Idx-b.FiftyMove, 0)
-
-	for i := startIdx; i < b.Repetition.Idx; i++ {
-		if b.Repetition.Table[i] == b.Key {
-			return true
-		}
-	}
-
-	return false
-}
-
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// guard against out-of-bounds at maximum search ply
-	if b.Ply >= MAX_PLY-1 || b.Repetition.Idx >= len(b.Repetition.Table)-1 {
+	if b.Ply >= MAX_PLY-1 {
 		return s.Evaluate(b)
 	}
+
+	// record this node so deeper nodes can detect repetitions against it
+	s.path[b.Ply] = b.Key
 
 	// node limit is checked on every node so it is exact
 	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
@@ -88,8 +81,12 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		return 0
 	}
 
+	excludedMove := s.excluded[b.Ply]
+	isSingularSearch := excludedMove != board.NOMOVE
+
 	// transposition table lookup
-	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); b.Ply != 0 && score != NOENTRY && !s.PV.FollowPv {
+	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
+		b.Ply != 0 && score != NOENTRY && !s.PV.FollowPv {
 		return score
 	}
 
@@ -116,14 +113,16 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	staticEval := s.Evaluate(b)
 	pvNode := beta-alpha > 1
 
-	// reverse futility pruning
-	if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
-		return score
-	}
+	if !isSingularSearch {
+		// reverse futility pruning
+		if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
+			return score
+		}
 
-	// null move pruning (pass turn to attempt early fail-high)
-	if score, prune := s.nullMovePruning(b, beta, depth, staticEval, inCheck); prune {
-		return score
+		// null move pruning (pass turn to attempt early fail-high)
+		if score, prune := s.nullMovePruning(b, beta, depth, staticEval, inCheck); prune {
+			return score
+		}
 	}
 
 	// futility pruning (discard moves with no potential of improving alpha)
@@ -142,6 +141,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	s.sortMove(b, ml, ttMove)
 
+	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch)
+
 	flag := FALPHA
 	score := 0
 	bestMove := board.NOMOVE
@@ -152,10 +153,14 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	for _, move := range ml.Moves[:ml.Count] {
 
+		if move == excludedMove {
+			continue
+		}
+
 		// check move futility
 		if isFP &&
 			movesSearched > 0 && // search at least one move
-			!move.IsCapture() && move.Promoted() == board.Empty {
+			!move.IsCapture() && move.Promoted(b.Side) == board.Empty {
 			continue
 		}
 
@@ -178,16 +183,17 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			s.NN.Update(&state, move)
 		}
 
-		b.Repetition.Idx++
-		b.Repetition.Table[b.Repetition.Idx] = b.Key
-
 		legalMoves++
 
+		ext := 0
+		if move == ttMove {
+			ext = singularExt
+		}
+
 		// late move reduction
-		score = s.lateMoveReduction(b, move, alpha, beta, depth, movesSearched, inCheck)
+		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck)
 
 		b.Ply--
-		b.Repetition.Idx--
 		b.Restore(&state)
 
 		if s.NN != nil {
@@ -203,7 +209,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 		// fail hard on beta cutoff
 		if score >= beta {
-			s.TT.Store(score, depth, b.Ply, FBETA, b.Key, move)
+			if !isSingularSearch {
+				s.TT.Store(score, depth, b.Ply, FBETA, b.Key, move)
+			}
 
 			// record killer moves
 			if !move.IsCapture() {
@@ -212,11 +220,11 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)
-				s.updateHistory(move, bonus)
+				s.updateHistory(b, move, bonus)
 
 				// maluses for quiet moves already searched this node that didn't cut off
 				for _, m := range searchedQuiets {
-					s.updateHistory(m, -bonus)
+					s.updateHistory(b, m, -bonus)
 				}
 
 			}
@@ -240,6 +248,11 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	// checkmate or stalemate
 	if legalMoves == 0 {
+
+		if isSingularSearch {
+			return alpha
+		}
+
 		var score int
 		if inCheck {
 			score = -ISMATE + b.Ply
@@ -251,7 +264,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	}
 
 	// store final score in transposition table
-	s.TT.Store(alpha, depth, b.Ply, flag, b.Key, bestMove)
+	if !isSingularSearch {
+		s.TT.Store(alpha, depth, b.Ply, flag, b.Key, bestMove)
+	}
 	return alpha
 }
 
@@ -259,6 +274,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int) {
 	alpha, beta := -INFINITY, INFINITY
 	delta := aspirationDelta
+
+	s.path[0] = b.Key // root of the line; its children compare against it
 
 	if depth >= aspirationMinDepth {
 		alpha = max(prevScore-delta, -INFINITY)
@@ -295,14 +312,10 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				s.NN.Update(&state, move)
 			}
 
-			b.Repetition.Idx++
-			b.Repetition.Table[b.Repetition.Idx] = b.Key
-
 			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
 			score := -s.AlphaBeta(b, -beta, -a, depth-1)
 
 			b.Ply--
-			b.Repetition.Idx--
 			b.Restore(&state)
 
 			if s.NN != nil {
@@ -347,7 +360,7 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 		score = -s.AlphaBeta(b, -beta, -alpha, depth-1)
 	} else {
 		reduced := movesSearched >= FULL_DEPTH_MOVES && depth >= REDUCTION_LIMIT &&
-			!inCheck && !move.IsCapture() && move.Promoted() == board.Empty
+			!inCheck && !move.IsCapture() && move.Promoted(b.Side) == board.Empty
 
 		if reduced {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-2)
@@ -440,4 +453,48 @@ func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, 
 	}
 
 	return 0, false
+}
+
+// helper function for singular search extension
+func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch bool) int {
+
+	var singularExt int
+
+	if b.Ply != 0 &&
+		!isSingularSearch &&
+		depth >= SINGULAR_MIN_DEPTH &&
+		ttMove != board.NOMOVE {
+
+		entryMove, ttScore, ttDepth, ttFlag, ok := s.TT.ProbeEntry(b.Key, b.Ply)
+
+		if ok &&
+			entryMove == ttMove &&
+			(ttFlag == FBETA || ttFlag == FEXACT) && // score is lower bound
+			ttDepth >= depth-SINGULAR_TT_DEPTH &&
+			ttScore > -MATESCORE+MAX_PLY && ttScore < MATESCORE-MAX_PLY {
+
+			singularBeta := ttScore - SINGULAR_MARGIN_MULT*depth
+			singularDepth := (depth - 1) / 2
+
+			// the pv-following flag must not leak into verification search
+			followPv := s.PV.FollowPv
+			s.PV.FollowPv = false
+
+			s.excluded[b.Ply] = ttMove
+			score := s.AlphaBeta(b, singularBeta-1, singularBeta, singularDepth)
+			s.excluded[b.Ply] = board.NOMOVE
+
+			s.PV.FollowPv = followPv
+
+			if s.Stop.Load() {
+				return 0
+			}
+
+			// every other move failed low
+			if score < singularBeta {
+				singularExt = 1
+			}
+		}
+	}
+	return singularExt
 }

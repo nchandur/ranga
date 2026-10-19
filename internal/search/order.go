@@ -26,10 +26,10 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 			captured = b.Mailbox[move.Target()]
 		}
 
-		return MVVLVA[move.Piece()][captured] + 10000
+		return MVVLVA[b.Mailbox[move.Source()]][captured] + 10000
 	} else {
 
-		if move.Promoted() == board.WQ || move.Promoted() == board.BQ {
+		if move.IsPromotion() {
 			return 9500
 		}
 
@@ -38,7 +38,7 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 		} else if s.Killers[1][b.Ply] == move {
 			return 8000
 		} else {
-			return s.History[move.Piece()][move.Target()]
+			return s.History[b.Mailbox[move.Source()]][move.Target()]
 		}
 
 	}

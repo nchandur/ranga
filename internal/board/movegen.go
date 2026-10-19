@@ -16,15 +16,15 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 				if !capturesOnly && target >= A8 && b.Occupancies[Both].GetBit(target) == 0 {
 					// quiet promotion
 					if source >= A7 && source <= H7 {
-						m.AddMove(NewMove(source, target, WP, WQ, false, false, false, false))
-						m.AddMove(NewMove(source, target, WP, WR, false, false, false, false))
-						m.AddMove(NewMove(source, target, WP, WB, false, false, false, false))
-						m.AddMove(NewMove(source, target, WP, WN, false, false, false, false))
+						m.AddMove(NewMove(source, target, MovePromoQ))
+						m.AddMove(NewMove(source, target, MovePromoR))
+						m.AddMove(NewMove(source, target, MovePromoB))
+						m.AddMove(NewMove(source, target, MovePromoN))
 					} else {
-						m.AddMove(NewMove(source, target, WP, Empty, false, false, false, false))
+						m.AddMove(NewMove(source, target, MoveQuiet))
 						// double push from rank 2
 						if (source >= A2 && source <= H2) && b.Occupancies[Both].GetBit(target-8) == 0 {
-							m.AddMove(NewMove(source, target-8, WP, Empty, false, true, false, false))
+							m.AddMove(NewMove(source, target-8, MoveDouble))
 						}
 					}
 				}
@@ -35,12 +35,12 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 				for attacks != 0 {
 					target = Square(attacks.GetLSB())
 					if source >= A7 && source <= H7 {
-						m.AddMove(NewMove(source, target, WP, WQ, true, false, false, false))
-						m.AddMove(NewMove(source, target, WP, WR, true, false, false, false))
-						m.AddMove(NewMove(source, target, WP, WB, true, false, false, false))
-						m.AddMove(NewMove(source, target, WP, WN, true, false, false, false))
+						m.AddMove(NewMove(source, target, MovePromoCaptureQ))
+						m.AddMove(NewMove(source, target, MovePromoCaptureR))
+						m.AddMove(NewMove(source, target, MovePromoCaptureB))
+						m.AddMove(NewMove(source, target, MovePromoCaptureN))
 					} else {
-						m.AddMove(NewMove(source, target, WP, Empty, true, false, false, false))
+						m.AddMove(NewMove(source, target, MoveCapture))
 					}
 					attacks.PopBit(target)
 				}
@@ -50,7 +50,7 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 					enpassantAttacks := PawnAttacks[b.Side][source] & (BitBoard(uint64(1) << uint64(b.EnPassant)))
 					if enpassantAttacks != 0 {
 						targetEnpass := Square(enpassantAttacks.GetLSB())
-						m.AddMove(NewMove(source, targetEnpass, WP, Empty, true, false, true, false))
+						m.AddMove(NewMove(source, targetEnpass, MoveEnPass))
 					}
 				}
 
@@ -69,15 +69,15 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 				if !capturesOnly && target <= H1 && b.Occupancies[Both].GetBit(target) == 0 {
 					// quiet promotion
 					if source >= A2 && source <= H2 {
-						m.AddMove(NewMove(source, target, BP, BQ, false, false, false, false))
-						m.AddMove(NewMove(source, target, BP, BR, false, false, false, false))
-						m.AddMove(NewMove(source, target, BP, BB, false, false, false, false))
-						m.AddMove(NewMove(source, target, BP, BN, false, false, false, false))
+						m.AddMove(NewMove(source, target, MovePromoQ))
+						m.AddMove(NewMove(source, target, MovePromoR))
+						m.AddMove(NewMove(source, target, MovePromoB))
+						m.AddMove(NewMove(source, target, MovePromoN))
 					} else {
-						m.AddMove(NewMove(source, target, BP, Empty, false, false, false, false))
+						m.AddMove(NewMove(source, target, MoveQuiet))
 						// double push from rank 7
 						if (source >= A7 && source <= H7) && b.Occupancies[Both].GetBit(target+8) == 0 {
-							m.AddMove(NewMove(source, target+8, BP, Empty, false, true, false, false))
+							m.AddMove(NewMove(source, target+8, MoveDouble))
 						}
 					}
 				}
@@ -88,12 +88,12 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 				for attacks != 0 {
 					target = Square(attacks.GetLSB())
 					if source >= A2 && source <= H2 {
-						m.AddMove(NewMove(source, target, BP, BQ, true, false, false, false))
-						m.AddMove(NewMove(source, target, BP, BR, true, false, false, false))
-						m.AddMove(NewMove(source, target, BP, BB, true, false, false, false))
-						m.AddMove(NewMove(source, target, BP, BN, true, false, false, false))
+						m.AddMove(NewMove(source, target, MovePromoCaptureQ))
+						m.AddMove(NewMove(source, target, MovePromoCaptureR))
+						m.AddMove(NewMove(source, target, MovePromoCaptureB))
+						m.AddMove(NewMove(source, target, MovePromoCaptureN))
 					} else {
-						m.AddMove(NewMove(source, target, BP, Empty, true, false, false, false))
+						m.AddMove(NewMove(source, target, MoveCapture))
 					}
 					attacks.PopBit(target)
 				}
@@ -103,7 +103,7 @@ func (m *MoveList) generatePawnMoves(b *Board, capturesOnly bool) {
 					enpassantAttacks := PawnAttacks[b.Side][source] & (BitBoard(uint64(1) << uint64(b.EnPassant)))
 					if enpassantAttacks != 0 {
 						targetEnpass := Square(enpassantAttacks.GetLSB())
-						m.AddMove(NewMove(source, targetEnpass, BP, Empty, true, false, true, false))
+						m.AddMove(NewMove(source, targetEnpass, MoveEnPass))
 					}
 				}
 
@@ -148,10 +148,10 @@ func (m *MoveList) generateKnightMoves(b *Board, capturesOnly bool) {
 
 			if enemy.GetBit(target) == 0 {
 				// quiet move
-				m.AddMove(NewMove(source, target, pce, Empty, false, false, false, false))
+				m.AddMove(NewMove(source, target, MoveQuiet))
 			} else {
 				// capture move
-				m.AddMove(NewMove(source, target, pce, Empty, true, false, false, false))
+				m.AddMove(NewMove(source, target, MoveCapture))
 			}
 
 			attacks.PopBit(target)
@@ -194,10 +194,10 @@ func (m *MoveList) generateKingMoves(b *Board, capturesOnly bool) {
 
 			if enemy.GetBit(target) == 0 {
 				// quiet move
-				m.AddMove(NewMove(source, target, pce, Empty, false, false, false, false))
+				m.AddMove(NewMove(source, target, MoveQuiet))
 			} else {
 				// capture move
-				m.AddMove(NewMove(source, target, pce, Empty, true, false, false, false))
+				m.AddMove(NewMove(source, target, MoveCapture))
 			}
 
 			attacks.PopBit(target)
@@ -212,7 +212,7 @@ func (m *MoveList) generateKingMoves(b *Board, capturesOnly bool) {
 		if b.Castle&WKCA != 0 {
 			if b.Occupancies[Both].GetBit(F1) == 0 && b.Occupancies[Both].GetBit(G1) == 0 {
 				if !b.IsSquareAttacked(E1, Black) && !b.IsSquareAttacked(F1, Black) {
-					m.AddMove(NewMove(E1, G1, pce, Empty, false, false, false, true))
+					m.AddMove(NewMove(E1, G1, MoveCastle))
 				}
 			}
 		}
@@ -220,7 +220,7 @@ func (m *MoveList) generateKingMoves(b *Board, capturesOnly bool) {
 		if b.Castle&WQCA != 0 {
 			if b.Occupancies[Both].GetBit(D1) == 0 && b.Occupancies[Both].GetBit(C1) == 0 && b.Occupancies[Both].GetBit(B1) == 0 {
 				if !b.IsSquareAttacked(E1, Black) && !b.IsSquareAttacked(D1, Black) {
-					m.AddMove(NewMove(E1, C1, pce, Empty, false, false, false, true))
+					m.AddMove(NewMove(E1, C1, MoveCastle))
 				}
 			}
 		}
@@ -231,7 +231,7 @@ func (m *MoveList) generateKingMoves(b *Board, capturesOnly bool) {
 		if b.Castle&BKCA != 0 {
 			if b.Occupancies[Both].GetBit(F8) == 0 && b.Occupancies[Both].GetBit(G8) == 0 {
 				if !b.IsSquareAttacked(E8, White) && !b.IsSquareAttacked(F8, White) {
-					m.AddMove(NewMove(E8, G8, pce, Empty, false, false, false, true))
+					m.AddMove(NewMove(E8, G8, MoveCastle))
 				}
 			}
 		}
@@ -239,7 +239,7 @@ func (m *MoveList) generateKingMoves(b *Board, capturesOnly bool) {
 		if b.Castle&BQCA != 0 {
 			if b.Occupancies[Both].GetBit(D8) == 0 && b.Occupancies[Both].GetBit(C8) == 0 && b.Occupancies[Both].GetBit(B8) == 0 {
 				if !b.IsSquareAttacked(E8, White) && !b.IsSquareAttacked(D8, White) {
-					m.AddMove(NewMove(E8, C8, pce, Empty, false, false, false, true))
+					m.AddMove(NewMove(E8, C8, MoveCastle))
 				}
 			}
 		}
@@ -281,10 +281,10 @@ func (m *MoveList) generateBishopMoves(b *Board, capturesOnly bool) {
 
 			if enemy.GetBit(target) == 0 {
 				// quiet move
-				m.AddMove(NewMove(source, target, pce, Empty, false, false, false, false))
+				m.AddMove(NewMove(source, target, MoveQuiet))
 			} else {
 				// capture move
-				m.AddMove(NewMove(source, target, pce, Empty, true, false, false, false))
+				m.AddMove(NewMove(source, target, MoveCapture))
 			}
 
 			attacks.PopBit(target)
@@ -329,10 +329,10 @@ func (m *MoveList) generateRookMoves(b *Board, capturesOnly bool) {
 
 			if enemy.GetBit(target) == 0 {
 				// quiet move
-				m.AddMove(NewMove(source, target, pce, Empty, false, false, false, false))
+				m.AddMove(NewMove(source, target, MoveQuiet))
 			} else {
 				// capture move
-				m.AddMove(NewMove(source, target, pce, Empty, true, false, false, false))
+				m.AddMove(NewMove(source, target, MoveCapture))
 			}
 
 			attacks.PopBit(target)
@@ -377,10 +377,10 @@ func (m *MoveList) generateQueenMoves(b *Board, capturesOnly bool) {
 
 			if enemy.GetBit(target) == 0 {
 				// quiet moves
-				m.AddMove(NewMove(source, target, pce, Empty, false, false, false, false))
+				m.AddMove(NewMove(source, target, MoveQuiet))
 			} else {
 				// capture moves
-				m.AddMove(NewMove(source, target, pce, Empty, true, false, false, false))
+				m.AddMove(NewMove(source, target, MoveCapture))
 			}
 
 			attacks.PopBit(target)

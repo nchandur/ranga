@@ -6,7 +6,7 @@ import "ranga/internal/board"
 func (s *Searcher) SeeCapture(b *board.Board, move board.Move) int {
 	from := move.Source()
 	to := move.Target()
-	piece := move.Piece()
+	piece := b.Mailbox[move.Source()]
 
 	targetPiece := b.Mailbox[to]
 	capturedVal := 0

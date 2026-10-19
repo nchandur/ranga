@@ -13,6 +13,9 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 		return s.Evaluate(b)
 	}
 
+	// record node so deeper nodes can detect repetitions against it
+	s.path[b.Ply] = b.Key
+
 	// node limit is checked on every node so it is exact
 	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
 		s.Stop.Store(true)
@@ -99,15 +102,11 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 			s.NN.Update(&state, ml.Moves[count])
 		}
 
-		b.Repetition.Idx++
-		b.Repetition.Table[b.Repetition.Idx] = b.Key
-
 		legalMoves++
 
 		score := -s.Quiescence(b, -beta, -alpha)
 
 		b.Ply--
-		b.Repetition.Idx--
 
 		b.Restore(&state)
 
@@ -161,8 +160,8 @@ func (s *Searcher) deltaPruning(alpha, evaluation int, inCheck bool, b *board.Bo
 	gain := abs(board.PieceValue[captured])
 
 	// actual promoted piece value
-	if move.Promoted() != board.Empty {
-		gain += abs(board.PieceValue[move.Promoted()]) - abs(board.PieceValue[board.WP])
+	if move.IsPromotion() {
+		gain += abs(board.PieceValue[move.Promoted(b.Side)]) - abs(board.PieceValue[board.WP])
 	}
 
 	return evaluation+gain+BIG_DELTA < alpha

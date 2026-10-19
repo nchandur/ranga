@@ -57,26 +57,12 @@ func assertBoardsEqual(t *testing.T, expected, want *Board) {
 	if expected.Key != want.Key {
 		t.Fatalf("Key mismatch: expected 0x%016x, want 0x%016x", expected.Key, want.Key)
 	}
-
-	if expected.Repetition.Idx != want.Repetition.Idx {
-		t.Fatalf("Repetition.Idx mismatch: expected %d, want %d", expected.Repetition.Idx, want.Repetition.Idx)
-	}
-
-	for i := range expected.Repetition.Idx {
-		if expected.Repetition.Table[i] != want.Repetition.Table[i] {
-			t.Fatalf("Repetition.Table[%d] mismatch: expected 0x%016x, want 0x%016x",
-				i, expected.Repetition.Table[i], want.Repetition.Table[i])
-		}
-	}
 }
 
 func TestBoard_Preserve(t *testing.T) {
 
 	original := NewBoard()
 	original.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2")
-	original.Repetition.Idx = 2
-	original.Repetition.Table[0] = 0x0
-	original.Repetition.Table[1] = 0x0
 
 	preserved := original.Preserve()
 	assertBoardsEqual(t, &preserved, &original)
@@ -88,8 +74,6 @@ func TestBoard_Preserve(t *testing.T) {
 	original.Mailbox[0] = Empty
 	original.PieceBitBoards[0] = 0
 	original.Occupancies[0] = 0
-	original.Repetition.Idx = 0x123
-	original.Repetition.Table[0] = 0x456
 
 	if preserved.Side != White {
 		t.Errorf("preserved.Side mutated: got %v, want White", preserved.Side)
@@ -103,9 +87,6 @@ func TestBoard_Preserve(t *testing.T) {
 	if preserved.Ply != 2 {
 		t.Errorf("preserved.Ply mutated: got %d, want 2", preserved.Ply)
 	}
-	if preserved.Repetition.Idx != 2 {
-		t.Errorf("preserved.Repetition.Idx mutated: got %d, want 2", preserved.Repetition.Idx)
-	}
 }
 
 func TestBoard_Restore(t *testing.T) {
@@ -115,10 +96,6 @@ func TestBoard_Restore(t *testing.T) {
 	snapshot := NewBoard()
 	snapshot.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR b Kq c6 3 2")
 
-	snapshot.Repetition.Idx = 2
-	snapshot.Repetition.Table[0] = 0x0
-	snapshot.Repetition.Table[1] = 0x0
-
 	current.Restore(&snapshot)
 	assertBoardsEqual(t, &current, &snapshot)
 
@@ -127,7 +104,6 @@ func TestBoard_Restore(t *testing.T) {
 	snapshot.FiftyMove = 99
 	snapshot.Ply = 100
 	snapshot.Mailbox[0] = Empty
-	snapshot.Repetition.Idx = 0
 
 	if current.Side != Black {
 		t.Errorf("current.Side mutated after snapshot change: got %v, want Black", current.Side)
@@ -141,19 +117,12 @@ func TestBoard_Restore(t *testing.T) {
 	if current.Ply != 3 {
 		t.Errorf("current.Ply mutated: got %d, want 3", current.Ply)
 	}
-	if current.Repetition.Idx != 2 {
-		t.Errorf("current.Repetition.Idx mutated: got %d, want 2", current.Repetition.Idx)
-	}
 }
 
 func TestBoard_Clear(t *testing.T) {
 	t.Run("clears a populated board", func(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 3 2")
-
-		b.Repetition.Idx = 2
-		b.Repetition.Table[0] = 0xDEADBEEFCAFE
-		b.Repetition.Table[1] = 0xBEEFCAFEDEAD
 		b.Clear()
 
 		for i, bb := range b.PieceBitBoards {
@@ -190,15 +159,6 @@ func TestBoard_Clear(t *testing.T) {
 		}
 		if b.Key != 0 {
 			t.Errorf("Key = 0x%016x; want 0", b.Key)
-		}
-
-		if b.Repetition.Idx != 0 {
-			t.Errorf("Repetition.Idx = %d; want 0", b.Repetition.Idx)
-		}
-		for i, key := range b.Repetition.Table {
-			if key != 0 {
-				t.Fatalf("Repetition.Table[%d] = 0x%016x; want 0", i, key)
-			}
 		}
 	})
 	t.Run("idempotent on empty board", func(t *testing.T) {
@@ -508,7 +468,7 @@ func TestBoard_MakeMove(t *testing.T) {
 	t.Run("quiet move executes when onlyCaptures is false", func(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN(START)
-		move := NewMove(E2, E3, WP, Empty, false, false, false, false)
+		move := NewMove(E2, E3, MoveQuiet)
 		legal := b.MakeMove(move, false)
 
 		if !legal {
@@ -529,7 +489,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		b.ParseFEN(START)
 		snapshot := b.Preserve()
 
-		move := NewMove(E2, E3, WP, Empty, false, false, false, false)
+		move := NewMove(E2, E3, MoveQuiet)
 		legal := b.MakeMove(move, true)
 
 		if legal {
@@ -541,7 +501,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 5 3")
 
-		move := NewMove(E4, D5, WP, Empty, true, false, false, false)
+		move := NewMove(E4, D5, MoveCapture)
 		legal := b.MakeMove(move, true)
 
 		if !legal {
@@ -561,7 +521,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN(START)
 
-		move := NewMove(E2, E4, WP, Empty, false, true, false, false)
+		move := NewMove(E2, E4, MoveDouble)
 		legal := b.MakeMove(move, false)
 
 		if !legal {
@@ -575,7 +535,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3")
 
-		move := NewMove(E5, D6, WP, Empty, true, false, true, false)
+		move := NewMove(E5, D6, MoveEnPass)
 		legal := b.MakeMove(move, false)
 
 		if !legal {
@@ -595,7 +555,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
 
-		move := NewMove(E1, G1, WK, Empty, false, false, false, true)
+		move := NewMove(E1, G1, MoveCastle)
 		legal := b.MakeMove(move, false)
 
 		if !legal {
@@ -618,7 +578,7 @@ func TestBoard_MakeMove(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("8/4P3/8/8/8/8/8/4K2k w - - 0 1")
 
-		move := NewMove(E7, E8, WP, WQ, false, false, false, false)
+		move := NewMove(E7, E8, MovePromoQ)
 		legal := b.MakeMove(move, false)
 
 		if !legal {
@@ -653,7 +613,7 @@ func TestBoard_ParseMove(t *testing.T) {
 		moveStr := "e2e4"
 
 		move := b.ParseMove(moveStr)
-		expected := NewMove(E2, E4, WP, Empty, false, true, false, false)
+		expected := NewMove(E2, E4, MoveDouble)
 
 		if move != expected {
 			t.Errorf("expected: %s\noutput: %s\n", expected, move)
@@ -665,7 +625,7 @@ func TestBoard_ParseMove(t *testing.T) {
 		b.ParseFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
 
 		moveStr := "f3f6"
-		expected := NewMove(F3, F6, WQ, Empty, true, false, false, false)
+		expected := NewMove(F3, F6, MoveCapture)
 		move := b.ParseMove(moveStr)
 
 		if move != expected {
@@ -678,7 +638,7 @@ func TestBoard_ParseMove(t *testing.T) {
 		b.ParseFEN("4k3/4p3/8/3pP3/8/8/8/4K3 w - d6 0 1")
 
 		moveStr := "e5d6"
-		expected := NewMove(E5, D6, WP, Empty, true, false, true, false)
+		expected := NewMove(E5, D6, MoveEnPass)
 
 		move := b.ParseMove(moveStr)
 
@@ -691,7 +651,7 @@ func TestBoard_ParseMove(t *testing.T) {
 		b := NewBoard()
 		b.ParseFEN("8/3P1k2/4p3/8/8/8/8/4K3 w - - 0 1")
 		moveStr := "d7d8q"
-		expected := NewMove(D7, D8, WP, WQ, false, false, false, false)
+		expected := NewMove(D7, D8, MovePromoQ)
 
 		move := b.ParseMove(moveStr)
 

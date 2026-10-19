@@ -17,7 +17,7 @@ Tested with SPRT against predecessor and with a progression test against Stash 2
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/) `1.27.1` or above *(or Docker, if you would rather skip a local install)*
+- [Go](https://go.dev/dl/) `1.27.2` or above *(or Docker, if you would rather skip a local install)*
 - [Task](https://taskfile.dev/installation/) (optional if you build with `go build` directly)
 
 ### Local build

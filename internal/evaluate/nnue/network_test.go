@@ -61,5 +61,25 @@ func TestNetwork(t *testing.T) {
 			t.Errorf("expected positive evaluation for evalA, got %d", evalA)
 		}
 	})
+}
 
+func TestOutputWeightsFitLizard(t *testing.T) {
+	net, _ := LoadEmbedded()
+
+	var maxAbs int32
+	for _, w := range net.OutputWeights {
+		a := int32(w)
+		if a < 0 {
+			a = -a
+		}
+		if a > maxAbs {
+			maxAbs = a
+		}
+	}
+
+	limit := int32(32767) / int32(QA)
+	t.Logf("max |output weight| = %d, limit = %d", maxAbs, limit)
+	if maxAbs > limit {
+		t.Fatalf("net not compatible with Lizard SCReLU")
+	}
 }

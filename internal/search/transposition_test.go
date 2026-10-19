@@ -2,11 +2,12 @@ package search
 
 import (
 	"ranga/internal/board"
+	"sync"
 	"testing"
 )
 
 func TestTranspositionTable(t *testing.T) {
-	sampleMove := board.NewMove(board.E2, board.E4, board.WP, board.Empty, false, false, false, false)
+	sampleMove := board.NewMove(board.E2, board.E4, board.MoveQuiet)
 
 	t.Run("NewTranspositionTable allocates power-of-two capacity", func(t *testing.T) {
 		tt := NewTranspositionTable(1)
@@ -75,14 +76,14 @@ func TestTranspositionTable(t *testing.T) {
 
 		tt.Store(200, 5, 0, FEXACT, key, sampleMove)
 
-		shallowMove := board.NewMove(board.D2, board.D4, board.WP, board.Empty, false, false, false, false)
+		shallowMove := board.NewMove(board.D2, board.D4, board.MoveQuiet)
 		tt.Store(50, 2, 0, FEXACT, key, shallowMove)
 
 		if got := tt.ProbeMove(key); got != sampleMove {
 			t.Errorf("shallow store overwrote deeper entry: got %v, want %v", got, sampleMove)
 		}
 
-		deepMove := board.NewMove(board.C2, board.C4, board.WP, board.Empty, false, false, false, false)
+		deepMove := board.NewMove(board.C2, board.C4, board.MoveQuiet)
 		tt.Store(300, 6, 0, FEXACT, key, deepMove)
 
 		if got := tt.ProbeMove(key); got != deepMove {
@@ -97,10 +98,10 @@ func TestTranspositionTable(t *testing.T) {
 		storePly := 3
 		tt.Store(rawMate, 4, storePly, FEXACT, key, sampleMove)
 
-		idx := key % uint64(tt.Length)
-		if tt.Entries[idx].Score != rawMate+storePly {
+		stored := TranspositionTableEntry(tt.slot(key).Load())
+		if stored.Score() != rawMate+storePly {
 			t.Errorf("Stored mate score mismatch: got %d, want %d",
-				tt.Entries[idx].Score, rawMate+storePly)
+				stored.Score(), rawMate+storePly)
 		}
 
 		probePly := 1
@@ -152,5 +153,127 @@ func TestTranspositionTable(t *testing.T) {
 		if missScore != NOENTRY {
 			t.Errorf("expected NOENTRY on probe after resize, got %d", missScore)
 		}
+	})
+	t.Run("Negative mate score normalization across plies", func(t *testing.T) {
+		tt := NewTranspositionTable(1)
+		key := uint64(0x123456789ABCDEF0)
+
+		rawMated := -MATESCORE - 10
+		storePly := 3
+		tt.Store(rawMated, 4, storePly, FEXACT, key, sampleMove)
+
+		stored := TranspositionTableEntry(tt.slot(key).Load())
+		if stored.Score() != rawMated-storePly {
+			t.Errorf("Stored mated score mismatch: got %d, want %d", stored.Score(), rawMated-storePly)
+		}
+
+		probePly := 1
+		gotScore := tt.Probe(-INFINITY, INFINITY, probePly, 4, key)
+		wantScore := (rawMated - storePly) + probePly
+		if gotScore != wantScore {
+			t.Errorf("Normalized probed mated score = %d; want %d", gotScore, wantScore)
+		}
+	})
+	t.Run("Packed entry round-trips every field", func(t *testing.T) {
+		mv := board.NewMove(board.E7, board.E8, board.MovePromoCaptureQ)
+		key := uint64(0xDEADBEEFCAFEF00D)
+
+		scores := []int{0, 1, -1, 12345, -12345, INFINITY, -INFINITY, MATESCORE + MAX_PLY, -MATESCORE - MAX_PLY}
+		depths := []int{0, 1, 17, 255}
+		flags := []int{FEXACT, FALPHA, FBETA}
+
+		for _, score := range scores {
+			for _, depth := range depths {
+				for _, flag := range flags {
+					e := packEntry(key, score, depth, flag, mv)
+
+					if e == 0 {
+						t.Fatalf("valid entry packed to 0 (score %d depth %d flag %d)", score, depth, flag)
+					}
+					if e.Score() != score || e.Depth() != depth || e.Flag() != flag || e.Move() != mv {
+						t.Fatalf("fields differ: got score %d depth %d flag %d move %v; want %d %d %d %v",
+							e.Score(), e.Depth(), e.Flag(), e.Move(), score, depth, flag, mv)
+					}
+					if !e.matches(key) {
+						t.Fatalf("entry does not match its own key")
+					}
+				}
+			}
+		}
+	})
+	t.Run("Packed fields do not bleed into each other", func(t *testing.T) {
+		deep := packEntry(0, 0, 255, FEXACT, board.NOMOVE)
+		if deep.Score() != 0 || deep.Flag() != FEXACT || deep.Move() != board.NOMOVE || deep.Depth() != 255 {
+			t.Error("depth bled into another field")
+		}
+
+		neg := packEntry(0, -1, 0, FBETA, board.NewMove(board.H1, board.A8, board.MovePromoCaptureQ))
+		if neg.Depth() != 0 || neg.Score() != -1 || neg.Flag() != FBETA {
+			t.Error("score or move bled into another field")
+		}
+	})
+	t.Run("Score range fits the score field", func(t *testing.T) {
+		if INFINITY+MAX_PLY >= scoreBias-1 {
+			t.Fatalf("scores up to %d do not fit in %d score bits", INFINITY+MAX_PLY, scoreBits)
+		}
+	})
+	t.Run("Key check uses the high key bits only", func(t *testing.T) {
+		key := uint64(0xDEADBEEFCAFEF00D)
+		e := packEntry(key, 5, 5, FEXACT, board.NOMOVE)
+
+		if !e.matches(key ^ 1) { // low bits only select the slot
+			t.Error("low key bits must not affect the check")
+		}
+		if e.matches(key ^ (1 << 63)) {
+			t.Error("different top key bits must not match")
+		}
+		if TranspositionTableEntry(0).matches(0) {
+			t.Error("empty slot must never match")
+		}
+	})
+	t.Run("Capacity uses the full memory budget", func(t *testing.T) {
+		for _, mb := range []int{1, 2, 16, 100, 256} {
+			tt := NewTranspositionTable(mb)
+
+			bytes := tt.Length * 8
+			if bytes > mb*1024*1024 || bytes*2 <= mb*1024*1024 {
+				t.Errorf("%dMB: %d entries use %d bytes", mb, tt.Length, bytes)
+			}
+		}
+
+		tt := NewTranspositionTable(1)
+		tt.Resize(16)
+		if tt.Length != 1<<21 {
+			t.Errorf("16MB should hold 2^21 entries, got %d", tt.Length)
+		}
+	})
+	t.Run("Concurrent Store and Probe stay consistent", func(t *testing.T) {
+		tt := NewTranspositionTable(1)
+		mv := board.NewMove(board.G1, board.F3, board.MoveQuiet)
+
+		var wg sync.WaitGroup
+		for g := range 8 {
+			wg.Add(1)
+			go func(seed uint64) {
+				defer wg.Done()
+				x := seed*0x9E3779B97F4A7C15 + 1
+
+				for range 200000 {
+					x ^= x << 13
+					x ^= x >> 7
+					x ^= x << 17
+
+					depth := int(x>>8) & 31
+					tt.Store(depth*7, depth, 0, FEXACT, x, mv)
+
+					e := TranspositionTableEntry(tt.Entries[(x>>20)&uint64(tt.Length-1)].Load())
+					if e != 0 && (e.Score() != e.Depth()*7 || e.Move() != mv) {
+						t.Errorf("inconsistent entry: score %d depth %d move %v", e.Score(), e.Depth(), e.Move())
+						return
+					}
+				}
+			}(uint64(g + 1))
+		}
+		wg.Wait()
 	})
 }
