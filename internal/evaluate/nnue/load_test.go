@@ -42,11 +42,12 @@ func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16) {
 		writeI16(int16(i))
 	}
 
-	for b := range OutputBuckets {
-		for i := range 2 * HiddenSize {
+	for i := range 2 * HiddenSize {
+		for b := range OutputBuckets {
 			writeI16(mockOutputWeight(b, i))
 		}
 	}
+	// one output bias per bucket
 	for b := range OutputBuckets {
 		writeI16(mockOutputBias(b))
 	}
