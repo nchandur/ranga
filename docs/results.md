@@ -31,7 +31,7 @@ Total time: 00:55:11 (h:m:s)
 
 ### LTC: 40+0.04
 
-**RC Engine:** ranga-1.17 | **Base Engine:** ranga-1.16
+**RC Engine:** ranga-1.18 | **Base Engine:** ranga-1.17
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
