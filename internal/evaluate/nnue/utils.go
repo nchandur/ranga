@@ -1,5 +1,10 @@
 package nnue
 
+import (
+	"math/bits"
+	"ranga/internal/board"
+)
+
 func screlu(x int16) int32 {
 	y := int32(clamp(x, 0, QA))
 	return y * y
@@ -26,4 +31,9 @@ func lizardDot(v, w []int16) int32 {
 		sum += int32(t) * int32(c)
 	}
 	return sum
+}
+
+func outputBucket(b *board.Board) int {
+	count := bits.OnesCount64(uint64(b.Occupancies[2]))
+	return (count - 2) / 4
 }
