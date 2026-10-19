@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v1.18] - 2026-10-18
 
 ## Added
 * feat(evaluate): change activation to Lizard SCReLU [[#79](https://github.com/nchandur/ranga/pull/79)]
