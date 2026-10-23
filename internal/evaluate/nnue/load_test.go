@@ -8,8 +8,17 @@ import (
 	"testing"
 )
 
+// deterministic expected values for the bucketed output layer
+func mockOutputWeight(bucket, i int) int16 {
+	return int16(bucket*1000 + i%1000)
+}
+
+func mockOutputBias(bucket int) int16 {
+	return int16(-(bucket + 1) * 7)
+}
+
 // helper to build a deterministic binary buffer of expected network size
-func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16, int16) {
+func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16) {
 	t.Helper()
 	buf := make([]byte, expectedNetworkBytes)
 	pos := 0
@@ -34,13 +43,36 @@ func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16, int16)
 	}
 
 	for i := range 2 * HiddenSize {
-		writeI16(int16(i + 10))
+		for b := range OutputBuckets {
+			writeI16(mockOutputWeight(b, i))
+		}
+	}
+	// one output bias per bucket
+	for b := range OutputBuckets {
+		writeI16(mockOutputBias(b))
 	}
 
-	outputBias := int16(-42)
-	writeI16(outputBias)
+	if pos != expectedNetworkBytes {
+		t.Fatalf("mock network wrote %d bytes; want %d", pos, expectedNetworkBytes)
+	}
 
-	return buf, firstWeight, lastWeight, firstBias, outputBias
+	return buf, firstWeight, lastWeight, firstBias
+}
+
+// checks every bucket's bias and a few representative weights
+func checkOutputLayer(t *testing.T, net *Network) {
+	t.Helper()
+	for b := range OutputBuckets {
+		// first weight, first weight of the "them" half, and last weight of the bucket
+		for _, i := range []int{0, HiddenSize, 2*HiddenSize - 1} {
+			if got, want := net.OutputWeights[b][i], mockOutputWeight(b, i); got != want {
+				t.Errorf("OutputWeights[%d][%d] = %d; want %d", b, i, got, want)
+			}
+		}
+		if got, want := net.OutputBias[b], mockOutputBias(b); got != want {
+			t.Errorf("OutputBias[%d] = %d; want %d", b, got, want)
+		}
+	}
 }
 
 func TestLoadNetwork(t *testing.T) {
@@ -55,8 +87,9 @@ func TestLoadNetwork(t *testing.T) {
 			t.Errorf("expected nil network on failure, got %v", net)
 		}
 	})
+
 	t.Run("parseNetwork deserializes weights and biases correctly", func(t *testing.T) {
-		data, wantFirstWeight, wantLastWeight, wantFirstBias, wantOutputBias := generateMockNetworkBytes(t)
+		data, wantFirstWeight, wantLastWeight, wantFirstBias := generateMockNetworkBytes(t)
 
 		net, err := parseNetwork(data)
 		if err != nil {
@@ -69,17 +102,15 @@ func TestLoadNetwork(t *testing.T) {
 		if got := net.FeatureWeights[767].Values[HiddenSize-1]; got != wantLastWeight {
 			t.Errorf("FeatureWeights[767][last] = %d; want %d", got, wantLastWeight)
 		}
-
 		if got := net.FeatureBias.Values[0]; got != wantFirstBias {
 			t.Errorf("FeatureBias[0] = %d; want %d", got, wantFirstBias)
 		}
 
-		if got := net.OutputBias; got != wantOutputBias {
-			t.Errorf("OutputBias = %d; want %d", got, wantOutputBias)
-		}
+		checkOutputLayer(t, net)
 	})
+
 	t.Run("parseNetwork ignores extra trailing bytes", func(t *testing.T) {
-		data, _, _, _, _ := generateMockNetworkBytes(t)
+		data, _, _, _ := generateMockNetworkBytes(t)
 		paddedData := append(data, []byte{0xFF, 0xEE, 0xDD}...)
 
 		net, err := parseNetwork(paddedData)
@@ -89,7 +120,9 @@ func TestLoadNetwork(t *testing.T) {
 		if net == nil {
 			t.Fatalf("expected non-nil network")
 		}
+		checkOutputLayer(t, net)
 	})
+
 	t.Run("LoadNetwork returns error when file does not exist", func(t *testing.T) {
 		_, err := LoadNetwork("non_existent_network_file.nnue")
 		if err == nil {
@@ -99,8 +132,9 @@ func TestLoadNetwork(t *testing.T) {
 			t.Errorf("expected wrapped os.ErrNotExist, got %v", err)
 		}
 	})
+
 	t.Run("LoadNetwork reads and unpacks valid network file from disk", func(t *testing.T) {
-		data, _, _, _, wantOutputBias := generateMockNetworkBytes(t)
+		data, _, _, _ := generateMockNetworkBytes(t)
 
 		tmpDir := t.TempDir()
 		filePath := filepath.Join(tmpDir, "test_net.nnue")
@@ -113,8 +147,6 @@ func TestLoadNetwork(t *testing.T) {
 			t.Fatalf("LoadNetwork failed: %v", err)
 		}
 
-		if net.OutputBias != wantOutputBias {
-			t.Errorf("loaded OutputBias = %d; want %d", net.OutputBias, wantOutputBias)
-		}
+		checkOutputLayer(t, net)
 	})
 }

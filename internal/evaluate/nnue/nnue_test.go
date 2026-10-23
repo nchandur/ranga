@@ -125,23 +125,62 @@ func TestNNUE(t *testing.T) {
 			})
 		}
 	})
-	t.Run("Evaluate alternates us and them based on b.Side", func(t *testing.T) {
-		nn := NewRandom()
-		b := board.NewBoard()
-		b.ParseFEN(board.START)
-		nn.Reset(&b)
-		b.Side = board.White
-		whiteEval := nn.Evaluate(&b)
-		expectedWhite := int(nn.Network.Evaluate(&nn.acc.White, &nn.acc.Black))
-		if whiteEval != expectedWhite {
-			t.Errorf("White eval = %d; want %d", whiteEval, expectedWhite)
+	t.Run("outputBucket maps piece count to bucket", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			fen    string
+			pieces int
+			want   int
+		}{
+			{"kings only", "4k3/8/8/8/8/8/8/4K3 w - - 0 1", 2, 0},
+			{"5 pieces, top of bucket 0", "4k3/p7/8/8/8/8/PP6/4K3 w - - 0 1", 5, 0},
+			{"6 pieces, bottom of bucket 1", "4k3/pp6/8/8/8/8/PP6/4K3 w - - 0 1", 6, 1},
+			{"10 pieces", "4k3/pppp4/8/8/8/8/PPPP4/4K3 w - - 0 1", 10, 2},
+			{"start position", board.START, 32, 7},
 		}
 
-		b.Side = board.Black
-		blackEval := nn.Evaluate(&b)
-		expectedBlack := int(nn.Network.Evaluate(&nn.acc.Black, &nn.acc.White))
-		if blackEval != expectedBlack {
-			t.Errorf("Black eval = %d; want %d", blackEval, expectedBlack)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				b := board.NewBoard()
+				b.ParseFEN(tt.fen)
+				got := outputBucket(&b)
+				if got != tt.want {
+					t.Errorf("outputBucket(%d pieces) = %d; want %d", tt.pieces, got, tt.want)
+				}
+				if got < 0 || got >= OutputBuckets {
+					t.Errorf("outputBucket = %d out of range [0, %d)", got, OutputBuckets)
+				}
+			})
+		}
+	})
+	t.Run("Evaluate alternates us and them based on b.Side and uses the output bucket", func(t *testing.T) {
+		fens := []string{
+			board.START,
+			"4k3/pp6/8/8/8/8/PP6/4K3 w - - 0 1",
+			"r3k2r/pppq1ppp/2npbn2/2b1p3/4P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 4 7",
+			"5k2/4P3/8/8/8/8/8/4K3 w - - 0 1",
+		}
+
+		for _, fen := range fens {
+			nn := NewRandom()
+			b := board.NewBoard()
+			b.ParseFEN(fen)
+			nn.Reset(&b)
+			bucket := outputBucket(&b)
+
+			b.Side = board.White
+			whiteEval := nn.Evaluate(&b)
+			expectedWhite := int(nn.Network.Evaluate(&nn.acc.White, &nn.acc.Black, bucket))
+			if whiteEval != expectedWhite {
+				t.Errorf("%s: White eval = %d; want %d", fen, whiteEval, expectedWhite)
+			}
+
+			b.Side = board.Black
+			blackEval := nn.Evaluate(&b)
+			expectedBlack := int(nn.Network.Evaluate(&nn.acc.Black, &nn.acc.White, bucket))
+			if blackEval != expectedBlack {
+				t.Errorf("%s: Black eval = %d; want %d", fen, blackEval, expectedBlack)
+			}
 		}
 	})
 }
