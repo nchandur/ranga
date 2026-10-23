@@ -27,7 +27,7 @@ func lizardDot(v, w []int16) int32 {
 	var sum int32
 	for i := range v {
 		c := clamp(v[i], 0, QA)
-		t := c * w[i] // int16 multiply, intentionally not widened
+		t := c * w[i]
 		sum += int32(t) * int32(c)
 	}
 	return sum
