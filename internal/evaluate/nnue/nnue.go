@@ -88,10 +88,11 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 }
 
 func (n *NNUE) Evaluate(b *board.Board) int {
+	bucket := outputBucket(b)
 	if b.Side == board.White {
-		return int(n.Network.Evaluate(&n.acc.White, &n.acc.Black))
+		return int(n.Network.Evaluate(&n.acc.White, &n.acc.Black, bucket))
 	}
-	return int(n.Network.Evaluate(&n.acc.Black, &n.acc.White))
+	return int(n.Network.Evaluate(&n.acc.Black, &n.acc.White, bucket))
 }
 
 func (n *NNUE) addPiece(piece board.Piece, sq board.Square) {

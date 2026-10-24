@@ -6,7 +6,8 @@ import (
 	"os"
 )
 
-const expectedNetworkBytes = int(768*HiddenSize+HiddenSize+2*HiddenSize+1) * 2
+// feature weights + feature bias + (output weights + output bias) per bucket
+const expectedNetworkBytes = (768*HiddenSize + HiddenSize + OutputBuckets*2*HiddenSize + OutputBuckets) * 2
 
 func LoadNetwork(path string) (*Network, error) {
 	data, err := os.ReadFile(path)
@@ -32,10 +33,17 @@ func parseNetwork(data []byte) (*Network, error) {
 	for i := range HiddenSize {
 		net.FeatureBias.Values[i] = int16(binary.LittleEndian.Uint16(r.next(2)))
 	}
-	for i := range net.OutputWeights {
-		net.OutputWeights[i] = int16(binary.LittleEndian.Uint16(r.next(2)))
+
+	for i := range 2 * HiddenSize {
+		for b := range OutputBuckets {
+			net.OutputWeights[b][i] = int16(binary.LittleEndian.Uint16(r.next(2)))
+		}
 	}
-	net.OutputBias = int16(binary.LittleEndian.Uint16(r.next(2)))
+
+	// followed by one bias per bucket
+	for b := range OutputBuckets {
+		net.OutputBias[b] = int16(binary.LittleEndian.Uint16(r.next(2)))
+	}
 
 	return &net, nil
 }

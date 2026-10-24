@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.19] - 2026-10-24
+
+## Added
+* feat(evaluate): implement piece-count output buckets [[#86](https://github.com/nchandur/ranga/pull/86)]
+
 ## [v1.18] - 2026-10-18
 
 ## Added

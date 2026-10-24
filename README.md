@@ -62,7 +62,7 @@ Run `./bin/ranga` and type UCI commands.
 
 ```bash
 uci
-id name ranga 1.16
+id name ranga 1.19
 id author nchandur
 option name Threads type spin default 1 min 1 max 1
 option name Hash type spin default 16 min 1 max 2048
@@ -70,15 +70,15 @@ option name Clear Hash type button
 uciok
 position startpos moves e2e4 e7e5
 go depth 8
-info depth 1 score cp 26 nodes 63 pv g1f3
-info depth 2 score cp 27 nodes 322 pv g1f3 b8c6
-info depth 3 score cp 30 nodes 2956 pv g1f3 b8c6 b1c3
-info depth 4 score cp 21 nodes 6994 pv g1f3 b8c6 b1c3 g8f6
-info depth 5 score cp 24 nodes 15756 pv g1f3 b8c6 b1c3 g8f6 f1e2
-info depth 6 score cp 22 nodes 44356 pv g1f3 g8f6 f3e5 f6e4 b1c3 d7d5
-info depth 7 score cp 21 nodes 88364 pv g1f3 g8f6 b1c3 b8c6 d2d4 e5d4 f3d4
-info depth 8 score cp 17 nodes 291347 pv g1f3 b8c6 d2d4 e5d4 f3d4 c6d4 d1d4 g8f6
-bestmove g1f3
+info depth 1 score cp 35 nodes 60 pv d2d4
+info depth 2 score cp 35 nodes 259 pv d2d4 e5d4
+info depth 3 score cp 35 nodes 4411 pv d2d4 e5d4 d1d4
+info depth 4 score cp 31 nodes 7008 pv g1f3 d7d5 d2d4 e5d4
+info depth 5 score cp 35 nodes 23555 pv b1c3 g8f6 g1f3 b8c6 d2d4
+info depth 6 score cp 35 nodes 40726 pv b1c3 g8f6 g1f3 b8c6 d2d4 e5d4
+info depth 7 score cp 38 nodes 71336 pv b1c3 g8f6 g1f3 b8c6 f1c4 f8e7 e1g1
+info depth 8 score cp 24 nodes 291652 pv b1c3 g8f6 g1f3 b8c6 f1c4 f8e7 e1g1 d7d6
+bestmove b1c3
 ```
 
 ### `bench`
