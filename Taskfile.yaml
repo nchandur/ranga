@@ -53,28 +53,28 @@ tasks:
     cmds:
       - docker build --build-arg VERSION={{.VERSION}} --target exporter --output ./{{.BIN_DIR}} .
 
-  build-docker-linux:
-    desc: Build using Docker exporter for Linux (amd64)
-    cmds:
-      - task: internal-docker-build
-        vars: { OS: 'linux', ARCH: 'amd64' }
+  build-linux:
+      desc: Cross-compile natively for Linux (amd64)
+      cmds:
+        - task: internal-cross-build
+          vars: { OS: 'linux', ARCH: 'amd64' }
 
-  build-docker-windows:
-    desc: Build using Docker exporter for Windows (amd64)
+  build-windows:
+    desc: Cross-compile natively for Windows (amd64)
     cmds:
-      - task: internal-docker-build
-        vars: { OS: 'windows', ARCH: 'amd64' }
+      - task: internal-cross-build
+        vars: { OS: 'windows', ARCH: 'amd64', EXT: '.exe' }
 
-  build-docker-mac:
-    desc: Build using Docker exporter for macOS (arm64)
+  build-mac:
+    desc: Cross-compile natively for macOS (arm64)
     cmds:
-      - task: internal-docker-build
+      - task: internal-cross-build
         vars: { OS: 'darwin', ARCH: 'arm64' }
 
-  internal-docker-build:
+  internal-cross-build:
     internal: true
-    desc: Internal template for cross-architecture Docker exports
+    desc: Internal template for native cross-compilation
     requires:
       vars: [OS, ARCH]
     cmds:
-      - docker build --build-arg VERSION={{.VERSION}} --build-arg TARGETOS={{.OS}} --build-arg TARGETARCH={{.ARCH}} --target exporter --output ./{{.BIN_DIR}} .
+      - env CGO_ENABLED=0 GOOS={{.OS}} GOARCH={{.ARCH}} go build -ldflags="-X 'main.version={{.VERSION}}'" -o {{.BIN_DIR}}/{{.BIN_NAME}}-{{.OS}}-{{.ARCH}}{{if .EXT}}{{.EXT}}{{end}} ./cmd
