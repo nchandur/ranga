@@ -47,6 +47,7 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.B
 // clears searcher state
 func (s *Searcher) Reset() {
 	s.PV.Clear()
+	s.TT.Clear()
 	s.Killers = [2][MAX_PLY]board.Move{}
 	s.History = [12][64]int{}
 }

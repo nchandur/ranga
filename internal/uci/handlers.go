@@ -56,6 +56,8 @@ func (e *Engine) handleNewGame() {
 func (e *Engine) handleClear() {
 	e.pauseSearch()
 	e.board.Clear()
+	e.searcher.NN.Reset(&e.board)
+	e.searcher.Reset()
 	e.searcher.ClearGame()
 }
 
