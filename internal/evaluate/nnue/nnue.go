@@ -44,47 +44,71 @@ func (n *NNUE) Restore(s Snapshot) {
 	n.acc = perspectives(s)
 }
 
-// applies incremental accumulator changes for a move that has already been confirmed as legal
+// applies incremental accumulator changes using fused loops
 func (n *NNUE) Update(before *board.Board, move board.Move) {
 	source, target := move.Source(), move.Target()
-	piece := before.Mailbox[source]
+	movingPiece := before.Mailbox[source]
 
-	n.removePiece(piece, source)
-
-	if move.IsCapture() && !move.IsEnpass() {
-		n.removePiece(before.Mailbox[target], target)
-	}
-
-	if move.IsEnpass() {
-		if before.Side == board.White {
-			n.removePiece(board.BP, target+8)
-		} else {
-			n.removePiece(board.WP, target-8)
-		}
-	}
-
-	if move.IsPromotion() {
-		n.addPiece(move.Promoted(before.Side), target)
-	} else {
-		n.addPiece(piece, target)
-	}
-
+	// castling
 	if move.IsCastle() {
+		var rSource, rTarget board.Square
+		var rPiece board.Piece
+
 		switch target {
 		case board.G1:
-			n.removePiece(board.WR, board.H1)
-			n.addPiece(board.WR, board.F1)
+			rSource, rTarget, rPiece = board.H1, board.F1, board.WR
 		case board.C1:
-			n.removePiece(board.WR, board.A1)
-			n.addPiece(board.WR, board.D1)
+			rSource, rTarget, rPiece = board.A1, board.D1, board.WR
 		case board.G8:
-			n.removePiece(board.BR, board.H8)
-			n.addPiece(board.BR, board.F8)
+			rSource, rTarget, rPiece = board.H8, board.F8, board.BR
 		case board.C8:
-			n.removePiece(board.BR, board.A8)
-			n.addPiece(board.BR, board.D8)
+			rSource, rTarget, rPiece = board.A8, board.D8, board.BR
 		}
+
+		wAdd1, bAdd1 := getIndices(movingPiece, target)
+		wAdd2, bAdd2 := getIndices(rPiece, rTarget)
+		wSub1, bSub1 := getIndices(movingPiece, source)
+		wSub2, bSub2 := getIndices(rPiece, rSource)
+
+		n.acc.White.Add2Sub2(n.Network, wAdd1, wAdd2, wSub1, wSub2)
+		n.acc.Black.Add2Sub2(n.Network, bAdd1, bAdd2, bSub1, bSub2)
+		return
 	}
+
+	addPiece := movingPiece
+	if move.IsPromotion() {
+		addPiece = move.Promoted(before.Side)
+	}
+
+	// captures and enpassant
+	if move.IsCapture() || move.IsEnpass() {
+		var capPiece board.Piece
+		var capTarget board.Square
+
+		if move.IsEnpass() {
+			if before.Side == board.White {
+				capPiece, capTarget = board.BP, target+8
+			} else {
+				capPiece, capTarget = board.WP, target-8
+			}
+		} else {
+			capPiece, capTarget = before.Mailbox[target], target
+		}
+
+		wAdd, bAdd := getIndices(addPiece, target)
+		wSub1, bSub1 := getIndices(movingPiece, source)
+		wSub2, bSub2 := getIndices(capPiece, capTarget)
+
+		n.acc.White.AddSub2(n.Network, wAdd, wSub1, wSub2)
+		n.acc.Black.AddSub2(n.Network, bAdd, bSub1, bSub2)
+		return
+	}
+
+	// quiet moves
+	wAdd, bAdd := getIndices(addPiece, target)
+	wSub, bSub := getIndices(movingPiece, source)
+	n.acc.White.AddSub(n.Network, wAdd, wSub)
+	n.acc.Black.AddSub(n.Network, bAdd, bSub)
 }
 
 func (n *NNUE) Evaluate(b *board.Board) int {
