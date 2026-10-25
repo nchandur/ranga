@@ -126,11 +126,3 @@ func (n *NNUE) addPiece(piece board.Piece, sq board.Square) {
 	n.acc.White.AddFeature(n.Network, wIdx)
 	n.acc.Black.AddFeature(n.Network, bIdx)
 }
-
-func (n *NNUE) removePiece(piece board.Piece, sq board.Square) {
-	isWhite := int(piece) <= 5
-	wIdx := FeatureIndex(true, isWhite, piece, sq)
-	bIdx := FeatureIndex(false, !isWhite, piece, sq)
-	n.acc.White.RemoveFeature(n.Network, wIdx)
-	n.acc.Black.RemoveFeature(n.Network, bIdx)
-}

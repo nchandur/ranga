@@ -17,14 +17,6 @@ func (acc *Accumulator) AddFeature(net *Network, featureIdx int) {
 	}
 }
 
-// remove feature from accumulator
-func (acc *Accumulator) RemoveFeature(net *Network, featureIdx int) {
-	for i := range acc.Values {
-		d := net.FeatureWeights[featureIdx].Values[i]
-		acc.Values[i] -= d
-	}
-}
-
 // handles 1 addition and 1 subtraction (quiet moves)
 func (acc *Accumulator) AddSub(net *Network, addIdx, subIdx int) {
 	for i := range acc.Values {
