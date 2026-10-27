@@ -37,3 +37,11 @@ func outputBucket(b *board.Board) int {
 	count := bits.OnesCount64(uint64(b.Occupancies[2]))
 	return (count - 2) / 4
 }
+
+// fetch white and black indices for a given piece and square
+func getIndices(piece board.Piece, sq board.Square) (int, int) {
+	isWhite := int(piece) <= 5
+	wIdx := FeatureIndex(true, isWhite, piece, sq)
+	bIdx := FeatureIndex(false, !isWhite, piece, sq)
+	return wIdx, bIdx
+}
