@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 * feat(evaluate): increase hidden layer size to 64 [[#88](https://github.com/nchandur/ranga/pull/88)]
 * feat(evaluate): implement fused accumulator updates [[#89](https://github.com/nchandur/ranga/pull/89)]
+* feat(evaluate): add horizontal king-file mirroring to input features [[#90](https://github.com/nchandur/ranga/pull/90)]
 
 ## [v1.19] - 2026-10-24
 

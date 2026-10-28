@@ -39,9 +39,15 @@ func outputBucket(b *board.Board) int {
 }
 
 // fetch white and black indices for a given piece and square
-func getIndices(piece board.Piece, sq board.Square) (int, int) {
+func getIndices(piece board.Piece, sq board.Square, wKSq, bKSq board.Square) (int, int) {
 	isWhite := int(piece) <= 5
-	wIdx := FeatureIndex(true, isWhite, piece, sq)
-	bIdx := FeatureIndex(false, !isWhite, piece, sq)
+	wIdx := FeatureIndex(true, isWhite, piece, sq, wKSq)
+	bIdx := FeatureIndex(false, !isWhite, piece, sq, bKSq)
+
 	return wIdx, bIdx
+}
+
+// true if a king on this square flips its perspective
+func mirrored(kSq board.Square) bool {
+	return int(kSq)&7 >= 4
 }
