@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.20] - *TBD*
+## [v1.20] - 2026-10-28
 
 ### Added
 * feat(evaluate): increase hidden layer size to 64 [[#88](https://github.com/nchandur/ranga/pull/88)]
