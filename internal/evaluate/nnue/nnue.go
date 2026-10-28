@@ -27,12 +27,15 @@ func (n *NNUE) Reset(b *board.Board) {
 	n.acc.White = n.FeatureBias
 	n.acc.Black = n.FeatureBias
 
+	wKSq := board.Square(b.PieceBitBoards[board.WK].GetLSB())
+	bKSq := board.Square(b.PieceBitBoards[board.BK].GetLSB())
+
 	for sq := range board.Square(64) {
 		piece := b.Mailbox[sq]
 		if piece == board.Empty {
 			continue
 		}
-		n.addPiece(piece, sq)
+		n.addPiece(piece, sq, wKSq, bKSq)
 	}
 }
 
@@ -44,47 +47,92 @@ func (n *NNUE) Restore(s Snapshot) {
 	n.acc = perspectives(s)
 }
 
-// applies incremental accumulator changes for a move that has already been confirmed as legal
+// applies incremental accumulator changes using fused loops
 func (n *NNUE) Update(before *board.Board, move board.Move) {
 	source, target := move.Source(), move.Target()
-	piece := before.Mailbox[source]
+	movingPiece := before.Mailbox[source]
 
-	n.removePiece(piece, source)
+	wKSq := board.Square(before.PieceBitBoards[board.WK].GetLSB())
+	bKSq := board.Square(before.PieceBitBoards[board.BK].GetLSB())
 
-	if move.IsCapture() && !move.IsEnpass() {
-		n.removePiece(before.Mailbox[target], target)
+	newWKSq, newBKSq := wKSq, bKSq
+
+	switch movingPiece {
+	case board.WK:
+		newWKSq = target
+	case board.BK:
+		newBKSq = target
 	}
 
-	if move.IsEnpass() {
-		if before.Side == board.White {
-			n.removePiece(board.BP, target+8)
-		} else {
-			n.removePiece(board.WP, target-8)
-		}
+	subWKSq, subBKSq := wKSq, bKSq
+	if movingPiece == board.WK && mirrored(wKSq) != mirrored(newWKSq) {
+		n.refresh(&n.acc.White, true, before, newWKSq)
+		subWKSq = newWKSq
+	} else if movingPiece == board.BK && mirrored(bKSq) != mirrored(newBKSq) {
+		n.refresh(&n.acc.Black, false, before, newBKSq)
+		subBKSq = newBKSq
 	}
 
-	if move.IsPromotion() {
-		n.addPiece(move.Promoted(before.Side), target)
-	} else {
-		n.addPiece(piece, target)
-	}
-
+	// castling
 	if move.IsCastle() {
+		var rSource, rTarget board.Square
+		var rPiece board.Piece
+
 		switch target {
 		case board.G1:
-			n.removePiece(board.WR, board.H1)
-			n.addPiece(board.WR, board.F1)
+			rSource, rTarget, rPiece = board.H1, board.F1, board.WR
 		case board.C1:
-			n.removePiece(board.WR, board.A1)
-			n.addPiece(board.WR, board.D1)
+			rSource, rTarget, rPiece = board.A1, board.D1, board.WR
 		case board.G8:
-			n.removePiece(board.BR, board.H8)
-			n.addPiece(board.BR, board.F8)
+			rSource, rTarget, rPiece = board.H8, board.F8, board.BR
 		case board.C8:
-			n.removePiece(board.BR, board.A8)
-			n.addPiece(board.BR, board.D8)
+			rSource, rTarget, rPiece = board.A8, board.D8, board.BR
 		}
+
+		wAdd1, bAdd1 := getIndices(movingPiece, target, newWKSq, newBKSq)
+		wAdd2, bAdd2 := getIndices(rPiece, rTarget, newWKSq, newBKSq)
+		wSub1, bSub1 := getIndices(movingPiece, source, subWKSq, subBKSq)
+		wSub2, bSub2 := getIndices(rPiece, rSource, subWKSq, subBKSq)
+
+		n.acc.White.Add2Sub2(n.Network, wAdd1, wAdd2, wSub1, wSub2)
+		n.acc.Black.Add2Sub2(n.Network, bAdd1, bAdd2, bSub1, bSub2)
+		return
 	}
+
+	addPiece := movingPiece
+	if move.IsPromotion() {
+		addPiece = move.Promoted(before.Side)
+	}
+
+	// captures and enpassant
+	if move.IsCapture() || move.IsEnpass() {
+		var capPiece board.Piece
+		var capTarget board.Square
+
+		if move.IsEnpass() {
+			if before.Side == board.White {
+				capPiece, capTarget = board.BP, target+8
+			} else {
+				capPiece, capTarget = board.WP, target-8
+			}
+		} else {
+			capPiece, capTarget = before.Mailbox[target], target
+		}
+
+		wAdd, bAdd := getIndices(addPiece, target, newWKSq, newBKSq)
+		wSub1, bSub1 := getIndices(movingPiece, source, subWKSq, subBKSq)
+		wSub2, bSub2 := getIndices(capPiece, capTarget, subWKSq, subBKSq)
+
+		n.acc.White.AddSub2(n.Network, wAdd, wSub1, wSub2)
+		n.acc.Black.AddSub2(n.Network, bAdd, bSub1, bSub2)
+		return
+	}
+
+	// quiet moves
+	wAdd, bAdd := getIndices(addPiece, target, newWKSq, newBKSq)
+	wSub, bSub := getIndices(movingPiece, source, subWKSq, subBKSq)
+	n.acc.White.AddSub(n.Network, wAdd, wSub)
+	n.acc.Black.AddSub(n.Network, bAdd, bSub)
 }
 
 func (n *NNUE) Evaluate(b *board.Board) int {
@@ -95,18 +143,23 @@ func (n *NNUE) Evaluate(b *board.Board) int {
 	return int(n.Network.Evaluate(&n.acc.Black, &n.acc.White, bucket))
 }
 
-func (n *NNUE) addPiece(piece board.Piece, sq board.Square) {
+func (n *NNUE) addPiece(piece board.Piece, sq board.Square, wKSq, bKSq board.Square) {
 	isWhite := int(piece) <= 5
-	wIdx := FeatureIndex(true, isWhite, piece, sq)
-	bIdx := FeatureIndex(false, !isWhite, piece, sq)
+	wIdx := FeatureIndex(true, isWhite, piece, sq, wKSq)
+	bIdx := FeatureIndex(false, !isWhite, piece, sq, bKSq)
 	n.acc.White.AddFeature(n.Network, wIdx)
 	n.acc.Black.AddFeature(n.Network, bIdx)
 }
 
-func (n *NNUE) removePiece(piece board.Piece, sq board.Square) {
-	isWhite := int(piece) <= 5
-	wIdx := FeatureIndex(true, isWhite, piece, sq)
-	bIdx := FeatureIndex(false, !isWhite, piece, sq)
-	n.acc.White.RemoveFeature(n.Network, wIdx)
-	n.acc.Black.RemoveFeature(n.Network, bIdx)
+// rebuilds one perspective from the given board, indexing every piece with kSq
+func (n *NNUE) refresh(acc *Accumulator, white bool, b *board.Board, kSq board.Square) {
+	*acc = n.FeatureBias
+	for sq := range board.Square(64) {
+		p := b.Mailbox[sq]
+		if p == board.Empty {
+			continue
+		}
+		isUs := (int(p) <= 5) == white
+		acc.AddFeature(n.Network, FeatureIndex(white, isUs, p, sq, kSq))
+	}
 }

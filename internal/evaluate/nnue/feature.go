@@ -3,11 +3,18 @@ package nnue
 import "ranga/internal/board"
 
 // computes the input feature index for one piece from one perspective
-func FeatureIndex(perspectiveIsWhite, isUs bool, piece board.Piece, square board.Square) int {
+func FeatureIndex(perspectiveIsWhite, isUs bool, piece board.Piece, square board.Square, kSq board.Square) int {
+
+	kFile := int(kSq) % 8
+
+	if kFile >= 4 {
+		square = board.Square(int(square) ^ 7)
+	}
 
 	relSquare := int(square)
+
 	if perspectiveIsWhite {
-		relSquare = int(square) ^ 56
+		relSquare = relSquare ^ 56
 	}
 
 	offset := 0

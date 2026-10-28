@@ -2,14 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.20] - 2026-10-28
+
+### Added
+* feat(evaluate): increase hidden layer size to 64 [[#88](https://github.com/nchandur/ranga/pull/88)]
+* feat(evaluate): implement fused accumulator updates [[#89](https://github.com/nchandur/ranga/pull/89)]
+* feat(evaluate): add horizontal king-file mirroring to input features [[#90](https://github.com/nchandur/ranga/pull/90)]
+
 ## [v1.19] - 2026-10-24
 
-## Added
+### Added
 * feat(evaluate): implement piece-count output buckets [[#86](https://github.com/nchandur/ranga/pull/86)]
 
 ## [v1.18] - 2026-10-18
 
-## Added
+### Added
 * feat(evaluate): change activation to Lizard SCReLU [[#79](https://github.com/nchandur/ranga/pull/79)]
 * refactor(board): enchance move packing [[#81](https://github.com/nchandur/ranga/pull/81)]
 * refactor(search): enhance TT entry storage [[#82](https://github.com/nchandur/ranga/pull/82)]
@@ -18,7 +25,7 @@ All notable changes to this project will be documented in this file.
 
 ## [v1.17] - 2026-10-10
 
-## Added 
+### Added 
 * feat(search): add static exchange evaluation to quiescence search [[#74](https://github.com/nchandur/ranga/pull/74)]
 
 ## [v1.16] - 2026-10-08

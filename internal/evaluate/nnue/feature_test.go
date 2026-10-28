@@ -11,38 +11,44 @@ func TestFeatureIndex(t *testing.T) {
 			for _, isUs := range []bool{true, false} {
 				for pce := board.WP; pce <= board.BK; pce++ {
 					for sq := range 64 {
-						idx := FeatureIndex(isWhite, isUs, pce, board.Square(sq))
-						if idx < 0 || idx >= 768 {
-							t.Fatalf("FeatureIndex out of bounds [0, 767]: got %d (perspectiveIsWhite=%v, isUs=%v, piece=%v, sq=%d)",
-								idx, isWhite, isUs, pce, sq)
+						for _, kSq := range []board.Square{board.E1, board.D1} {
+							idx := FeatureIndex(isWhite, isUs, pce, board.Square(sq), kSq)
+							if idx < 0 || idx >= 768 {
+								t.Fatalf("FeatureIndex out of bounds [0, 767]: got %d (perspectiveIsWhite=%v, isUs=%v, piece=%v, sq=%d, kSq=%d)",
+									idx, isWhite, isUs, pce, sq, kSq)
+							}
 						}
 					}
 				}
 			}
 		}
 	})
+
 	t.Run("applies rank flip when perspectiveIsWhite is true", func(t *testing.T) {
 		sq := board.A1
-		wantFlippedSq := int(sq) ^ 56
+		kSq := board.D1
 
-		idxWhite := FeatureIndex(true, true, board.WP, sq)
+		idxWhite := FeatureIndex(true, true, board.WP, sq, kSq)
+		wantFlippedSq := int(sq) ^ 56
 		wantWhite := (int(board.WP)%6)*64 + wantFlippedSq
 		if idxWhite != wantWhite {
 			t.Errorf("white perspective index = %d; want %d", idxWhite, wantWhite)
 		}
 
-		idxBlack := FeatureIndex(false, true, board.WP, sq)
+		idxBlack := FeatureIndex(false, true, board.WP, sq, kSq)
 		wantBlack := (int(board.WP)%6)*64 + int(sq)
 		if idxBlack != wantBlack {
 			t.Errorf("black perspective index = %d; want %d", idxBlack, wantBlack)
 		}
 	})
+
 	t.Run("applies 384 offset for opponent pieces", func(t *testing.T) {
 		piece := board.WN
 		sq := board.D4
+		kSq := board.D1
 
-		usIdx := FeatureIndex(false, true, piece, sq)
-		themIdx := FeatureIndex(false, false, piece, sq)
+		usIdx := FeatureIndex(false, true, piece, sq, kSq)
+		themIdx := FeatureIndex(false, false, piece, sq, kSq)
 
 		if themIdx-usIdx != 384 {
 			t.Errorf("expected 384 offset between us and them: us=%d, them=%d, diff=%d",
@@ -55,16 +61,30 @@ func TestFeatureIndex(t *testing.T) {
 			t.Errorf("opponent piece index %d should be >= 384", themIdx)
 		}
 	})
+
 	t.Run("pieceType modulo partitions pieces across 64-square blocks", func(t *testing.T) {
 		sq := board.E4
+		kSq := board.D1
 
 		for p := range 6 {
-			idx := FeatureIndex(false, true, board.Piece(p), sq)
+			idx := FeatureIndex(false, true, board.Piece(p), sq, kSq)
 			expectedBlockStart := p * 64
 			if idx < expectedBlockStart || idx >= expectedBlockStart+64 {
 				t.Errorf("piece %d mapped to index %d; expected range [%d, %d)",
 					p, idx, expectedBlockStart, expectedBlockStart+64)
 			}
+		}
+	})
+
+	t.Run("applies horizontal mirroring when king is on kingside", func(t *testing.T) {
+		piece := board.WP
+
+		idxKingside := FeatureIndex(false, true, piece, board.H1, board.E1)
+		idxQueenside := FeatureIndex(false, true, piece, board.A1, board.D1)
+
+		if idxKingside != idxQueenside {
+			t.Errorf("expected horizontal mirroring to map H1 (kingside king) to A1 (queenside king): got %d and %d",
+				idxKingside, idxQueenside)
 		}
 	})
 }
