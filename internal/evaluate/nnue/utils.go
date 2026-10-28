@@ -46,3 +46,8 @@ func getIndices(piece board.Piece, sq board.Square, wKSq, bKSq board.Square) (in
 
 	return wIdx, bIdx
 }
+
+// true if a king on this square flips its perspective
+func mirrored(kSq board.Square) bool {
+	return int(kSq)&7 >= 4
+}
