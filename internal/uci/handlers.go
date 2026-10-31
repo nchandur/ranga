@@ -258,7 +258,13 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 		maxDepth = opts.depth
 	}
 
-	e.searcher.NodeLimit = opts.nodes
+	e.searcher.SoftNodeLimit = opts.nodes
+	e.searcher.HardNodeLimit = 0
+
+	if opts.nodes > 0 {
+		e.searcher.HardNodeLimit = opts.nodes * 10
+	}
+
 	e.searcher.Nodes = 0
 	e.searcher.Reset()
 
@@ -290,6 +296,10 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 				stableIterations = 0
 			}
 			prevBestMove = bestMove
+		}
+
+		if opts.nodes > 0 && e.searcher.Nodes >= opts.nodes {
+			break
 		}
 
 		// score dropped sharply, so spend the full hard limit
