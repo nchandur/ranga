@@ -4,16 +4,35 @@ import (
 	"ranga/internal/board"
 )
 
+type pendingKind uint8
+
+const (
+	pendNone pendingKind = iota
+	pendQuiet
+	pendCapture
+	pendCastle
+)
+
+// feature indices of a delta
+type pending struct {
+	kind       pendingKind
+	wAdd, wSub [2]int
+	bAdd, bSub [2]int
+}
+
 type perspectives struct {
 	White, Black Accumulator
 }
 
 // opaque copy of accumulator state
-type Snapshot perspectives
-
+type Snapshot struct {
+	acc  perspectives
+	pend pending
+}
 type NNUE struct {
 	*Network
-	acc perspectives
+	acc  perspectives
+	pend pending
 }
 
 func NewRandom() *NNUE {
@@ -24,6 +43,7 @@ func NewRandom() *NNUE {
 
 // rebuilds both accumulators from scratch
 func (n *NNUE) Reset(b *board.Board) {
+	n.pend = pending{}
 	n.acc.White = n.FeatureBias
 	n.acc.Black = n.FeatureBias
 
@@ -40,15 +60,16 @@ func (n *NNUE) Reset(b *board.Board) {
 }
 
 func (n *NNUE) Preserve() Snapshot {
-	return Snapshot(n.acc)
+	return Snapshot{n.acc, n.pend}
 }
 
 func (n *NNUE) Restore(s Snapshot) {
-	n.acc = perspectives(s)
+	n.acc, n.pend = s.acc, s.pend
 }
 
 // applies incremental accumulator changes using fused loops
 func (n *NNUE) Update(before *board.Board, move board.Move) {
+	n.flush()
 	source, target := move.Source(), move.Target()
 	movingPiece := before.Mailbox[source]
 
@@ -94,8 +115,11 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 		wSub1, bSub1 := getIndices(movingPiece, source, subWKSq, subBKSq)
 		wSub2, bSub2 := getIndices(rPiece, rSource, subWKSq, subBKSq)
 
-		n.acc.White.Add2Sub2(n.Network, wAdd1, wAdd2, wSub1, wSub2)
-		n.acc.Black.Add2Sub2(n.Network, bAdd1, bAdd2, bSub1, bSub2)
+		n.pend = pending{
+			kind: pendCastle,
+			wAdd: [2]int{wAdd1, wAdd2}, wSub: [2]int{wSub1, wSub2},
+			bAdd: [2]int{bAdd1, bAdd2}, bSub: [2]int{bSub1, bSub2},
+		}
 		return
 	}
 
@@ -123,19 +147,26 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 		wSub1, bSub1 := getIndices(movingPiece, source, subWKSq, subBKSq)
 		wSub2, bSub2 := getIndices(capPiece, capTarget, subWKSq, subBKSq)
 
-		n.acc.White.AddSub2(n.Network, wAdd, wSub1, wSub2)
-		n.acc.Black.AddSub2(n.Network, bAdd, bSub1, bSub2)
+		n.pend = pending{
+			kind: pendCapture,
+			wAdd: [2]int{wAdd}, wSub: [2]int{wSub1, wSub2},
+			bAdd: [2]int{bAdd}, bSub: [2]int{bSub1, bSub2},
+		}
 		return
 	}
 
 	// quiet moves
 	wAdd, bAdd := getIndices(addPiece, target, newWKSq, newBKSq)
 	wSub, bSub := getIndices(movingPiece, source, subWKSq, subBKSq)
-	n.acc.White.AddSub(n.Network, wAdd, wSub)
-	n.acc.Black.AddSub(n.Network, bAdd, bSub)
+	n.pend = pending{
+		kind: pendQuiet,
+		wAdd: [2]int{wAdd}, wSub: [2]int{wSub},
+		bAdd: [2]int{bAdd}, bSub: [2]int{bSub},
+	}
 }
 
 func (n *NNUE) Evaluate(b *board.Board) int {
+	n.flush()
 	bucket := outputBucket(b)
 	if b.Side == board.White {
 		return int(n.Network.Evaluate(&n.acc.White, &n.acc.Black, bucket))
@@ -162,4 +193,21 @@ func (n *NNUE) refresh(acc *Accumulator, white bool, b *board.Board, kSq board.S
 		isUs := (int(p) <= 5) == white
 		acc.AddFeature(n.Network, FeatureIndex(white, isUs, p, sq, kSq))
 	}
+}
+
+// applies the recorded delta
+func (n *NNUE) flush() {
+	p := &n.pend
+	switch p.kind {
+	case pendQuiet:
+		n.acc.White.AddSub(n.Network, p.wAdd[0], p.wSub[0])
+		n.acc.Black.AddSub(n.Network, p.bAdd[0], p.bSub[0])
+	case pendCapture:
+		n.acc.White.AddSub2(n.Network, p.wAdd[0], p.wSub[0], p.wSub[1])
+		n.acc.Black.AddSub2(n.Network, p.bAdd[0], p.bSub[0], p.bSub[1])
+	case pendCastle:
+		n.acc.White.Add2Sub2(n.Network, p.wAdd[0], p.wAdd[1], p.wSub[0], p.wSub[1])
+		n.acc.Black.Add2Sub2(n.Network, p.bAdd[0], p.bAdd[1], p.bSub[0], p.bSub[1])
+	}
+	p.kind = pendNone
 }
