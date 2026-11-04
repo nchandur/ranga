@@ -8,6 +8,18 @@ import (
 	"testing"
 )
 
+const totalFeatureWeights = InputSize * HiddenSize
+
+func mockFeatureWeight(flat int) int16 {
+	switch flat {
+	case 0:
+		return 111
+	case totalFeatureWeights - 1:
+		return 222
+	}
+	return int16(flat % 100)
+}
+
 // deterministic expected values for the bucketed output layer
 func mockOutputWeight(bucket, i int) int16 {
 	return int16(bucket*1000 + i%1000)
@@ -28,13 +40,9 @@ func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16) {
 		pos += 2
 	}
 
-	firstWeight := int16(111)
-	lastWeight := int16(222)
-	writeI16(firstWeight)
-	for i := 1; i < 768*HiddenSize-1; i++ {
-		writeI16(int16(i % 100))
+	for i := range totalFeatureWeights {
+		writeI16(mockFeatureWeight(i))
 	}
-	writeI16(lastWeight)
 
 	firstBias := int16(-350)
 	writeI16(firstBias)
@@ -56,7 +64,23 @@ func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16) {
 		t.Fatalf("mock network wrote %d bytes; want %d", pos, expectedNetworkBytes)
 	}
 
-	return buf, firstWeight, lastWeight, firstBias
+	return buf, mockFeatureWeight(0), mockFeatureWeight(totalFeatureWeights - 1), firstBias
+}
+
+// checks representative feature weights of every input bucket, including its boundaries
+func checkFeatureLayer(t *testing.T, net *Network) {
+	t.Helper()
+	for b := range InputBuckets {
+		for _, f := range []int{0, 1, 383, 384, FeaturesPerBucket - 1} {
+			for _, v := range []int{0, 1, HiddenSize - 1} {
+				idx := b*FeaturesPerBucket + f
+				want := mockFeatureWeight(idx*HiddenSize + v)
+				if got := net.FeatureWeights[idx].Values[v]; got != want {
+					t.Errorf("FeatureWeights[%d][%d] (bucket %d, feature %d) = %d; want %d", idx, v, b, f, got, want)
+				}
+			}
+		}
+	}
 }
 
 // checks every bucket's bias and a few representative weights
@@ -76,12 +100,34 @@ func checkOutputLayer(t *testing.T, net *Network) {
 }
 
 func TestLoadNetwork(t *testing.T) {
+	t.Run("expected size accounts for every input bucket", func(t *testing.T) {
+		want := (InputBuckets*768*HiddenSize + HiddenSize + OutputBuckets*2*HiddenSize + OutputBuckets) * 2
+		if expectedNetworkBytes != want {
+			t.Errorf("expectedNetworkBytes = %d; want %d", expectedNetworkBytes, want)
+		}
+		if InputSize != InputBuckets*768 {
+			t.Errorf("InputSize = %d; want %d", InputSize, InputBuckets*768)
+		}
+	})
+
 	t.Run("parseNetwork rejects truncated byte slices", func(t *testing.T) {
 		shortData := make([]byte, expectedNetworkBytes-1)
 		net, err := parseNetwork(shortData)
 
 		if err == nil {
 			t.Fatalf("expected error for data smaller than %d bytes, got nil", expectedNetworkBytes)
+		}
+		if net != nil {
+			t.Errorf("expected nil network on failure, got %v", net)
+		}
+	})
+
+	t.Run("parseNetwork rejects a net with a different input bucket count", func(t *testing.T) {
+		oversized := make([]byte, expectedNetworkBytes+768*HiddenSize*2)
+		net, err := parseNetwork(oversized)
+
+		if err == nil {
+			t.Fatalf("expected error for oversized data (bucket count mismatch), got nil")
 		}
 		if net != nil {
 			t.Errorf("expected nil network on failure, got %v", net)
@@ -99,13 +145,14 @@ func TestLoadNetwork(t *testing.T) {
 		if got := net.FeatureWeights[0].Values[0]; got != wantFirstWeight {
 			t.Errorf("FeatureWeights[0][0] = %d; want %d", got, wantFirstWeight)
 		}
-		if got := net.FeatureWeights[767].Values[HiddenSize-1]; got != wantLastWeight {
-			t.Errorf("FeatureWeights[767][last] = %d; want %d", got, wantLastWeight)
+		if got := net.FeatureWeights[InputSize-1].Values[HiddenSize-1]; got != wantLastWeight {
+			t.Errorf("FeatureWeights[%d][last] = %d; want %d", InputSize-1, got, wantLastWeight)
 		}
 		if got := net.FeatureBias.Values[0]; got != wantFirstBias {
 			t.Errorf("FeatureBias[0] = %d; want %d", got, wantFirstBias)
 		}
 
+		checkFeatureLayer(t, net)
 		checkOutputLayer(t, net)
 	})
 
@@ -120,6 +167,28 @@ func TestLoadNetwork(t *testing.T) {
 		if net == nil {
 			t.Fatalf("expected non-nil network")
 		}
+		checkOutputLayer(t, net)
+	})
+
+	t.Run("parseNetwork accepts padding up to 63 bytes but not 64", func(t *testing.T) {
+		data, _, _, _ := generateMockNetworkBytes(t)
+
+		if _, err := parseNetwork(append(append([]byte{}, data...), make([]byte, 63)...)); err != nil {
+			t.Errorf("63 bytes of padding should be accepted, got: %v", err)
+		}
+		if _, err := parseNetwork(append(append([]byte{}, data...), make([]byte, 64)...)); err == nil {
+			t.Errorf("64 bytes of extra data should be rejected")
+		}
+	})
+
+	t.Run("parseNetwork accepts a 64-byte aligned (bullet-padded) file", func(t *testing.T) {
+		data, _, _, _ := generateMockNetworkBytes(t)
+		pad := (64 - len(data)%64) % 64
+		net, err := parseNetwork(append(data, make([]byte, pad)...))
+		if err != nil {
+			t.Fatalf("expected padded network to load, got: %v", err)
+		}
+		checkFeatureLayer(t, net)
 		checkOutputLayer(t, net)
 	})
 
@@ -147,6 +216,7 @@ func TestLoadNetwork(t *testing.T) {
 			t.Fatalf("LoadNetwork failed: %v", err)
 		}
 
+		checkFeatureLayer(t, net)
 		checkOutputLayer(t, net)
 	})
 }
