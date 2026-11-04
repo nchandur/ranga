@@ -23,7 +23,7 @@ func parseNetwork(data []byte) (*Network, error) {
 	}
 
 	if len(data)-expectedNetworkBytes >= 64 {
-		return nil, fmt.Errorf("network data too large: got %d bytes, want %d (+ up to 63 padding): input bucket count mismatch?", len(data), expectedNetworkBytes)
+		return nil, fmt.Errorf("network data too large: got %d bytes, want %d: input bucket count mismatch?", len(data), expectedNetworkBytes)
 	}
 
 	r := bytesReader(data[:expectedNetworkBytes])
