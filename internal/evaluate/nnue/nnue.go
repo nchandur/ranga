@@ -86,10 +86,10 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 	}
 
 	subWKSq, subBKSq := wKSq, bKSq
-	if movingPiece == board.WK && mirrored(wKSq) != mirrored(newWKSq) {
+	if movingPiece == board.WK && needsRefresh(true, wKSq, newWKSq) {
 		n.refresh(&n.acc.White, true, before, newWKSq)
 		subWKSq = newWKSq
-	} else if movingPiece == board.BK && mirrored(bKSq) != mirrored(newBKSq) {
+	} else if movingPiece == board.BK && needsRefresh(false, bKSq, newBKSq) {
 		n.refresh(&n.acc.Black, false, before, newBKSq)
 		subBKSq = newBKSq
 	}

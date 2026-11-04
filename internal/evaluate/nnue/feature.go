@@ -5,9 +5,7 @@ import "ranga/internal/board"
 // computes the input feature index for one piece from one perspective
 func FeatureIndex(perspectiveIsWhite, isUs bool, piece board.Piece, square board.Square, kSq board.Square) int {
 
-	kFile := int(kSq) % 8
-
-	if kFile >= 4 {
+	if mirrored(kSq) {
 		square = board.Square(int(square) ^ 7)
 	}
 
@@ -24,5 +22,5 @@ func FeatureIndex(perspectiveIsWhite, isUs bool, piece board.Piece, square board
 
 	pieceType := int(piece) % 6
 
-	return offset + pieceType*64 + relSquare
+	return inputBucket(perspectiveIsWhite, kSq)*FeaturesPerBucket + offset + pieceType*64 + relSquare
 }
