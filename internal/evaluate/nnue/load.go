@@ -7,7 +7,7 @@ import (
 )
 
 // feature weights + feature bias + (output weights + output bias) per bucket
-const expectedNetworkBytes = (768*HiddenSize + HiddenSize + OutputBuckets*2*HiddenSize + OutputBuckets) * 2
+const expectedNetworkBytes = (InputSize*HiddenSize + HiddenSize + OutputBuckets*2*HiddenSize + OutputBuckets) * 2
 
 func LoadNetwork(path string) (*Network, error) {
 	data, err := os.ReadFile(path)
@@ -20,6 +20,10 @@ func LoadNetwork(path string) (*Network, error) {
 func parseNetwork(data []byte) (*Network, error) {
 	if len(data) < expectedNetworkBytes {
 		return nil, fmt.Errorf("network data too small: got %d bytes, want at least %d", len(data), expectedNetworkBytes)
+	}
+
+	if len(data)-expectedNetworkBytes >= 64 {
+		return nil, fmt.Errorf("network data too large: got %d bytes, want %d (+ up to 63 padding): input bucket count mismatch?", len(data), expectedNetworkBytes)
 	}
 
 	r := bytesReader(data[:expectedNetworkBytes])

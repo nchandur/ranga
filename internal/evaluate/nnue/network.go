@@ -5,7 +5,7 @@ import (
 )
 
 type Network struct {
-	FeatureWeights [768]Accumulator
+	FeatureWeights [InputSize]Accumulator
 	FeatureBias    Accumulator
 	OutputWeights  [OutputBuckets][2 * HiddenSize]int16
 	OutputBias     [OutputBuckets]int16
