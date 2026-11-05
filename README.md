@@ -13,26 +13,26 @@
 ### Prerequisites
 
 - [Go](https://go.dev/dl/) `1.27.3` or above *(or Docker, if you would rather skip a local install)*
-- [Task](https://taskfile.dev/installation/) (optional, but recommended)
+- `make`
 
 ### Local build
 
 ```bash
-task build
+make build
 ```
 
 To target a specific platform:
 
 | Platform      | Command                |
 |---------------|------------------------|
-| Linux         | `task build-linux`     |
-| Mac (Silicon) | `task build-mac`       |
-| Windows       | `task build-windows`   |
+| Linux         | `make build-linux`     |
+| Mac (Silicon) | `make build-mac`       |
+| Windows       | `make build-windows`   |
 
-Without Task, build it directly with Go:
+Without make, build it directly with Go:
 
 ```bash
-go build -o bin/ranga ./cmd
+go build -gcflags="all=-B" -ldflags="-s -w" -o bin/ranga ./cmd
 ```
 
 ### Docker
@@ -40,7 +40,7 @@ go build -o bin/ranga ./cmd
 Docker builds the binary inside a container and exports it to the local `./bin` directory.
 
 ```bash
-task build-docker
+make build-docker
 ```
 
 ## UCI Commands
