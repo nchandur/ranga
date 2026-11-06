@@ -33,7 +33,7 @@ func (s *Searcher) IsRepetition(b *board.Board) bool {
 			if s.game[i] == b.Key {
 				return true
 			}
-		} else if s.path[i-games] == b.Key {
+		} else if s.stack[i-games].key == b.Key {
 			return true
 		}
 	}
