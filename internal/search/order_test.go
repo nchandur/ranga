@@ -42,8 +42,8 @@ func TestMoveOrdering(t *testing.T) {
 			t.Errorf("Queen promo score = %d; want 9500", score)
 		}
 
-		s.Killers[0][b.Ply] = mKiller1
-		s.Killers[1][b.Ply] = mKiller2
+		s.stack[b.Ply].killers[0] = mKiller1
+		s.stack[b.Ply].killers[1] = mKiller2
 		if score := s.scoreMove(&b, mKiller1, board.NOMOVE); score != 9000 {
 			t.Errorf("Killer 1 score = %d; want 9000", score)
 		}
@@ -75,7 +75,7 @@ func TestMoveOrdering(t *testing.T) {
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
 		b.Ply = 0
 
-		s.Killers[0][b.Ply] = mKiller1
+		s.stack[b.Ply].killers[0] = mKiller1
 		s.History[board.WP][board.A3] = 120
 
 		mCapture := board.NewMove(board.E4, board.D5, board.MoveCapture)

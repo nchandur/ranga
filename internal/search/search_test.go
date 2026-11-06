@@ -91,7 +91,7 @@ func TestSearcher(t *testing.T) {
 
 		s.AlphaBeta(&b, alpha, beta, depth)
 
-		killer := s.Killers[0][b.Ply]
+		killer := s.stack[b.Ply].killers[0]
 		if killer == board.NOMOVE {
 			t.Errorf("expected killer move recorded on beta cutoff at ply %d", b.Ply)
 		}
