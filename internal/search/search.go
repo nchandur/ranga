@@ -222,7 +222,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 			// record killer moves
 			if !move.IsCapture() {
-				s.pushKiller(b.Ply, move)
+				s.updateKiller(b.Ply, move)
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)

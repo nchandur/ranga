@@ -9,12 +9,11 @@ type Node struct {
 	excluded   board.Move    // move to skip at each ply
 }
 
-// headroom so stack[ply+N] lookups never go out of bounds
 type NodeStack [MAX_PLY + 8]Node
 
-func (st *NodeStack) reset() {
-	for i := range st {
-		st[i] = Node{
+func (ns *NodeStack) reset() {
+	for i := range ns {
+		ns[i] = Node{
 			staticEval: -INFINITY,
 			killers:    [2]board.Move{board.NOMOVE, board.NOMOVE},
 			excluded:   board.NOMOVE,
