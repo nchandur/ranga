@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [v1.21] - *TBD*
 * feat(evaluate): add lazy accumulator updates [[#95](https://github.com/nchandur/ranga/pull/95)]
-
+* feat(evaluate): add single input bucket [[#96](https://github.com/nchandur/ranga/pull/96)]
+* feat(search): add improving heuristic to RFP and LMR [[#98](https://github.com/nchandur/ranga/pull/98)]
 
 ## [v1.20] - 2026-10-28
 
