@@ -120,9 +120,16 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	pvNode := beta-alpha > 1
 
+	// improving heuristic
+	improving := false
+
+	if !inCheck && b.Ply >= 2 && s.stack[b.Ply-2].staticEval != -INFINITY {
+		improving = staticEval > s.stack[b.Ply-2].staticEval
+	}
+
 	if !isSingularSearch {
 		// reverse futility pruning
-		if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
+		if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode, improving); prune {
 			return score
 		}
 
@@ -198,7 +205,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		}
 
 		// late move reduction
-		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck)
+		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck, improving)
 
 		b.Ply--
 		b.Restore(&state)
@@ -358,7 +365,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck bool) int {
+func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck, improving bool) int {
 
 	var score int
 
@@ -369,7 +376,11 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			!inCheck && !move.IsCapture() && move.Promoted(b.Side) == board.Empty
 
 		if reduced {
-			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-2)
+			r := 1
+			if !improving {
+				r++
+			}
+			score = -s.AlphaBeta(b, -alpha-1, -alpha, max(depth-1-r, 0))
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
 		}
@@ -448,13 +459,19 @@ func (s *Searcher) isFutile(alpha, depth, staticEval int, inCheck, pvNode bool) 
 }
 
 // helper function for reverse futility pruning
-func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, isPVNode bool) (int, bool) {
+func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, isPVNode, improving bool) (int, bool) {
 
 	if depth >= 8 || inCheck || isPVNode || beta <= -MATESCORE+MAX_PLY || beta >= MATESCORE-MAX_PLY {
 		return 0, false
 	}
 
-	if staticEval-(150*depth) >= beta {
+	d := depth
+
+	if improving {
+		d--
+	}
+
+	if staticEval-(150*d) >= beta {
 		return staticEval, true
 	}
 
