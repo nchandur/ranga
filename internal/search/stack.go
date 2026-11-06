@@ -24,8 +24,6 @@ func (st *NodeStack) reset() {
 
 func (s *Searcher) pushKiller(ply int, m board.Move) {
 	n := &s.stack[ply]
-	if n.killers[0] != m {
-		n.killers[1] = n.killers[0]
-		n.killers[0] = m
-	}
+	n.killers[1] = n.killers[0]
+	n.killers[0] = m
 }
