@@ -1,16 +1,8 @@
 # Results
 
 ## Contents
-- [Elo](#estimated-elo)
 - [SPRT](#sequential-probability-ratio-test)
 - [Progression Test](#progression-test)
-
-## Estimated Elo
-
-Derived from a head-to-head match against ranga-1.20, whose COPE rating at this time control is *2457 +/- 35*.
-
-- Estimated rating = 2457 + 502.57 $\approx$ 2960
-- Error = $\sqrt{35^2 + 38.8^2} \approx$ +/- 52
 
 ## Sequential Probability Ratio Test
 

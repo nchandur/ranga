@@ -7,10 +7,7 @@
 # Ranga
 
 **Ranga** is a UCI-compatible chess engine written in **Go**.
-
-### COPE Rating for *ranga-1.20*
-- **Bullet:** 2457 +/- 35
-- **Rapid:** 2406 +/- 35
+> See rating on [COPE](https://cope-chess.live/engines/149)
 
 ## Building
 
@@ -41,7 +38,7 @@ go build -gcflags="all=-B" -ldflags="-s -w" -o bin/ranga ./cmd
 
 ### Docker
 
-Docker builds the binary inside a container and exports it to the local `./bin` directory.
+Docker builds the binary inside a container and exports it to the local `./bin` directory
 
 ```bash
 make build-docker
