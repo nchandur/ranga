@@ -8,6 +8,10 @@
 
 **Ranga** is a UCI-compatible chess engine written in **Go**.
 
+### COPE Rating for *ranga-1.20*
+- **Bullet:** 2457 +/- 35
+- **Rapid:** 2406 +/- 35
+
 ## Building
 
 ### Prerequisites
