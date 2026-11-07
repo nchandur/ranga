@@ -142,6 +142,11 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// futility pruning (discard moves with no potential of improving alpha)
 	isFP := s.isFutile(alpha, depth, staticEval, inCheck, pvNode)
 
+	// late move pruning (skip late quiets at shallow depth)
+	isLMP := !pvNode && !inCheck && depth <= LMP_MAX_DEPTH && alpha > -MATESCORE+MAX_PLY && alpha < MATESCORE-MAX_PLY
+
+	lmpLimit := lmpThreshold(depth, improving)
+
 	legalMoves := 0
 	ml := board.NewMoveList()
 	ml.GenerateMoves(b)
@@ -174,6 +179,13 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		// check move futility
 		if isFP &&
 			movesSearched > 0 && // search at least one move
+			!move.IsCapture() && move.Promoted(b.Side) == board.Empty {
+			continue
+		}
+
+		// late move pruning
+		if isLMP &&
+			movesSearched >= lmpLimit &&
 			!move.IsCapture() && move.Promoted(b.Side) == board.Empty {
 			continue
 		}
@@ -520,4 +532,12 @@ func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth i
 		}
 	}
 	return singularExt
+}
+
+// number of moves after which quiet moves get pruned at shallow depth
+func lmpThreshold(depth int, improving bool) int {
+	if improving {
+		return 3 + depth*depth
+	}
+	return (3 + depth*depth) / 2
 }
