@@ -14,10 +14,10 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 	}
 
 	// record node so deeper nodes can detect repetitions against it
-	s.path[b.Ply] = b.Key
+	s.stack[b.Ply].key = b.Key
 
 	// node limit is checked on every node so it is exact
-	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+	if s.HardNodeLimit > 0 && s.Nodes >= s.HardNodeLimit {
 		s.Stop.Store(true)
 		return 0
 	}

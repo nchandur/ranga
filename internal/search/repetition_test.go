@@ -11,7 +11,9 @@ import (
 func setup(game, path []uint64, fifty int) (*Searcher, *board.Board) {
 	s := &Searcher{}
 	s.SetGame(game)
-	copy(s.path[:], path)
+	for i, k := range path {
+		s.stack[i].key = k
+	}
 
 	b := &board.Board{}
 	b.Ply = len(path) - 1
@@ -58,8 +60,8 @@ func TestIsRepetition(t *testing.T) {
 // stale path entries above current ply must never be read
 func TestIsRepetitionIgnoresStalePath(t *testing.T) {
 	s, b := setup(nil, []uint64{1, 2}, 5)
-	s.path[2] = 2
-	s.path[3] = 2
+	s.stack[2].key = 2
+	s.stack[3].key = 2
 
 	if s.IsRepetition(b) {
 		t.Fatal("stale entries above the current ply were read")
@@ -153,7 +155,7 @@ func TestTrimmingLosesNoRepetitions(t *testing.T) {
 			full = append(full, key)
 			s.AddGameMove(prev, fifty)
 
-			s.path[0] = key
+			s.stack[0].key = key
 			b := &board.Board{Key: key, FiftyMove: fifty, Ply: 0}
 
 			want := referenceIsRepetition(full, len(full)-1, fifty)

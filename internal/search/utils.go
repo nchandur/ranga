@@ -10,6 +10,14 @@ func (s *Searcher) updateHistory(b *board.Board, move board.Move, bonus int) {
 	s.History[b.Mailbox[move.Source()]][move.Target()] += (clamped - s.History[b.Mailbox[move.Source()]][move.Target()]*abs(clamped)/MAX_HISTORY)
 }
 
+// update killer move heuristic
+func (s *Searcher) updateKiller(ply int, m board.Move) {
+	n := &s.stack[ply]
+	n.killers[1] = n.killers[0]
+	n.killers[0] = m
+}
+
+
 // returns true for side with non-pawn material
 func hasNonPawnMaterial(b *board.Board) bool {
 

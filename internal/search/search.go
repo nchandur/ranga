@@ -11,29 +11,28 @@ import (
 type Searcher struct {
 	evaluate.Evaluator // static evaluation to score positions at leaf nodes
 	NN                 *nnue.NNUE
-	PV                 PVTable                 // stores and tracks the pv line found during search
-	TT                 *TranspositionTable     // caches position evaluations and cutoffs
-	Killers            [2][MAX_PLY]board.Move  // holds killer moves
-	History            [12][64]int             // maintains history heuristic scores [piece][targetSq]
-	Nodes              int                     // nodes visited that search
-	NodeLimit          int                     // max number of nodes to visit
-	Stop               *atomic.Bool            // shared stop flag across all threads
-	path               [MAX_PLY + 1]uint64     // key of the node at each ply of the line being searched
-	game               []uint64                // positions before the root that can still repeat
-	excluded           [MAX_PLY + 1]board.Move // move to skip at each ply
+	PV                 PVTable             // stores and tracks the pv line found during search
+	TT                 *TranspositionTable // caches position evaluations and cutoffs
+	History            [12][64]int         // maintains history heuristic scores [piece][targetSq]
+	Nodes              int                 // nodes visited that search
+	SoftNodeLimit      int
+	HardNodeLimit      int          // max number of nodes to visit
+	Stop               *atomic.Bool // shared stop flag across all threads
+	game               []uint64     // positions before the root that can still repeat
+	stack              NodeStack
 }
 
 // instantiates new searcher
 func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.Bool) *Searcher {
 	s := Searcher{
-		Evaluator: eval,
-		PV:        PVTable{},
-		TT:        tt,
-		Killers:   [2][MAX_PLY]board.Move{},
-		History:   [12][64]int{},
-		Nodes:     0,
-		NodeLimit: 0,
-		Stop:      stop,
+		Evaluator:     eval,
+		PV:            PVTable{},
+		TT:            tt,
+		History:       [12][64]int{},
+		Nodes:         0,
+		SoftNodeLimit: 0,
+		HardNodeLimit: 0,
+		Stop:          stop,
 	}
 
 	// only evaluator is NNUE
@@ -48,7 +47,7 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.B
 func (s *Searcher) Reset() {
 	s.PV.Clear()
 	s.TT.Clear()
-	s.Killers = [2][MAX_PLY]board.Move{}
+	s.stack.reset()
 	s.History = [12][64]int{}
 }
 
@@ -60,10 +59,10 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	}
 
 	// record this node so deeper nodes can detect repetitions against it
-	s.path[b.Ply] = b.Key
+	s.stack[b.Ply].key = b.Key
 
 	// node limit is checked on every node so it is exact
-	if s.NodeLimit > 0 && s.Nodes >= s.NodeLimit {
+	if s.HardNodeLimit > 0 && s.Nodes >= s.HardNodeLimit {
 		s.Stop.Store(true)
 		return 0
 	}
@@ -82,7 +81,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		return 0
 	}
 
-	excludedMove := s.excluded[b.Ply]
+	excludedMove := s.stack[b.Ply].excluded
 	isSingularSearch := excludedMove != board.NOMOVE
 
 	// transposition table lookup
@@ -112,11 +111,25 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	}
 
 	staticEval := s.Evaluate(b)
+
+	if inCheck {
+		s.stack[b.Ply].staticEval = -INFINITY
+	} else {
+		s.stack[b.Ply].staticEval = staticEval
+	}
+
 	pvNode := beta-alpha > 1
+
+	// improving heuristic
+	improving := false
+
+	if !inCheck && b.Ply >= 2 && s.stack[b.Ply-2].staticEval != -INFINITY {
+		improving = staticEval > s.stack[b.Ply-2].staticEval
+	}
 
 	if !isSingularSearch {
 		// reverse futility pruning
-		if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode); prune {
+		if score, prune := s.reverseFutilityPruning(beta, depth, staticEval, inCheck, pvNode, improving); prune {
 			return score
 		}
 
@@ -192,7 +205,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		}
 
 		// late move reduction
-		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck)
+		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck, improving)
 
 		b.Ply--
 		b.Restore(&state)
@@ -216,8 +229,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 			// record killer moves
 			if !move.IsCapture() {
-				s.Killers[1][b.Ply] = s.Killers[0][b.Ply]
-				s.Killers[0][b.Ply] = move
+				s.updateKiller(b.Ply, move)
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)
@@ -276,7 +288,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 	alpha, beta := -INFINITY, INFINITY
 	delta := aspirationDelta
 
-	s.path[0] = b.Key // root of the line; its children compare against it
+	s.stack[0].key = b.Key // root of the line
 
 	if depth >= aspirationMinDepth {
 		alpha = max(prevScore-delta, -INFINITY)
@@ -353,7 +365,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 }
 
 // helper function to perform late move reduction
-func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck bool) int {
+func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, beta, depth, movesSearched int, inCheck, improving bool) int {
 
 	var score int
 
@@ -364,7 +376,11 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			!inCheck && !move.IsCapture() && move.Promoted(b.Side) == board.Empty
 
 		if reduced {
-			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-2)
+			r := 1
+			if !improving {
+				r++
+			}
+			score = -s.AlphaBeta(b, -alpha-1, -alpha, max(depth-1-r, 0))
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
 		}
@@ -443,13 +459,19 @@ func (s *Searcher) isFutile(alpha, depth, staticEval int, inCheck, pvNode bool) 
 }
 
 // helper function for reverse futility pruning
-func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, isPVNode bool) (int, bool) {
+func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, isPVNode, improving bool) (int, bool) {
 
 	if depth >= 8 || inCheck || isPVNode || beta <= -MATESCORE+MAX_PLY || beta >= MATESCORE-MAX_PLY {
 		return 0, false
 	}
 
-	if staticEval-(150*depth) >= beta {
+	d := depth
+
+	if improving {
+		d--
+	}
+
+	if staticEval-(150*d) >= beta {
 		return staticEval, true
 	}
 
@@ -481,9 +503,9 @@ func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth i
 			followPv := s.PV.FollowPv
 			s.PV.FollowPv = false
 
-			s.excluded[b.Ply] = ttMove
+			s.stack[b.Ply].excluded = ttMove
 			score := s.AlphaBeta(b, singularBeta-1, singularBeta, singularDepth)
-			s.excluded[b.Ply] = board.NOMOVE
+			s.stack[b.Ply].excluded = board.NOMOVE
 
 			s.PV.FollowPv = followPv
 

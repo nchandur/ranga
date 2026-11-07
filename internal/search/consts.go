@@ -1,7 +1,7 @@
 package search
 
 const (
-	MAX_DEPTH        int = 8       // defines maximum search depth in plies
+	MAX_DEPTH        int = 64      // defines maximum search depth in plies
 	MAX_PLY          int = 256     // defines the maximum distance from the root node
 	MAX_HISTORY      int = 1 << 14 // cap for history bonus
 	ISMATE           int = 1000000 // base score used to identify mate condition

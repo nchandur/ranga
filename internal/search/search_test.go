@@ -91,7 +91,7 @@ func TestSearcher(t *testing.T) {
 
 		s.AlphaBeta(&b, alpha, beta, depth)
 
-		killer := s.Killers[0][b.Ply]
+		killer := s.stack[b.Ply].killers[0]
 		if killer == board.NOMOVE {
 			t.Errorf("expected killer move recorded on beta cutoff at ply %d", b.Ply)
 		}
@@ -130,12 +130,12 @@ func TestSearcher(t *testing.T) {
 		b := board.NewBoard()
 		b.ParseFEN(board.START)
 
-		s.NodeLimit = 3000
+		s.HardNodeLimit = 5000
 
 		s.Search(&b, 10, 0)
 
 		if s.Nodes > 5000 {
-			t.Errorf("search visited %d nodes; expected cutoff near NodeLimit %d", s.Nodes, s.NodeLimit)
+			t.Errorf("search visited %d nodes; expected cutoff near NodeLimit %d", s.Nodes, s.HardNodeLimit)
 		}
 	})
 }

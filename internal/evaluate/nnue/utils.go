@@ -51,3 +51,16 @@ func getIndices(piece board.Piece, sq board.Square, wKSq, bKSq board.Square) (in
 func mirrored(kSq board.Square) bool {
 	return int(kSq)&7 >= 4
 }
+
+// input bucket for a king on kSq
+func inputBucket(white bool, kSq board.Square) int {
+	if white {
+		return int(bucketTable[0][kSq])
+	}
+	return int(bucketTable[1][kSq])
+}
+
+// true if moving this perspective's king invalidates its accumulator
+func needsRefresh(white bool, oldSq, newSq board.Square) bool {
+	return mirrored(oldSq) != mirrored(newSq) || inputBucket(white, oldSq) != inputBucket(white, newSq)
+}

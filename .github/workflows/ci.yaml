@@ -31,23 +31,20 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Setup Task (go-task/task)
-        uses: tenthirtyam/setup-task@v1.0.5
-
       - name: Run Tests
-        run: task test
+        run: make test
 
       - name: Run Coverage
-        run: task cover
+        run: make cover
 
       - name: Run Race
-        run: task race
+        run: make race
 
       - name: Build Engine Binary
-        run: task build
+        run: make build
 
       - name: Run bench
-        run: task bench
+        run: make bench
 
       - name: Cleanup
-        run: task clean
+        run: make clean
