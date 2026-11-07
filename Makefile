@@ -1,4 +1,4 @@
-VERSION  := 1.21
+VERSION  := 1.22
 BIN_DIR  := bin
 BIN_NAME := ranga-$(VERSION)
 
