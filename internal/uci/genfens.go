@@ -5,10 +5,16 @@ import (
 	"ranga/internal/board"
 )
 
-const genfensPlies = 8
+const (
+	genfensPlies   = 8
+	genfensEvalCap = 400 // reject openings scoring beyond +/- this many centipawns
+	genfensDepth   = 4
+)
 
 // plays `plies` random legal moves from `start`, `count` times,
-func genPositions(start *board.Board, count, plies int, seed uint64, emit func(*board.Board)) int {
+func genPositions(start *board.Board, count, plies int, seed uint64,
+	accept func(*board.Board) bool, emit func(*board.Board)) int {
+
 	rng := rand.New(rand.NewPCG(seed, seed))
 
 	produced := 0
@@ -23,6 +29,9 @@ func genPositions(start *board.Board, count, plies int, seed uint64, emit func(*
 			}
 		}
 		if !ok || !hasLegalMove(&b) {
+			continue
+		}
+		if accept != nil && !accept(&b) {
 			continue
 		}
 
