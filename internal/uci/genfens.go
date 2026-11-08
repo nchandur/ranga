@@ -6,6 +6,8 @@ import (
 	"math/rand/v2"
 	"os"
 	"ranga/internal/board"
+	"strconv"
+	"strings"
 	"sync/atomic"
 )
 
@@ -15,8 +17,68 @@ const (
 	genfensNodes   = 5000 // node budget for scoring each candidate
 )
 
-// generates `count` random openings from the current position
-func (e *Engine) generate(count int, seed uint64, emit func(*board.Board)) int {
+// loads an opening book (EPD or FEN, one position per line)
+func loadBook(path string) ([]string, error) {
+	if path == "" || strings.EqualFold(path, "none") {
+		return nil, nil
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var fens []string
+	skipped := 0
+	scratch := board.NewBoard()
+
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		fields := strings.Fields(sc.Text())
+		if len(fields) == 0 {
+			continue
+		}
+		if len(fields) < 4 {
+			skipped++
+			continue
+		}
+
+		// EPD has 4 fields, optionally followed by opcodes; FEN has 6.
+		// use the counters only when they are really there
+		fen := strings.Join(fields[:4], " ") + " 0 1"
+		if len(fields) >= 6 {
+			_, e1 := strconv.Atoi(fields[4])
+			_, e2 := strconv.Atoi(fields[5])
+			if e1 == nil && e2 == nil {
+				fen = strings.Join(fields[:6], " ")
+			}
+		}
+
+		if scratch.ParseFEN(fen) != nil {
+			skipped++
+			continue
+		}
+		fens = append(fens, fen)
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(fens) == 0 {
+		return nil, fmt.Errorf("no valid positions in %s", path)
+	}
+	if skipped > 0 {
+		fmt.Fprintf(os.Stderr, "genfens: skipped %d unreadable lines in %s\n", skipped, path)
+	}
+	return fens, nil
+}
+
+// generates `count` random openings, handing each accepted one to emit.
+// each opening starts from a random position in `book`, or from the
+// engine's current position when book is empty. returns how many were produced
+func (e *Engine) generate(count int, seed uint64, book []string, emit func(*board.Board)) int {
+	// scoring candidates needs a fresh, unset stop flag, as handleGo does
 	e.pauseSearch()
 	stop := new(atomic.Bool)
 	e.stop = stop
@@ -26,23 +88,31 @@ func (e *Engine) generate(count int, seed uint64, emit func(*board.Board)) int {
 		return abs(e.scorePosition(b)) <= genfensEvalCap
 	}
 
-	n := genPositions(&e.board, count, genfensPlies, seed, accept, emit)
+	n := genPositions(&e.board, book, count, genfensPlies, seed, accept, emit)
 
+	// scoring reused the engine's NN and TT state, so restore it
 	e.searcher.NN.Reset(&e.board)
 	e.searcher.TT.Clear()
 
 	return n
 }
 
-// generates `count` positions and saves just the FENs
-func (e *Engine) GenFENsToFile(path string, count int, seed uint64) (int, error) {
-	f, err := os.Create(path)
+// generates `count` positions and saves just the FENs, one per line, to the
+// file at `path`. bookPath is optional ("" for none). returns how many
+// positions were written
+func (e *Engine) GenFENsToFile(path string, count int, seed uint64, bookPath string) (int, error) {
+	book, err := loadBook(bookPath)
+	if err != nil {
+		return 0, fmt.Errorf("book: %w", err)
+	}
+
+	f, err := os.Create(path) // fail fast, before any searching
 	if err != nil {
 		return 0, err
 	}
 	w := bufio.NewWriter(f)
 
-	n := e.generate(count, seed, func(b *board.Board) {
+	n := e.generate(count, seed, book, func(b *board.Board) {
 		fmt.Fprintln(w, b.FEN())
 	})
 
@@ -59,8 +129,10 @@ func (e *Engine) GenFENsToFile(path string, count int, seed uint64) (int, error)
 	return n, nil
 }
 
-// plays `plies` random legal moves from `start`, `count` times
-func genPositions(start *board.Board, count, plies int, seed uint64,
+// plays `plies` random legal moves from a starting position, `count` times,
+// keeping only positions that pass `accept` (nil accepts everything).
+// the starting position is a random entry of `book`, or `start` if book is empty
+func genPositions(start *board.Board, book []string, count, plies int, seed uint64,
 	accept func(*board.Board) bool, emit func(*board.Board)) int {
 
 	rng := rand.New(rand.NewPCG(seed, seed))
@@ -68,6 +140,12 @@ func genPositions(start *board.Board, count, plies int, seed uint64,
 	produced := 0
 	for attempts := 0; produced < count && attempts < 1000*count; attempts++ {
 		b := start.Preserve()
+		if len(book) > 0 {
+			b = board.NewBoard()
+			if b.ParseFEN(book[rng.IntN(len(book))]) != nil {
+				continue
+			}
+		}
 
 		ok := true
 		for range plies {

@@ -86,11 +86,28 @@ func (e *Engine) handleGenFENs(args []string) {
 	}
 
 	var seed uint64
-	if len(args) >= 3 && args[1] == "seed" {
-		seed, _ = strconv.ParseUint(args[2], 10, 64)
+	var bookPath string
+	for i := 1; i+1 < len(args); i += 2 {
+		switch args[i] {
+		case "seed":
+			if seed, err = strconv.ParseUint(args[i+1], 10, 64); err != nil {
+				fmt.Fprintln(os.Stderr, "genfens: bad seed", args[i+1])
+				return
+			}
+		case "book":
+			bookPath = args[i+1]
+		}
 	}
 
-	e.generate(count, seed, func(b *board.Board) {
+	book, err := loadBook(bookPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "genfens: book:", err)
+		return
+	}
+
+	e.writeLine(fmt.Sprintf("info string found %d book lines", len(book)))
+
+	e.generate(count, seed, book, func(b *board.Board) {
 		e.writeLine("info string genfens " + b.FEN())
 	})
 }

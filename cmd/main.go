@@ -35,7 +35,6 @@ func main() {
 	engine.Run()
 }
 
-// handles the genfile mode
 func genFile(args []string) {
 	fs := flag.NewFlagSet("genfile", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -43,9 +42,10 @@ func genFile(args []string) {
 	out := fs.String("out", "", "path of the file to write (required)")
 	count := fs.Int("count", -1, "number of positions to generate (required)")
 	seed := fs.Uint64("seed", 0, "random seed")
+	book := fs.String("book", "", "opening book (EPD or FEN, one per line); omit to start from the standard position")
 
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: ranga genfile -out <path> -count <n> [-seed <s>]")
+		fmt.Fprintln(os.Stderr, "usage: ranga genfile -out <path> -count <n> [-seed <s>] [-book <path>]")
 		fs.PrintDefaults()
 	}
 
@@ -63,7 +63,7 @@ func genFile(args []string) {
 
 	engine := uci.NewEngine(os.Stdin, os.Stdout, version)
 
-	n, err := engine.GenFENsToFile(*out, *count, *seed)
+	n, err := engine.GenFENsToFile(*out, *count, *seed, *book)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "genfile:", err)
 		os.Exit(1)
