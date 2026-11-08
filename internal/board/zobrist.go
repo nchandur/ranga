@@ -33,7 +33,9 @@ func (b *Board) GenerateKey() uint64 {
 	res ^= CastleKeys[b.Castle]
 
 	// hash side
-	res ^= SideKey
+	if b.Side == Black {
+		res ^= SideKey
+	}
 
 	return res
 }
