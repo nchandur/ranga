@@ -1,4 +1,4 @@
-VERSION  := 1.21
+VERSION  := 1.22
 BIN_DIR  := bin
 BIN_NAME := ranga-$(VERSION)
 
@@ -38,18 +38,18 @@ clean:
 	rm -rf $(BIN_DIR)/$(BIN_NAME)
 	go clean -cache -testcache -modcache
 
-build-docker:
+docker:
 	docker build --build-arg VERSION=$(VERSION) --target exporter --output ./$(BIN_DIR) .
 
 define cross_build
 	env CGO_ENABLED=0 GOOS=$(1) GOARCH=$(2) go build $(GCFLAGS) -ldflags="-s -w -X 'main.version=$(VERSION)'" -o $(BIN_DIR)/$(BIN_NAME)-$(1)-$(2)$(3) ./cmd
 endef
 
-build-linux:
+linux:
 	$(call cross_build,linux,amd64,)
 
-build-windows:
+windows:
 	$(call cross_build,windows,amd64,.exe)
 
-build-mac:
+mac:
 	$(call cross_build,darwin,arm64,)

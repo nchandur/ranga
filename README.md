@@ -24,11 +24,11 @@ make build
 
 To target a specific platform:
 
-| Platform      | Command                |
-|---------------|------------------------|
-| Linux         | `make build-linux`     |
-| Mac (Silicon) | `make build-mac`       |
-| Windows       | `make build-windows`   |
+| Platform      | Command          |
+|---------------|------------------|
+| Linux         | `make linux`     |
+| Mac (Silicon) | `make mac`       |
+| Windows       | `make windows`   |
 
 Without make, build it directly with Go:
 
@@ -41,7 +41,7 @@ go build -gcflags="all=-B" -ldflags="-s -w" -o bin/ranga ./cmd
 Docker builds the binary inside a container and exports it to the local `./bin` directory
 
 ```bash
-make build-docker
+make docker
 ```
 
 ## UCI Commands
