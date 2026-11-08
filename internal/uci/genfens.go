@@ -9,6 +9,7 @@ const (
 	genfensPlies   = 8
 	genfensEvalCap = 400 // reject openings scoring beyond +/- this many centipawns
 	genfensDepth   = 4
+	genfensNodes   = 5000
 )
 
 // plays `plies` random legal moves from `start`, `count` times,

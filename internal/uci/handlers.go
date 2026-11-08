@@ -370,14 +370,24 @@ func (e *Engine) scorePosition(b *board.Board) int {
 	c := b.Preserve()
 	e.searcher.NN.Reset(&c)
 
-	e.searcher.SoftNodeLimit = 0
-	e.searcher.HardNodeLimit = 0
+	e.stop.Store(false)
+	e.searcher.SoftNodeLimit = genfensNodes
+	e.searcher.HardNodeLimit = genfensNodes * 10
 	e.searcher.Nodes = 0
 	e.searcher.Reset()
 
 	score := 0
-	for d := 1; d <= genfensDepth; d++ {
-		_, score = e.searcher.Search(&c, d, score)
+	for d := 1; d <= search.MAX_DEPTH; d++ {
+		_, s := e.searcher.Search(&c, d, score)
+
+		if e.stop.Load() {
+			break
+		}
+		score = s
+
+		if e.searcher.Nodes >= genfensNodes {
+			break
+		}
 	}
 	return score
 }
