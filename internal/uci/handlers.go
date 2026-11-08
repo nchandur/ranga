@@ -74,6 +74,44 @@ func (e *Engine) handleEvaluate() {
 	e.writeLine(fmt.Sprintf("score %.2f", float64(e.searcher.Evaluate(&e.board))/float64(100)))
 }
 
+// handles genfens command
+// provides FENs for random positions derived from the current position
+func (e *Engine) handleGenFENs(args []string) {
+	if len(args) < 1 {
+		return
+	}
+	count, err := strconv.Atoi(args[0])
+	if err != nil || count < 0 {
+		return
+	}
+
+	var seed uint64
+	var bookPath string
+	for i := 1; i+1 < len(args); i += 2 {
+		switch args[i] {
+		case "seed":
+			if seed, err = strconv.ParseUint(args[i+1], 10, 64); err != nil {
+				fmt.Fprintln(os.Stderr, "genfens: bad seed", args[i+1])
+				return
+			}
+		case "book":
+			bookPath = args[i+1]
+		}
+	}
+
+	book, err := loadBook(bookPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "genfens: book:", err)
+		return
+	}
+
+	e.writeLine(fmt.Sprintf("info string found %d book lines", len(book)))
+
+	e.generate(count, seed, book, func(b *board.Board) {
+		e.writeLine("info string genfens " + b.FEN())
+	})
+}
+
 // handles position command
 // sets pieces on board after parsing valid FEN string
 func (e *Engine) handlePosition(args []string) {
@@ -328,6 +366,33 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 	}
 
 	e.writeLine("bestmove " + bestMove.String())
+}
+
+// scores a candidate opening with a node-limited search
+func (e *Engine) scorePosition(b *board.Board) int {
+	c := b.Preserve()
+	e.searcher.NN.Reset(&c)
+
+	e.stop.Store(false)
+	e.searcher.SoftNodeLimit = genfensNodes
+	e.searcher.HardNodeLimit = genfensNodes * 10
+	e.searcher.Nodes = 0
+	e.searcher.Reset()
+
+	score := 0
+	for d := 1; d <= search.MAX_DEPTH; d++ {
+		_, s := e.searcher.Search(&c, d, score)
+
+		if e.stop.Load() {
+			break
+		}
+		score = s
+
+		if e.searcher.Nodes >= genfensNodes {
+			break
+		}
+	}
+	return score
 }
 
 // helper function to pause search

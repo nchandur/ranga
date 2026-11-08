@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [v1.22] - *TBD*
+* feat(evaluate): increased input buckets to 4 [[#103](https://github.com/nchandur/ranga/pull/103)] 
+* feat(uci): add `genfens` command to uci [[#105](https://github.com/nchandur/ranga/pull/105)]
 
 ## [v1.21] - 2026-11-06
 * feat(evaluate): add lazy accumulator updates [[#95](https://github.com/nchandur/ranga/pull/95)]
