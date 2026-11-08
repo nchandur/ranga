@@ -132,6 +132,8 @@ func (e *Engine) registerCommands() {
 		e.handleEvaluate()
 	}
 
+	e.commands["genfens"] = e.handleGenFENs
+
 	e.commands["stop"] = func([]string) {
 		e.handleStop()
 	}

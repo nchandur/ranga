@@ -74,6 +74,12 @@ func (e *Engine) handleEvaluate() {
 	e.writeLine(fmt.Sprintf("score %.2f", float64(e.searcher.Evaluate(&e.board))/float64(100)))
 }
 
+// handles genfens command
+// provides FENs for random positions
+func (e *Engine) handleGenFENs(args []string) {
+	e.writeLine("genfens command")
+}
+
 // handles position command
 // sets pieces on board after parsing valid FEN string
 func (e *Engine) handlePosition(args []string) {
