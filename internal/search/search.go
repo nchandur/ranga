@@ -288,7 +288,21 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 	alpha, beta := -INFINITY, INFINITY
 	delta := aspirationDelta
 
-	s.stack[0].key = b.Key // root of the line
+	s.stack[0].key = b.Key
+
+	// so ply-2 nodes have a valid "improving" baseline
+	var rootInCheck bool
+	if b.Side == board.White {
+		rootInCheck = b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.WK].GetLSB()), board.Black)
+	} else {
+		rootInCheck = b.IsSquareAttacked(board.Square(b.PieceBitBoards[board.BK].GetLSB()), board.White)
+	}
+
+	if rootInCheck {
+		s.stack[0].staticEval = -INFINITY
+	} else {
+		s.stack[0].staticEval = s.Evaluate(b)
+	}
 
 	if depth >= aspirationMinDepth {
 		alpha = max(prevScore-delta, -INFINITY)
