@@ -2,8 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.22] - *TBD*
-
 ## [v1.21] - 2026-11-06
 * feat(evaluate): add lazy accumulator updates [[#95](https://github.com/nchandur/ranga/pull/95)]
 * feat(evaluate): add single input bucket [[#96](https://github.com/nchandur/ranga/pull/96)]
