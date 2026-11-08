@@ -13,7 +13,7 @@ import (
 
 const (
 	genfensPlies   = 8
-	genfensEvalCap = 400  // reject openings scoring beyond +/- this many centipawns
+	genfensEvalCap = 300  // reject openings scoring beyond +/- this many centipawns
 	genfensNodes   = 5000 // node budget for scoring each candidate
 )
 
