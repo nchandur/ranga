@@ -90,23 +90,9 @@ func (e *Engine) handleGenFENs(args []string) {
 		seed, _ = strconv.ParseUint(args[2], 10, 64)
 	}
 
-	// scoring candidates needs a fresh, unset stop flag, as handleGo does
-	e.pauseSearch()
-	stop := new(atomic.Bool)
-	e.stop = stop
-	e.searcher.Stop = stop
-
-	accept := func(b *board.Board) bool {
-		return abs(e.scorePosition(b)) <= genfensEvalCap
-	}
-
-	genPositions(&e.board, count, genfensPlies, seed, accept, func(b *board.Board) {
+	e.generate(count, seed, func(b *board.Board) {
 		e.writeLine("info string genfens " + b.FEN())
 	})
-
-	// scoring reused the engine's NN and TT state, so restore it
-	e.searcher.NN.Reset(&e.board)
-	e.searcher.TT.Clear()
 }
 
 // handles position command
@@ -365,7 +351,7 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 	e.writeLine("bestmove " + bestMove.String())
 }
 
-// scores a candidate opening with fixed-depth search
+// scores a candidate opening with a node-limited search
 func (e *Engine) scorePosition(b *board.Board) int {
 	c := b.Preserve()
 	e.searcher.NN.Reset(&c)
