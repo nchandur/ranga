@@ -75,9 +75,24 @@ func (e *Engine) handleEvaluate() {
 }
 
 // handles genfens command
-// provides FENs for random positions
+// provides FENs for random positions derived from the current position
 func (e *Engine) handleGenFENs(args []string) {
-	e.writeLine("genfens command")
+	if len(args) < 1 {
+		return
+	}
+	count, err := strconv.Atoi(args[0])
+	if err != nil || count < 0 {
+		return
+	}
+
+	var seed uint64
+	if len(args) >= 3 && args[1] == "seed" {
+		seed, _ = strconv.ParseUint(args[2], 10, 64)
+	}
+
+	genPositions(&e.board, count, genfensPlies, seed, func(b *board.Board) {
+		e.writeLine("info string genfens " + b.FEN())
+	})
 }
 
 // handles position command
