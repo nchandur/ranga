@@ -44,8 +44,6 @@ func loadBook(path string) ([]string, error) {
 			continue
 		}
 
-		// EPD has 4 fields, optionally followed by opcodes; FEN has 6.
-		// use the counters only when they are really there
 		fen := strings.Join(fields[:4], " ") + " 0 1"
 		if len(fields) >= 6 {
 			_, e1 := strconv.Atoi(fields[4])
@@ -74,9 +72,7 @@ func loadBook(path string) ([]string, error) {
 	return fens, nil
 }
 
-// generates `count` random openings, handing each accepted one to emit.
-// each opening starts from a random position in `book`, or from the
-// engine's current position when book is empty. returns how many were produced
+// generates `count` random openings
 func (e *Engine) generate(count int, seed uint64, book []string, emit func(*board.Board)) int {
 	// scoring candidates needs a fresh, unset stop flag, as handleGo does
 	e.pauseSearch()
@@ -90,23 +86,20 @@ func (e *Engine) generate(count int, seed uint64, book []string, emit func(*boar
 
 	n := genPositions(&e.board, book, count, genfensPlies, seed, accept, emit)
 
-	// scoring reused the engine's NN and TT state, so restore it
 	e.searcher.NN.Reset(&e.board)
 	e.searcher.TT.Clear()
 
 	return n
 }
 
-// generates `count` positions and saves just the FENs, one per line, to the
-// file at `path`. bookPath is optional ("" for none). returns how many
-// positions were written
+// generates `count` positions and saves just the FENs
 func (e *Engine) GenFENsToFile(path string, count int, seed uint64, bookPath string) (int, error) {
 	book, err := loadBook(bookPath)
 	if err != nil {
 		return 0, fmt.Errorf("book: %w", err)
 	}
 
-	f, err := os.Create(path) // fail fast, before any searching
+	f, err := os.Create(path)
 	if err != nil {
 		return 0, err
 	}
@@ -129,9 +122,7 @@ func (e *Engine) GenFENsToFile(path string, count int, seed uint64, bookPath str
 	return n, nil
 }
 
-// plays `plies` random legal moves from a starting position, `count` times,
-// keeping only positions that pass `accept` (nil accepts everything).
-// the starting position is a random entry of `book`, or `start` if book is empty
+// plays `plies` random legal moves from a starting position, `count` times
 func genPositions(start *board.Board, book []string, count, plies int, seed uint64,
 	accept func(*board.Board) bool, emit func(*board.Board)) int {
 
