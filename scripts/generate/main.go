@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"ranga/internal/uci"
+	"time"
 )
 
 var version string = ""
@@ -39,10 +40,11 @@ func main() {
 
 	engine := uci.NewEngine(os.Stdin, os.Stdout, version)
 
+	start := time.Now()
 	n, err := engine.GenFENsToFile(*out, *count, *seed, *book)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "genfile:", err)
 		os.Exit(1)
 	}
-	fmt.Printf("wrote %d positions to %s\n", n, *out)
+	fmt.Printf("wrote %d positions to %s in %v\n", n, *out, time.Since(start))
 }
