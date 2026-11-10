@@ -2,16 +2,26 @@ package search
 
 import "ranga/internal/board"
 
+// move ordering buckets
+const (
+	SCORE_TT        int = 2000000
+	SCORE_PV        int = 1900000
+	SCORE_CAPTURE   int = 1000000 // + MVVLVA
+	SCORE_PROMOTION int = 950000
+	SCORE_KILLER1   int = 900000
+	SCORE_KILLER2   int = 800000
+)
+
 // evaluates heuristic score to move to prioritize it during move ordering
 func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 
 	if move == ttMove {
-		return 30000
+		return SCORE_TT
 	}
 
 	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
 		s.PV.ScorePV = false
-		return 20000
+		return SCORE_PV
 	}
 
 	if move.IsCapture() {
@@ -26,17 +36,17 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 			captured = b.Mailbox[move.Target()]
 		}
 
-		return MVVLVA[b.Mailbox[move.Source()]][captured] + 10000
+		return MVVLVA[b.Mailbox[move.Source()]][captured] + SCORE_CAPTURE
 	} else {
 
 		if move.IsPromotion() {
-			return 9500
+			return SCORE_PROMOTION
 		}
 
 		if s.stack[b.Ply].killers[0] == move {
-			return 9000
+			return SCORE_KILLER1
 		} else if s.stack[b.Ply].killers[1] == move {
-			return 8000
+			return SCORE_KILLER2
 		} else {
 			return s.History[b.Mailbox[move.Source()]][move.Target()]
 		}

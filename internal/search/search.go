@@ -40,6 +40,7 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.B
 		s.NN = nn
 	}
 
+	s.stack.reset()
 	return &s
 }
 
