@@ -3,10 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [v1.22] - *TBD*
+
+### Added
 * feat(evaluate): increased input buckets to 4 [[#103](https://github.com/nchandur/ranga/pull/103)] 
 * feat(uci): add `genfens` command to uci [[#105](https://github.com/nchandur/ranga/pull/105)]
 
+### Fixed
+* fix(search): move ordering buckets and killer duplication [[#107](https://github.com/nchandur/ranga/pull/107)]
+
 ## [v1.21] - 2026-11-06
+
+### Added
 * feat(evaluate): add lazy accumulator updates [[#95](https://github.com/nchandur/ranga/pull/95)]
 * feat(evaluate): add single input bucket [[#96](https://github.com/nchandur/ranga/pull/96)]
 * feat(search): add improving heuristic to RFP and LMR [[#98](https://github.com/nchandur/ranga/pull/98)]
