@@ -144,7 +144,7 @@ func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, mov
 	slot := tt.slot(key)
 
 	old := TranspositionTableEntry(slot.Load())
-	if old != 0 && old.Depth() > depth {
+	if old.matches(key) && old.Depth() > depth {
 		return
 	}
 
