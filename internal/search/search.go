@@ -330,8 +330,19 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				s.NN.Update(&state, move)
 			}
 
-			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
-			score := -s.AlphaBeta(b, -beta, -a, depth-1)
+			var score int
+			if bestMove == board.NOMOVE {
+				// full window for first legal move
+				s.PV.FollowPv = true
+				score = -s.AlphaBeta(b, -beta, -a, depth-1)
+			} else {
+				// null window first, full re-search only if it beats alpha
+				s.PV.FollowPv = false
+				score = -s.AlphaBeta(b, -a-1, -a, depth-1)
+				if score > a && score < beta && !s.Stop.Load() {
+					score = -s.AlphaBeta(b, -beta, -a, depth-1)
+				}
+			}
 
 			b.Ply--
 			b.Restore(&state)
