@@ -46,9 +46,14 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.B
 // clears searcher state
 func (s *Searcher) Reset() {
 	s.PV.Clear()
-	s.TT.Clear()
 	s.stack.reset()
 	s.History = [12][64]int{}
+}
+
+// clears everything, including transposition table
+func (s *Searcher) NewGame() {
+	s.Reset()
+	s.TT.Clear()
 }
 
 // executes main alpha-beta minimax search tree traversal
