@@ -5,13 +5,16 @@ import "ranga/internal/board"
 // evaluates heuristic score to move to prioritize it during move ordering
 func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 
-	if move == ttMove {
-		return 30000
-	}
-
 	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
 		s.PV.ScorePV = false
+		if move == ttMove {
+			return 30000
+		}
 		return 20000
+	}
+
+	if move == ttMove {
+		return 30000
 	}
 
 	if move.IsCapture() {
@@ -40,9 +43,7 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 		} else {
 			return s.History[b.Mailbox[move.Source()]][move.Target()]
 		}
-
 	}
-
 }
 
 // orders the legal moves in given move list
