@@ -311,6 +311,8 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		s.PV.enablePVScoring(ml, 0)
 		s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
+		movesSearched := 0 // track legal moves specifically for PVS
+
 		for _, move := range ml.Moves[:ml.Count] {
 			state := b.Preserve()
 
@@ -330,16 +332,19 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				s.NN.Update(&state, move)
 			}
 
+			s.PV.FollowPv = movesSearched == 0
 			var score int
-			if bestMove == board.NOMOVE {
-				// full window for first legal move
-				s.PV.FollowPv = true
+
+			if movesSearched == 0 {
+				// first legal move is searched with the full window
 				score = -s.AlphaBeta(b, -beta, -a, depth-1)
 			} else {
-				// null window first, full re-search only if it beats alpha
-				s.PV.FollowPv = false
+				// subsequent moves are searched with a null window
 				score = -s.AlphaBeta(b, -a-1, -a, depth-1)
-				if score > a && score < beta && !s.Stop.Load() {
+
+				// if it fails high within the open window, re-search with full window
+				if !s.Stop.Load() && score > a && score < beta {
+					s.PV.FollowPv = true // re-enable PV following for the exact score search
 					score = -s.AlphaBeta(b, -beta, -a, depth-1)
 				}
 			}
@@ -350,6 +355,8 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 			if s.NN != nil {
 				s.NN.Restore(nnState)
 			}
+
+			movesSearched++
 
 			if s.Stop.Load() {
 				return bestMove, bestScore
