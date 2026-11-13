@@ -154,6 +154,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// look for move in transposition table
 	ttMove := s.TT.ProbeMove(b.Key)
 
+	followingPV := s.PV.FollowPv
+
 	if s.PV.FollowPv {
 		s.PV.enablePVScoring(ml, b.Ply)
 	}
@@ -208,6 +210,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		if move == ttMove {
 			ext = singularExt
 		}
+
+		// only follow PV if this specific move is PV move
+		s.PV.FollowPv = followingPV && (b.Ply-1) < s.PV.Length[0] && move == s.PV.Table[0][b.Ply-1]
 
 		// late move reduction
 		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck, improving)
@@ -332,9 +337,10 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				s.NN.Update(&state, move)
 			}
 
-			s.PV.FollowPv = movesSearched == 0
-			var score int
+			// only follow the PV if the move matches the previous iteration's PV
+			s.PV.FollowPv = s.PV.Length[0] > 0 && move == s.PV.Table[0][0]
 
+			var score int
 			if movesSearched == 0 {
 				// first legal move is searched with the full window
 				score = -s.AlphaBeta(b, -beta, -a, depth-1)
