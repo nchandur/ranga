@@ -2,19 +2,29 @@ package search
 
 import "ranga/internal/board"
 
+const (
+	ScoreTT         int = 2_000_000
+	ScorePV         int = 1_900_000
+	ScoreQueenPromo int = 1_000_000
+	ScoreCapture    int = 800_000
+	ScoreKiller1    int = 600_000
+	ScoreKiller2    int = 590_000
+	ScoreUnderPromo int = -1_000_000
+)
+
 // evaluates heuristic score to move to prioritize it during move ordering
 func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 
 	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
 		s.PV.ScorePV = false
 		if move == ttMove {
-			return 30000
+			return ScoreTT
 		}
-		return 20000
+		return ScorePV
 	}
 
 	if move == ttMove {
-		return 30000
+		return ScoreTT
 	}
 
 	if move.IsCapture() {
@@ -29,17 +39,27 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 			captured = b.Mailbox[move.Target()]
 		}
 
-		return MVVLVA[b.Mailbox[move.Source()]][captured] + 10000
+		score := MVVLVA[b.Mailbox[move.Source()]][captured] + ScoreCapture
+
+		// capturing into queen promotion is almost always the best capture
+		if move.IsPromotion() && isQueenPromotion(b, move) {
+			score += ScoreQueenPromo
+		}
+
+		return score
+
 	} else {
 
 		if move.IsPromotion() {
-			return 9500
+			if isQueenPromotion(b, move) {
+				return ScoreQueenPromo
+			}
+			return ScoreUnderPromo
 		}
-
 		if s.stack[b.Ply].killers[0] == move {
-			return 9000
+			return ScoreKiller1
 		} else if s.stack[b.Ply].killers[1] == move {
-			return 8000
+			return ScoreKiller2
 		} else {
 			return s.History[b.Mailbox[move.Source()]][move.Target()]
 		}

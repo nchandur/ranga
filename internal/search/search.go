@@ -107,8 +107,8 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	}
 
 	// transposition table lookup
-	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
-		b.Ply != 0 && score != NOENTRY && !pvNode {
+	if score, ok := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); ok && !isSingularSearch &&
+		b.Ply != 0 && !pvNode {
 		return score
 	}
 
