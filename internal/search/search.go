@@ -433,6 +433,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	if depth < 3 ||
 		inCheck ||
 		b.Ply == 0 ||
+		s.stack[b.Ply-1].nullMove || // no two nulls in a row
 		beta >= MATESCORE-MAX_PLY ||
 		staticeval < beta ||
 		!hasNonPawnMaterial(b) { // zugzwang check
@@ -450,7 +451,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	}
 
 	b.EnPassant = board.NoSquare
-
+	s.stack[b.Ply].nullMove = true
 	b.Ply++
 
 	// adaptive depth reduction
@@ -462,6 +463,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 
 	nullScore := -s.AlphaBeta(b, -beta, -beta+1, reducedDepth)
 	b.Ply--
+	s.stack[b.Ply].nullMove = false
 
 	b.Restore(&state)
 

@@ -7,6 +7,7 @@ type Node struct {
 	staticEval int           // static eval at this ply
 	killers    [2]board.Move // holds killer moves
 	excluded   board.Move    // move to skip at each ply
+	nullMove   bool          // true when null move is being searched
 }
 
 type NodeStack [MAX_PLY + 8]Node
