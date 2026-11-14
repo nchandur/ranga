@@ -91,12 +91,6 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	pvNode := beta-alpha > 1
 
-	// transposition table lookup
-	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
-		b.Ply != 0 && score != NOENTRY && !pvNode {
-		return score
-	}
-
 	var inCheck bool
 
 	// check if current side king is in check
@@ -110,6 +104,12 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// increase depth by 1 if in check
 	if inCheck {
 		depth++
+	}
+
+	// transposition table lookup
+	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
+		b.Ply != 0 && score != NOENTRY && !pvNode {
+		return score
 	}
 
 	// drop into quiescence search at leaf nodes
