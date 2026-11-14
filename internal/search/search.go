@@ -162,7 +162,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	s.sortMove(b, ml, ttMove)
 
-	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch)
+	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch, inCheck)
 
 	flag := FALPHA
 	score := 0
@@ -509,7 +509,7 @@ func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, 
 }
 
 // helper function for singular search extension
-func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch bool) int {
+func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch, inCheck bool) int {
 
 	var singularExt int
 
@@ -528,6 +528,10 @@ func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth i
 
 			singularBeta := ttScore - SINGULAR_MARGIN_MULT*depth
 			singularDepth := (depth - 1) / 2
+
+			if inCheck {
+				singularDepth--
+			}
 
 			// the pv-following flag must not leak into verification search
 			followPv := s.PV.FollowPv
