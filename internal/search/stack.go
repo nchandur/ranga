@@ -20,9 +20,3 @@ func (ns *NodeStack) reset() {
 		}
 	}
 }
-
-func (s *Searcher) pushKiller(ply int, m board.Move) {
-	n := &s.stack[ply]
-	n.killers[1] = n.killers[0]
-	n.killers[0] = m
-}
