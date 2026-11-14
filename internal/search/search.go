@@ -439,7 +439,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 		return 0, false
 	}
 
-	copy := b.Preserve()
+	state := b.Preserve()
 
 	b.Side ^= 1
 
@@ -463,7 +463,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	nullScore := -s.AlphaBeta(b, -beta, -beta+1, reducedDepth)
 	b.Ply--
 
-	b.Restore(&copy)
+	b.Restore(&state)
 
 	if s.Stop.Load() {
 		return 0, false
