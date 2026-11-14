@@ -386,6 +386,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		case bestScore >= beta && beta < INFINITY: // fail high
 			beta = min(beta+delta, INFINITY)
 		default: // inside window, or already full width
+			s.TT.Store(bestScore, depth, 0, FEXACT, b.Key, bestMove)
 			return bestMove, bestScore
 		}
 
