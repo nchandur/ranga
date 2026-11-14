@@ -89,9 +89,11 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	excludedMove := s.stack[b.Ply].excluded
 	isSingularSearch := excludedMove != board.NOMOVE
 
+	pvNode := beta-alpha > 1
+
 	// transposition table lookup
 	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
-		b.Ply != 0 && score != NOENTRY && !s.PV.FollowPv {
+		b.Ply != 0 && score != NOENTRY && !pvNode {
 		return score
 	}
 
@@ -122,8 +124,6 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	} else {
 		s.stack[b.Ply].staticEval = staticEval
 	}
-
-	pvNode := beta-alpha > 1
 
 	// improving heuristic
 	improving := false
@@ -386,6 +386,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		case bestScore >= beta && beta < INFINITY: // fail high
 			beta = min(beta+delta, INFINITY)
 		default: // inside window, or already full width
+			s.TT.Store(bestScore, depth, 0, FEXACT, b.Key, bestMove)
 			return bestMove, bestScore
 		}
 
