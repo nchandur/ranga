@@ -48,6 +48,8 @@ func (e *Engine) handleIsReady() {
 // handle ucinewgame command
 // sets board to new game
 func (e *Engine) handleNewGame() {
+	e.pauseSearch()
+	e.searcher.NewGame()
 	e.handlePosition([]string{"position", "startpos"})
 }
 

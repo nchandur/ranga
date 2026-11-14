@@ -3,10 +3,20 @@
 All notable changes to this project will be documented in this file.
 
 ## [v1.22] - *TBD*
+
+### Added
 * feat(evaluate): increased input buckets to 4 [[#103](https://github.com/nchandur/ranga/pull/103)] 
 * feat(uci): add `genfens` command to uci [[#105](https://github.com/nchandur/ranga/pull/105)]
 
+### Fixed
+* fix(search): SEE prune also checks evasions [[#108](https://github.com/nchandur/ranga/pull/108)]
+* fix(search): retain TT between moves [[#109](https://github.com/nchandur/ranga/pull/109)]
+* fix(search): implement root PVS and prevent ScorePV/FollowPv leakage [[#110](https://github.com/nchandur/ranga/pull/110)]
+* fix(search): preserve TT moves on fail-low and restrict PV cutoffs [[#111](https://github.com/nchandur/ranga/pull/111)]
+
 ## [v1.21] - 2026-11-06
+
+### Added
 * feat(evaluate): add lazy accumulator updates [[#95](https://github.com/nchandur/ranga/pull/95)]
 * feat(evaluate): add single input bucket [[#96](https://github.com/nchandur/ranga/pull/96)]
 * feat(search): add improving heuristic to RFP and LMR [[#98](https://github.com/nchandur/ranga/pull/98)]

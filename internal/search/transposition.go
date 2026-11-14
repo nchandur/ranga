@@ -139,13 +139,23 @@ func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int
 }
 
 // saves or updates entry in transposition table
+// saves or updates entry in transposition table
 func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, move board.Move) {
 
 	slot := tt.slot(key)
 
 	old := TranspositionTableEntry(slot.Load())
-	if old != 0 && old.Depth() > depth {
-		return
+
+	if old.matches(key) {
+		// do not overwrite deeper entries
+		if old.Depth() > depth {
+			return
+		}
+
+		// rescue existing tt move on a fail-low to preserve move ordering
+		if move == board.NOMOVE {
+			move = old.Move()
+		}
 	}
 
 	if score < -MATESCORE {
