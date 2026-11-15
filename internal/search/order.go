@@ -10,10 +10,11 @@ const (
 	ScoreKiller1    int = 600_000
 	ScoreKiller2    int = 590_000
 	ScoreUnderPromo int = -1_000_000
+	ScoreCounter    int = 580_000
 )
 
 // evaluates heuristic score to move to prioritize it during move ordering
-func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
+func (s *Searcher) scoreMove(b *board.Board, move, ttMove, counter board.Move) int {
 
 	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
 		s.PV.ScorePV = false
@@ -60,6 +61,8 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 			return ScoreKiller1
 		} else if s.stack[b.Ply].killers[1] == move {
 			return ScoreKiller2
+		} else if move == counter {
+			return ScoreCounter
 		} else {
 			return s.History[b.Mailbox[move.Source()]][move.Target()]
 		}
@@ -71,8 +74,10 @@ func (s *Searcher) sortMove(b *board.Board, ml *board.MoveList, ttMove board.Mov
 	var scoreBuf [256]int
 	score := scoreBuf[:ml.Count]
 
+	counter := s.counterMove(b.Ply) // once per node
+
 	for i := 0; i < ml.Count; i++ {
-		score[i] = s.scoreMove(b, ml.Moves[i], ttMove)
+		score[i] = s.scoreMove(b, ml.Moves[i], ttMove, counter)
 	}
 
 	for i := 1; i < ml.Count; i++ {
