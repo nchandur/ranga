@@ -424,6 +424,11 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			if !improving {
 				r++
 			}
+
+			// countermove is a likely refutation
+			if move == s.counterMove(b.Ply-1) {
+				r--
+			}
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, max(depth-1-r, 0))
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
