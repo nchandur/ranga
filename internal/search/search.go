@@ -91,12 +91,6 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	pvNode := beta-alpha > 1
 
-	// transposition table lookup
-	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
-		b.Ply != 0 && score != NOENTRY && !pvNode {
-		return score
-	}
-
 	var inCheck bool
 
 	// check if current side king is in check
@@ -110,6 +104,12 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// increase depth by 1 if in check
 	if inCheck {
 		depth++
+	}
+
+	// transposition table lookup
+	if score, ok := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); ok && !isSingularSearch &&
+		b.Ply != 0 && !pvNode {
+		return score
 	}
 
 	// drop into quiescence search at leaf nodes
@@ -162,7 +162,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 	s.sortMove(b, ml, ttMove)
 
-	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch)
+	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch, inCheck)
 
 	flag := FALPHA
 	score := 0
@@ -433,6 +433,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	if depth < 3 ||
 		inCheck ||
 		b.Ply == 0 ||
+		s.stack[b.Ply-1].nullMove || // no two nulls in a row
 		beta >= MATESCORE-MAX_PLY ||
 		staticeval < beta ||
 		!hasNonPawnMaterial(b) { // zugzwang check
@@ -450,7 +451,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	}
 
 	b.EnPassant = board.NoSquare
-
+	s.stack[b.Ply].nullMove = true
 	b.Ply++
 
 	// adaptive depth reduction
@@ -462,6 +463,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 
 	nullScore := -s.AlphaBeta(b, -beta, -beta+1, reducedDepth)
 	b.Ply--
+	s.stack[b.Ply].nullMove = false
 
 	b.Restore(&state)
 
@@ -509,7 +511,7 @@ func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, 
 }
 
 // helper function for singular search extension
-func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch bool) int {
+func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch, inCheck bool) int {
 
 	var singularExt int
 
@@ -528,6 +530,10 @@ func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth i
 
 			singularBeta := ttScore - SINGULAR_MARGIN_MULT*depth
 			singularDepth := (depth - 1) / 2
+
+			if inCheck {
+				singularDepth--
+			}
 
 			// the pv-following flag must not leak into verification search
 			followPv := s.PV.FollowPv

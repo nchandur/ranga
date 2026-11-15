@@ -13,10 +13,14 @@ func (s *Searcher) updateHistory(b *board.Board, move board.Move, bonus int) {
 // update killer move heuristic
 func (s *Searcher) updateKiller(ply int, m board.Move) {
 	n := &s.stack[ply]
+
+	if n.killers[0] == m {
+		return
+	}
+
 	n.killers[1] = n.killers[0]
 	n.killers[0] = m
 }
-
 
 // returns true for side with non-pawn material
 func hasNonPawnMaterial(b *board.Board) bool {
@@ -57,4 +61,10 @@ func abs(n int) int {
 	}
 
 	return n
+}
+
+// reports whether move promotes to queen for side to move
+func isQueenPromotion(b *board.Board, move board.Move) bool {
+	p := move.Promoted(b.Side)
+	return p == board.WQ || p == board.BQ
 }

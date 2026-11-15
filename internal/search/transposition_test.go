@@ -32,19 +32,29 @@ func TestTranspositionTable(t *testing.T) {
 
 		tt.Store(150, 4, 2, FEXACT, key, sampleMove)
 
-		score := tt.Probe(-1000, 1000, 2, 4, key)
-		if score != 150 {
-			t.Errorf("Probe score = %d; want 150", score)
+		score, ok := tt.Probe(-1000, 1000, 2, 4, key)
+		if !ok || score != 150 {
+			t.Errorf("Probe = (%d, %v); want (150, true)", score, ok)
 		}
 
-		missScore := tt.Probe(-1000, 1000, 2, 5, key)
-		if missScore != NOENTRY {
-			t.Errorf("expected NOENTRY on deeper probe, got %d", missScore)
+		if _, ok := tt.Probe(-1000, 1000, 2, 5, key); ok {
+			t.Error("expected miss on deeper probe")
 		}
 
-		missKey := tt.Probe(-1000, 1000, 2, 4, key^0xFF)
-		if missKey != NOENTRY {
-			t.Errorf("expected NOENTRY on key miss, got %d", missKey)
+		if _, ok := tt.Probe(-1000, 1000, 2, 4, key^0xFF); ok {
+			t.Error("expected miss on key mismatch")
+		}
+	})
+	t.Run("Probe hit is independent of the score value", func(t *testing.T) {
+		tt := NewTranspositionTable(1)
+		key := uint64(0x0123ABCD4567EF89)
+
+		// 99999 was the old NOENTRY sentinel; it must now be a normal hit
+		tt.Store(99999, 4, 0, FEXACT, key, sampleMove)
+
+		got, ok := tt.Probe(-INFINITY, INFINITY, 0, 4, key)
+		if !ok || got != 99999 {
+			t.Errorf("Probe = (%d, %v); want (99999, true)", got, ok)
 		}
 	})
 	t.Run("Probe alpha and beta cutoffs", func(t *testing.T) {
@@ -54,20 +64,20 @@ func TestTranspositionTable(t *testing.T) {
 
 		tt.Store(50, 3, 0, FALPHA, keyAlpha, sampleMove)
 
-		if got := tt.Probe(100, 200, 0, 3, keyAlpha); got != 100 {
-			t.Errorf("FALPHA cutoff expected 100, got %d", got)
+		if got, ok := tt.Probe(100, 200, 0, 3, keyAlpha); !ok || got != 100 {
+			t.Errorf("FALPHA cutoff = (%d, %v); want (100, true)", got, ok)
 		}
-		if got := tt.Probe(20, 200, 0, 3, keyAlpha); got != NOENTRY {
-			t.Errorf("FALPHA expected NOENTRY when score > alpha, got %d", got)
+		if _, ok := tt.Probe(20, 200, 0, 3, keyAlpha); ok {
+			t.Error("FALPHA expected miss when score > alpha")
 		}
 
 		tt.Store(250, 3, 0, FBETA, keyBeta, sampleMove)
 
-		if got := tt.Probe(100, 200, 0, 3, keyBeta); got != 200 {
-			t.Errorf("FBETA cutoff expected 200, got %d", got)
+		if got, ok := tt.Probe(100, 200, 0, 3, keyBeta); !ok || got != 200 {
+			t.Errorf("FBETA cutoff = (%d, %v); want (200, true)", got, ok)
 		}
-		if got := tt.Probe(100, 300, 0, 3, keyBeta); got != NOENTRY {
-			t.Errorf("FBETA expected NOENTRY when score < beta, got %d", got)
+		if _, ok := tt.Probe(100, 300, 0, 3, keyBeta); ok {
+			t.Error("FBETA expected miss when score < beta")
 		}
 	})
 	t.Run("Replacement strategy favors deeper entries", func(t *testing.T) {
@@ -105,10 +115,10 @@ func TestTranspositionTable(t *testing.T) {
 		}
 
 		probePly := 1
-		gotScore := tt.Probe(-INFINITY, INFINITY, probePly, 4, key)
+		gotScore, ok := tt.Probe(-INFINITY, INFINITY, probePly, 4, key)
 		wantScore := (rawMate + storePly) - probePly
-		if gotScore != wantScore {
-			t.Errorf("Normalized probed mate score = %d; want %d", gotScore, wantScore)
+		if !ok || gotScore != wantScore {
+			t.Errorf("Normalized probed mate score = (%d, %v); want (%d, true)", gotScore, ok, wantScore)
 		}
 	})
 	t.Run("ProbeMove and Clear", func(t *testing.T) {
@@ -129,8 +139,8 @@ func TestTranspositionTable(t *testing.T) {
 		if move := tt.ProbeMove(key); move != board.NOMOVE {
 			t.Errorf("expected NOMOVE after Clear, got %v", move)
 		}
-		if score := tt.Probe(-1000, 1000, 0, 1, key); score != NOENTRY {
-			t.Errorf("expected NOENTRY after Clear, got %d", score)
+		if _, ok := tt.Probe(-1000, 1000, 0, 1, key); ok {
+			t.Error("expected miss after Clear")
 		}
 	})
 	t.Run("Resize allocates new capacity", func(t *testing.T) {
@@ -149,9 +159,8 @@ func TestTranspositionTable(t *testing.T) {
 		}
 
 		key := uint64(0x123456789ABCDEF0)
-		missScore := tt.Probe(-1000, 1000, 2, 4, key)
-		if missScore != NOENTRY {
-			t.Errorf("expected NOENTRY on probe after resize, got %d", missScore)
+		if _, ok := tt.Probe(-1000, 1000, 2, 4, key); ok {
+			t.Error("expected miss on probe after resize")
 		}
 	})
 	t.Run("Negative mate score normalization across plies", func(t *testing.T) {
@@ -168,10 +177,10 @@ func TestTranspositionTable(t *testing.T) {
 		}
 
 		probePly := 1
-		gotScore := tt.Probe(-INFINITY, INFINITY, probePly, 4, key)
+		gotScore, ok := tt.Probe(-INFINITY, INFINITY, probePly, 4, key)
 		wantScore := (rawMated - storePly) + probePly
-		if gotScore != wantScore {
-			t.Errorf("Normalized probed mated score = %d; want %d", gotScore, wantScore)
+		if !ok || gotScore != wantScore {
+			t.Errorf("Normalized probed mated score = (%d, %v); want (%d, true)", gotScore, ok, wantScore)
 		}
 	})
 	t.Run("Packed entry round-trips every field", func(t *testing.T) {
