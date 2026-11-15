@@ -88,7 +88,7 @@ func TestMoveOrdering(t *testing.T) {
 			t.Errorf("quiet underpromotion = %d; want %d", got, ScoreUnderPromo)
 		}
 
-		wantCapQ := MVVLVA[board.WP][board.BR] + ScoreQueenPromo
+		wantCapQ := MVVLVA[board.WP][board.BR] + ScoreCapture + ScoreQueenPromo
 		if got := s.scoreMove(&b, capQ, board.NOMOVE); got != wantCapQ {
 			t.Errorf("queen capture-promotion = %d; want %d", got, wantCapQ)
 		}
@@ -113,7 +113,7 @@ func TestMoveOrdering(t *testing.T) {
 		switch {
 		case ScoreTT <= ScorePV:
 			t.Error("TT tier must sit above the PV tier")
-		case ScorePV <= ScoreQueenPromo+maxMVV:
+		case ScorePV <= ScoreCapture+ScoreQueenPromo+maxMVV:
 			t.Error("queen capture-promotions can reach the PV tier")
 		case ScoreQueenPromo <= ScoreCapture+maxMVV:
 			t.Error("plain captures can reach the queen-promotion tier")
