@@ -14,6 +14,7 @@ type Searcher struct {
 	PV                 PVTable             // stores and tracks the pv line found during search
 	TT                 *TranspositionTable // caches position evaluations and cutoffs
 	History            [12][64]int         // maintains history heuristic scores [piece][targetSq]
+	CounterMoves       [12][64]board.Move  // [prevPiece][prevTarget] -> refutation
 	Nodes              int                 // nodes visited that search
 	SoftNodeLimit      int
 	HardNodeLimit      int          // max number of nodes to visit
@@ -48,6 +49,12 @@ func (s *Searcher) Reset() {
 	s.PV.Clear()
 	s.stack.reset()
 	s.History = [12][64]int{}
+
+	for p := range s.CounterMoves {
+		for sq := range s.CounterMoves[p] {
+			s.CounterMoves[p][sq] = board.NOMOVE
+		}
+	}
 }
 
 // clears everything, including transposition table
@@ -192,6 +199,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			nnState = s.NN.Preserve()
 		}
 
+		s.stack[b.Ply].currMove = move
+		s.stack[b.Ply].currPiece = b.Mailbox[move.Source()]
+
 		b.Ply++
 
 		if !b.MakeMove(move, false) {
@@ -240,6 +250,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			// record killer moves
 			if !move.IsCapture() {
 				s.updateKiller(b.Ply, move)
+				s.updateCounter(b.Ply, move)
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)
@@ -326,6 +337,9 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				nnState = s.NN.Preserve()
 			}
 
+			s.stack[b.Ply].currMove = move
+			s.stack[b.Ply].currPiece = b.Mailbox[move.Source()]
+
 			b.Ply++
 			if !b.MakeMove(move, false) {
 				b.Ply--
@@ -410,6 +424,11 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			if !improving {
 				r++
 			}
+
+			// countermove is a likely refutation
+			if move == s.counterMove(b.Ply-1) {
+				r--
+			}
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, max(depth-1-r, 0))
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
@@ -452,6 +471,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 
 	b.EnPassant = board.NoSquare
 	s.stack[b.Ply].nullMove = true
+	s.stack[b.Ply].currMove = board.NOMOVE
 	b.Ply++
 
 	// adaptive depth reduction

@@ -68,3 +68,26 @@ func isQueenPromotion(b *board.Board, move board.Move) bool {
 	p := move.Promoted(b.Side)
 	return p == board.WQ || p == board.BQ
 }
+
+// returns the stored refutation of the previous move, or NOMOVE
+func (s *Searcher) counterMove(ply int) board.Move {
+	if ply == 0 {
+		return board.NOMOVE
+	}
+	prev := &s.stack[ply-1]
+	if prev.currMove == board.NOMOVE {
+		return board.NOMOVE
+	}
+	return s.CounterMoves[prev.currPiece][prev.currMove.Target()]
+}
+
+func (s *Searcher) updateCounter(ply int, m board.Move) {
+	if ply == 0 {
+		return
+	}
+	prev := &s.stack[ply-1]
+	if prev.currMove == board.NOMOVE {
+		return
+	}
+	s.CounterMoves[prev.currPiece][prev.currMove.Target()] = m
+}

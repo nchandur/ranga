@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 * feat(evaluate): increased input buckets to 4 [[#103](https://github.com/nchandur/ranga/pull/103)] 
 * feat(uci): add `genfens` command to uci [[#105](https://github.com/nchandur/ranga/pull/105)]
+* feat(search): add countermove heuristic [[#114](https://github.com/nchandur/ranga/pull/114)]
 
 ### Fixed
 * fix(search): SEE prune also checks evasions [[#108](https://github.com/nchandur/ranga/pull/108)]
