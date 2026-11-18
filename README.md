@@ -13,7 +13,7 @@
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/) `1.27.3` or above *(or Docker, if you would rather skip a local install)*
+- [Go](https://go.dev/dl/) `1.27.4` or above *(or Docker, if you would rather skip a local install)*
 - `make`
 
 ### Local build
