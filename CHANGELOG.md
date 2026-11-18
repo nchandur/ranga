@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.23] - *TBD*
+
 ## [v1.22] - 2026-11-18
 
 ### Added
