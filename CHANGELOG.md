@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.22] - *TBD*
+## [v1.22] - 2026-11-18
 
 ### Added
 * feat(evaluate): increased input buckets to 4 [[#103](https://github.com/nchandur/ranga/pull/103)] 
