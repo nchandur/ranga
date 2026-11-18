@@ -15,8 +15,6 @@ const (
 
 )
 
-const NOENTRY int = 99999 // indicate cache miss or uninitialized entry
-
 // A TT entry is packed into one uint64:
 //
 //	bits  0-15  move                      (16 bits, board.Move as is)
@@ -101,8 +99,7 @@ func (tt *TranspositionTable) Clear() {
 }
 
 // checks transposition table for previously evaluated position
-func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int {
-
+func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) (int, bool) {
 	entry := TranspositionTableEntry(tt.slot(key).Load())
 
 	if entry.matches(key) {
@@ -121,31 +118,41 @@ func (tt *TranspositionTable) Probe(alpha, beta, ply, depth int, key uint64) int
 			flag := entry.Flag()
 
 			if flag == FEXACT {
-				return score
+				return score, true
 			}
 
 			if (flag == FALPHA) && (score <= alpha) {
-				return alpha
+				return alpha, true
 			}
 
 			if (flag == FBETA) && (score >= beta) {
-				return beta
+				return beta, true
 			}
 
 		}
 	}
 
-	return NOENTRY
+	return 0, false
 }
 
+// saves or updates entry in transposition table
 // saves or updates entry in transposition table
 func (tt *TranspositionTable) Store(score, depth, ply, flag int, key uint64, move board.Move) {
 
 	slot := tt.slot(key)
 
 	old := TranspositionTableEntry(slot.Load())
-	if old != 0 && old.Depth() > depth {
-		return
+
+	if old.matches(key) {
+		// do not overwrite deeper entries
+		if old.Depth() > depth {
+			return
+		}
+
+		// rescue existing tt move on a fail-low to preserve move ordering
+		if move == board.NOMOVE {
+			move = old.Move()
+		}
 	}
 
 	if score < -MATESCORE {

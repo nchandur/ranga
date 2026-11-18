@@ -24,17 +24,16 @@ func (p *PVTable) Clear() {
 
 // flags pv move at given search depth to be prioritized for move ordering
 func (p *PVTable) enablePVScoring(ml *board.MoveList, ply int) {
-
-	p.FollowPv = false
 	p.ScorePV = false
 
-	for count := range ml.Count {
-		if p.Table[0][ply] == ml.Moves[count] {
-			p.ScorePV = true
-			p.FollowPv = true
+	if ply < p.Length[0] {
+		for count := range ml.Count {
+			if p.Table[0][ply] == ml.Moves[count] {
+				p.ScorePV = true
+				return
+			}
 		}
 	}
-
 }
 
 // update line in pv at given ply

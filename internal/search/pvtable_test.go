@@ -66,6 +66,7 @@ func TestPVTable(t *testing.T) {
 	t.Run("enablePVScoring sets flags when pv move matches MoveList", func(t *testing.T) {
 		var pv PVTable
 		pv.Table[0][0] = m1
+		pv.Length[0] = 1
 
 		var ml board.MoveList
 		ml.AddMove(m2)
@@ -73,27 +74,25 @@ func TestPVTable(t *testing.T) {
 
 		pv.enablePVScoring(&ml, 0)
 
-		if !pv.ScorePV || !pv.FollowPv {
-			t.Errorf("expected ScorePV and FollowPv to be true, got ScorePV=%v, FollowPv=%v",
-				pv.ScorePV, pv.FollowPv)
+		if !pv.ScorePV {
+			t.Errorf("expected ScorePV to be true, got ScorePV=%v", pv.ScorePV)
 		}
 	})
 	t.Run("enablePVScoring remains false when pv move is absent", func(t *testing.T) {
 		var pv PVTable
 		pv.Table[0][0] = m1
+		pv.Length[0] = 1
 
 		var ml board.MoveList
 		ml.AddMove(m2)
 		ml.AddMove(m3)
 
-		pv.FollowPv = true
 		pv.ScorePV = true
 
 		pv.enablePVScoring(&ml, 0)
 
-		if pv.ScorePV || pv.FollowPv {
-			t.Errorf("expected ScorePV and FollowPv to be false, got ScorePV=%v, FollowPv=%v",
-				pv.ScorePV, pv.FollowPv)
+		if pv.ScorePV {
+			t.Errorf("expected ScorePV to be false, got ScorePV=%v", pv.ScorePV)
 		}
 	})
 	t.Run("String formats root variation properly", func(t *testing.T) {

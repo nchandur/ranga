@@ -7,6 +7,9 @@ type Node struct {
 	staticEval int           // static eval at this ply
 	killers    [2]board.Move // holds killer moves
 	excluded   board.Move    // move to skip at each ply
+	nullMove   bool          // true when null move is being searched
+	currMove   board.Move    // move played FROM this ply (NOMOVE for null move)
+	currPiece  board.Piece   // piece that made it, read before MakeMove
 }
 
 type NodeStack [MAX_PLY + 8]Node
@@ -17,12 +20,8 @@ func (ns *NodeStack) reset() {
 			staticEval: -INFINITY,
 			killers:    [2]board.Move{board.NOMOVE, board.NOMOVE},
 			excluded:   board.NOMOVE,
+			currMove:   board.NOMOVE,
+			currPiece:  board.Empty,
 		}
 	}
-}
-
-func (s *Searcher) pushKiller(ply int, m board.Move) {
-	n := &s.stack[ply]
-	n.killers[1] = n.killers[0]
-	n.killers[0] = m
 }

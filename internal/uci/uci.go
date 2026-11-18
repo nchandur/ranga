@@ -45,6 +45,9 @@ func NewEngine(in io.Reader, out io.Writer, version string) *Engine {
 	}
 
 	e.board = board.NewBoard()
+	if err := e.board.ParseFEN(board.START); err != nil {
+		log.Fatalf("loading start position: %v", err)
+	}
 
 	net, err := nnue.LoadEmbedded()
 
@@ -131,6 +134,8 @@ func (e *Engine) registerCommands() {
 	e.commands["eval"] = func([]string) {
 		e.handleEvaluate()
 	}
+
+	e.commands["genfens"] = e.handleGenFENs
 
 	e.commands["stop"] = func([]string) {
 		e.handleStop()

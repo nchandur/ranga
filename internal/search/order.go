@@ -2,16 +2,30 @@ package search
 
 import "ranga/internal/board"
 
-// evaluates heuristic score to move to prioritize it during move ordering
-func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
+const (
+	ScoreTT         int = 2_000_000
+	ScorePV         int = 1_900_000
+	ScoreQueenPromo int = 1_000_000
+	ScoreCapture    int = 800_000
+	ScoreKiller1    int = 600_000
+	ScoreKiller2    int = 590_000
+	ScoreUnderPromo int = -1_000_000
+	ScoreCounter    int = 580_000
+)
 
-	if move == ttMove {
-		return 30000
-	}
+// evaluates heuristic score to move to prioritize it during move ordering
+func (s *Searcher) scoreMove(b *board.Board, move, ttMove, counter board.Move) int {
 
 	if s.PV.ScorePV && move == s.PV.Table[0][b.Ply] {
 		s.PV.ScorePV = false
-		return 20000
+		if move == ttMove {
+			return ScoreTT
+		}
+		return ScorePV
+	}
+
+	if move == ttMove {
+		return ScoreTT
 	}
 
 	if move.IsCapture() {
@@ -26,23 +40,33 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove board.Move) int {
 			captured = b.Mailbox[move.Target()]
 		}
 
-		return MVVLVA[b.Mailbox[move.Source()]][captured] + 10000
+		score := MVVLVA[b.Mailbox[move.Source()]][captured] + ScoreCapture
+
+		// capturing into queen promotion is almost always the best capture
+		if move.IsPromotion() && isQueenPromotion(b, move) {
+			score += ScoreQueenPromo
+		}
+
+		return score
+
 	} else {
 
 		if move.IsPromotion() {
-			return 9500
+			if isQueenPromotion(b, move) {
+				return ScoreQueenPromo
+			}
+			return ScoreUnderPromo
 		}
-
 		if s.stack[b.Ply].killers[0] == move {
-			return 9000
+			return ScoreKiller1
 		} else if s.stack[b.Ply].killers[1] == move {
-			return 8000
+			return ScoreKiller2
+		} else if move == counter {
+			return ScoreCounter
 		} else {
 			return s.History[b.Mailbox[move.Source()]][move.Target()]
 		}
-
 	}
-
 }
 
 // orders the legal moves in given move list
@@ -50,8 +74,10 @@ func (s *Searcher) sortMove(b *board.Board, ml *board.MoveList, ttMove board.Mov
 	var scoreBuf [256]int
 	score := scoreBuf[:ml.Count]
 
+	counter := s.counterMove(b.Ply) // once per node
+
 	for i := 0; i < ml.Count; i++ {
-		score[i] = s.scoreMove(b, ml.Moves[i], ttMove)
+		score[i] = s.scoreMove(b, ml.Moves[i], ttMove, counter)
 	}
 
 	for i := 1; i < ml.Count; i++ {

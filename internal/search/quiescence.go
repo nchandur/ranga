@@ -74,7 +74,8 @@ func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
 
 	for count := range ml.Count {
 
-		if s.SeeCapture(b, ml.Moves[count]) < 0 {
+		// when in check every legal move must be searched
+		if !inCheck && s.SeeCapture(b, ml.Moves[count]) < 0 {
 			continue
 		}
 

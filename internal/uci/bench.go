@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const benchDepth = 8
+const benchDepth = 10
 
 var benchFENs = []string{
 	"r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq a6 0 14",
@@ -70,9 +70,9 @@ func Bench(e *Engine, out io.Writer) {
 
 	for _, fen := range benchFENs {
 		b.Clear()
+		e.searcher.NewGame()
 		b.ParseFEN(fen)
-		e.searcher.TT.Clear()
-		e.searcher.Reset()
+
 		if e.searcher.NN != nil {
 			e.searcher.NN.Reset(&b)
 		}

@@ -19,40 +19,40 @@ func TestMoveOrdering(t *testing.T) {
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
 		b.Ply = 0
 
-		if score := s.scoreMove(&b, mTT, mTT); score != 30000 {
-			t.Errorf("TT move score = %d; want 30000", score)
+		if score := s.scoreMove(&b, mTT, mTT, board.NOMOVE); score != ScoreTT {
+			t.Errorf("TT move score = %d; want %d", score, ScoreTT)
 		}
 
 		s.PV.ScorePV = true
 		s.PV.Table[0][b.Ply] = mPV
-		if score := s.scoreMove(&b, mPV, board.NOMOVE); score != 20000 {
-			t.Errorf("PV move score = %d; want 20000", score)
+		if score := s.scoreMove(&b, mPV, board.NOMOVE, board.NOMOVE); score != ScorePV {
+			t.Errorf("PV move score = %d; want %d", score, ScorePV)
 		}
 		if s.PV.ScorePV {
 			t.Errorf("ScorePV was not reset to false after scoring PV move")
 		}
 
 		mCapture := board.NewMove(board.E4, board.D5, board.MoveCapture)
-		expectedCapScore := MVVLVA[board.WP][board.BP] + 10000
-		if score := s.scoreMove(&b, mCapture, board.NOMOVE); score != expectedCapScore {
+		expectedCapScore := MVVLVA[board.WP][board.BP] + ScoreCapture
+		if score := s.scoreMove(&b, mCapture, board.NOMOVE, board.NOMOVE); score != expectedCapScore {
 			t.Errorf("Capture score = %d; want %d", score, expectedCapScore)
 		}
 
-		if score := s.scoreMove(&b, mPromoQ, board.NOMOVE); score != 9500 {
-			t.Errorf("Queen promo score = %d; want 9500", score)
+		if score := s.scoreMove(&b, mPromoQ, board.NOMOVE, board.NOMOVE); score != ScoreQueenPromo {
+			t.Errorf("Queen promo score = %d; want %d", score, ScoreQueenPromo)
 		}
 
 		s.stack[b.Ply].killers[0] = mKiller1
 		s.stack[b.Ply].killers[1] = mKiller2
-		if score := s.scoreMove(&b, mKiller1, board.NOMOVE); score != 9000 {
-			t.Errorf("Killer 1 score = %d; want 9000", score)
+		if score := s.scoreMove(&b, mKiller1, board.NOMOVE, board.NOMOVE); score != ScoreKiller1 {
+			t.Errorf("Killer 1 score = %d; want %d", score, ScoreKiller1)
 		}
-		if score := s.scoreMove(&b, mKiller2, board.NOMOVE); score != 8000 {
-			t.Errorf("Killer 2 score = %d; want 8000", score)
+		if score := s.scoreMove(&b, mKiller2, board.NOMOVE, board.NOMOVE); score != ScoreKiller2 {
+			t.Errorf("Killer 2 score = %d; want %d", score, ScoreKiller2)
 		}
 
 		s.History[board.WP][board.A3] = 450
-		if score := s.scoreMove(&b, mHistory, board.NOMOVE); score != 450 {
+		if score := s.scoreMove(&b, mHistory, board.NOMOVE, board.NOMOVE); score != 450 {
 			t.Errorf("History score = %d; want 450", score)
 		}
 	})
@@ -62,11 +62,133 @@ func TestMoveOrdering(t *testing.T) {
 		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2")
 
 		mEP := board.NewMove(board.E5, board.D6, board.MoveEnPass)
-		score := s.scoreMove(&b, mEP, board.NOMOVE)
+		score := s.scoreMove(&b, mEP, board.NOMOVE, board.NOMOVE)
 
-		wantScore := MVVLVA[board.WP][board.BP] + 10000
+		wantScore := MVVLVA[board.WP][board.BP] + ScoreCapture
 		if score != wantScore {
 			t.Errorf("En passant capture score = %d; want %d", score, wantScore)
+		}
+	})
+	t.Run("scoreMove ranks promotions by piece", func(t *testing.T) {
+		s := &Searcher{}
+		b := board.NewBoard()
+		// white pawn on b7 can push to b8 or capture the rook on a8
+		b.ParseFEN("r3k3/1P6/8/8/8/8/8/4K3 w - - 0 1")
+		b.Ply = 0
+
+		quietQ := board.NewMove(board.B7, board.B8, board.MovePromoQ)
+		quietN := board.NewMove(board.B7, board.B8, board.MovePromoN)
+		capQ := board.NewMove(board.B7, board.A8, board.MovePromoCaptureQ)
+
+		if got := s.scoreMove(&b, quietQ, board.NOMOVE, board.NOMOVE); got != ScoreQueenPromo {
+			t.Errorf("quiet queen promotion = %d; want %d", got, ScoreQueenPromo)
+		}
+
+		if got := s.scoreMove(&b, quietN, board.NOMOVE, board.NOMOVE); got != ScoreUnderPromo {
+			t.Errorf("quiet underpromotion = %d; want %d", got, ScoreUnderPromo)
+		}
+
+		wantCapQ := MVVLVA[board.WP][board.BR] + ScoreCapture + ScoreQueenPromo
+		if got := s.scoreMove(&b, capQ, board.NOMOVE, board.NOMOVE); got != wantCapQ {
+			t.Errorf("queen capture-promotion = %d; want %d", got, wantCapQ)
+		}
+
+		plainCapture := MVVLVA[board.WP][board.BR] + ScoreCapture
+		if wantCapQ <= plainCapture {
+			t.Errorf("queen capture-promotion (%d) should outrank a plain capture of the same piece (%d)", wantCapQ, plainCapture)
+		}
+		if wantCapQ <= ScoreQueenPromo {
+			t.Errorf("queen capture-promotion (%d) should outrank a quiet queen promotion (%d)", wantCapQ, ScoreQueenPromo)
+		}
+	})
+	t.Run("score tiers do not overlap", func(t *testing.T) {
+		maxMVV, minMVV := MVVLVA[0][0], MVVLVA[0][0]
+		for _, row := range MVVLVA {
+			for _, v := range row {
+				maxMVV = max(maxMVV, v)
+				minMVV = min(minMVV, v)
+			}
+		}
+
+		switch {
+		case ScoreTT <= ScorePV:
+			t.Error("TT tier must sit above the PV tier")
+		case ScorePV <= ScoreCapture+ScoreQueenPromo+maxMVV:
+			t.Error("queen capture-promotions can reach the PV tier")
+		case ScoreQueenPromo <= ScoreCapture+maxMVV:
+			t.Error("plain captures can reach the queen-promotion tier")
+		case ScoreCapture+minMVV <= ScoreKiller1:
+			t.Error("captures can fall into the killer tier")
+		case ScoreKiller1 <= ScoreKiller2:
+			t.Error("killer 1 must outrank killer 2")
+		case ScoreKiller2 <= ScoreCounter:
+			t.Error("killer 2 must outrank the countermove")
+		case ScoreCounter <= MAX_HISTORY:
+			t.Error("history scores can reach the countermove tier")
+		case ScoreKiller2 <= MAX_HISTORY:
+			t.Error("history scores can reach the killer tier")
+		case -MAX_HISTORY <= ScoreUnderPromo:
+			t.Error("history scores can fall to the underpromotion tier")
+		}
+	})
+	t.Run("scoreMove ranks countermove between killers and history", func(t *testing.T) {
+		s := &Searcher{}
+		b := board.NewBoard()
+		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
+		b.Ply = 0
+
+		mCounter := board.NewMove(board.H2, board.H3, board.MoveQuiet)
+		s.History[board.WP][board.H3] = 450
+
+		if got := s.scoreMove(&b, mCounter, board.NOMOVE, mCounter); got != ScoreCounter {
+			t.Errorf("countermove score = %d; want %d", got, ScoreCounter)
+		}
+
+		if got := s.scoreMove(&b, mCounter, board.NOMOVE, board.NOMOVE); got != 450 {
+			t.Errorf("non-countermove score = %d; want 450", got)
+		}
+
+		// a killer that is also the countermove keeps the killer score
+		s.stack[b.Ply].killers[0] = mCounter
+		if got := s.scoreMove(&b, mCounter, board.NOMOVE, mCounter); got != ScoreKiller1 {
+			t.Errorf("killer+countermove score = %d; want %d", got, ScoreKiller1)
+		}
+
+		// captures ignore the countermove bonus
+		mCapture := board.NewMove(board.E4, board.D5, board.MoveCapture)
+		want := MVVLVA[board.WP][board.BP] + ScoreCapture
+		if got := s.scoreMove(&b, mCapture, board.NOMOVE, mCapture); got != want {
+			t.Errorf("capture score = %d; want %d", got, want)
+		}
+	})
+	t.Run("counterMove looks up the refutation of the previous move", func(t *testing.T) {
+		s := &Searcher{}
+		prev := board.NewMove(board.E7, board.E5, board.MoveQuiet)
+		reply := board.NewMove(board.G1, board.F3, board.MoveQuiet)
+
+		// root has no previous move
+		if got := s.counterMove(0); got != board.NOMOVE {
+			t.Errorf("counterMove(0) = %v; want NOMOVE", got)
+		}
+
+		// previous move was a null move
+		s.stack[0].currMove = board.NOMOVE
+		if got := s.counterMove(1); got != board.NOMOVE {
+			t.Errorf("counterMove after null move = %v; want NOMOVE", got)
+		}
+		s.updateCounter(1, reply) // must be a no-op
+		if s.CounterMoves != ([12][64]board.Move{}) {
+			t.Errorf("updateCounter modified the table after a null move")
+		}
+
+		s.stack[0].currMove = prev
+		s.stack[0].currPiece = board.BP
+		s.updateCounter(1, reply)
+		if got := s.counterMove(1); got != reply {
+			t.Errorf("counterMove(1) = %v; want %v", got, reply)
+		}
+		if got := s.CounterMoves[board.BP][board.E5]; got != reply {
+			t.Errorf("CounterMoves[BP][E5] = %v; want %v", got, reply)
 		}
 	})
 	t.Run("sortMove arranges moves in descending order of score", func(t *testing.T) {
@@ -89,6 +211,35 @@ func TestMoveOrdering(t *testing.T) {
 		s.sortMove(&b, &ml, mTT)
 
 		expected := []board.Move{mTT, mCapture, mKiller1, mHistory}
+		for i, want := range expected {
+			if ml.Moves[i] != want {
+				t.Errorf("Move at index %d = %v; want %v", i, ml.Moves[i], want)
+			}
+		}
+	})
+	t.Run("sortMove places countermove after killers and before history", func(t *testing.T) {
+		s := &Searcher{}
+		b := board.NewBoard()
+		b.ParseFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
+		b.Ply = 1
+
+		prev := board.NewMove(board.D7, board.D5, board.MoveQuiet)
+		mCounter := board.NewMove(board.H2, board.H3, board.MoveQuiet)
+
+		s.stack[0].currMove = prev
+		s.stack[0].currPiece = board.BP
+		s.CounterMoves[board.BP][board.D5] = mCounter
+		s.stack[b.Ply].killers[0] = mKiller1
+		s.History[board.WP][board.A3] = 120
+
+		var ml board.MoveList
+		ml.AddMove(mHistory)
+		ml.AddMove(mCounter)
+		ml.AddMove(mKiller1)
+
+		s.sortMove(&b, &ml, board.NOMOVE)
+
+		expected := []board.Move{mKiller1, mCounter, mHistory}
 		for i, want := range expected {
 			if ml.Moves[i] != want {
 				t.Errorf("Move at index %d = %v; want %v", i, ml.Moves[i], want)

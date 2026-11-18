@@ -103,4 +103,16 @@ func TestQuiescence(t *testing.T) {
 			t.Errorf("deltaPruning should not prune when in check")
 		}
 	})
+	t.Run("does not prune losing blocks when in check", func(t *testing.T) {
+		var stop atomic.Bool
+		s := NewSearcher(eval, tt, &stop)
+		b := board.NewBoard()
+		b.ParseFEN("k7/8/8/4R3/8/3n4/3B1PPP/r5K1 w - - 0 1")
+
+		score := s.Quiescence(&b, -INFINITY, INFINITY)
+
+		if score <= -MATESCORE {
+			t.Errorf("check evasion reported as checkmate: score %d", score)
+		}
+	})
 }

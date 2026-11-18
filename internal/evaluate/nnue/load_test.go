@@ -31,7 +31,7 @@ func generateMockNetworkBytes(t *testing.T) ([]byte, int16, int16, int16) {
 	firstWeight := int16(111)
 	lastWeight := int16(222)
 	writeI16(firstWeight)
-	for i := 1; i < 768*HiddenSize-1; i++ {
+	for i := 1; i < InputSize*HiddenSize-1; i++ {
 		writeI16(int16(i % 100))
 	}
 	writeI16(lastWeight)
@@ -88,6 +88,17 @@ func TestLoadNetwork(t *testing.T) {
 		}
 	})
 
+	t.Run("parseNetwork rejects a net with the wrong bucket count", func(t *testing.T) {
+		oneBucketBytes := FeaturesPerBucket * HiddenSize * 2
+
+		if _, err := parseNetwork(make([]byte, expectedNetworkBytes+oneBucketBytes)); err == nil {
+			t.Fatalf("expected error for oversized network data, got nil")
+		}
+		if _, err := parseNetwork(make([]byte, expectedNetworkBytes-oneBucketBytes)); err == nil {
+			t.Fatalf("expected error for undersized network data, got nil")
+		}
+	})
+
 	t.Run("parseNetwork deserializes weights and biases correctly", func(t *testing.T) {
 		data, wantFirstWeight, wantLastWeight, wantFirstBias := generateMockNetworkBytes(t)
 
@@ -99,8 +110,8 @@ func TestLoadNetwork(t *testing.T) {
 		if got := net.FeatureWeights[0].Values[0]; got != wantFirstWeight {
 			t.Errorf("FeatureWeights[0][0] = %d; want %d", got, wantFirstWeight)
 		}
-		if got := net.FeatureWeights[767].Values[HiddenSize-1]; got != wantLastWeight {
-			t.Errorf("FeatureWeights[767][last] = %d; want %d", got, wantLastWeight)
+		if got := net.FeatureWeights[InputSize-1].Values[HiddenSize-1]; got != wantLastWeight {
+			t.Errorf("FeatureWeights[%d][last] = %d; want %d", InputSize-1, got, wantLastWeight)
 		}
 		if got := net.FeatureBias.Values[0]; got != wantFirstBias {
 			t.Errorf("FeatureBias[0] = %d; want %d", got, wantFirstBias)

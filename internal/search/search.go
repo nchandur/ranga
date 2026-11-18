@@ -14,6 +14,7 @@ type Searcher struct {
 	PV                 PVTable             // stores and tracks the pv line found during search
 	TT                 *TranspositionTable // caches position evaluations and cutoffs
 	History            [12][64]int         // maintains history heuristic scores [piece][targetSq]
+	CounterMoves       [12][64]board.Move  // [prevPiece][prevTarget] -> refutation
 	Nodes              int                 // nodes visited that search
 	SoftNodeLimit      int
 	HardNodeLimit      int          // max number of nodes to visit
@@ -46,9 +47,20 @@ func NewSearcher(eval evaluate.Evaluator, tt *TranspositionTable, stop *atomic.B
 // clears searcher state
 func (s *Searcher) Reset() {
 	s.PV.Clear()
-	s.TT.Clear()
 	s.stack.reset()
 	s.History = [12][64]int{}
+
+	for p := range s.CounterMoves {
+		for sq := range s.CounterMoves[p] {
+			s.CounterMoves[p][sq] = board.NOMOVE
+		}
+	}
+}
+
+// clears everything, including transposition table
+func (s *Searcher) NewGame() {
+	s.Reset()
+	s.TT.Clear()
 }
 
 // executes main alpha-beta minimax search tree traversal
@@ -84,11 +96,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	excludedMove := s.stack[b.Ply].excluded
 	isSingularSearch := excludedMove != board.NOMOVE
 
-	// transposition table lookup
-	if score := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); !isSingularSearch &&
-		b.Ply != 0 && score != NOENTRY && !s.PV.FollowPv {
-		return score
-	}
+	pvNode := beta-alpha > 1
 
 	var inCheck bool
 
@@ -105,6 +113,12 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		depth++
 	}
 
+	// transposition table lookup
+	if score, ok := s.TT.Probe(alpha, beta, b.Ply, depth, b.Key); ok && !isSingularSearch &&
+		b.Ply != 0 && !pvNode {
+		return score
+	}
+
 	// drop into quiescence search at leaf nodes
 	if depth == 0 {
 		return s.Quiescence(b, alpha, beta)
@@ -117,8 +131,6 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	} else {
 		s.stack[b.Ply].staticEval = staticEval
 	}
-
-	pvNode := beta-alpha > 1
 
 	// improving heuristic
 	improving := false
@@ -149,13 +161,15 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// look for move in transposition table
 	ttMove := s.TT.ProbeMove(b.Key)
 
+	followingPV := s.PV.FollowPv
+
 	if s.PV.FollowPv {
 		s.PV.enablePVScoring(ml, b.Ply)
 	}
 
 	s.sortMove(b, ml, ttMove)
 
-	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch)
+	singularExt := s.singularExtensions(b, ttMove, depth, isSingularSearch, inCheck)
 
 	flag := FALPHA
 	score := 0
@@ -185,6 +199,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			nnState = s.NN.Preserve()
 		}
 
+		s.stack[b.Ply].currMove = move
+		s.stack[b.Ply].currPiece = b.Mailbox[move.Source()]
+
 		b.Ply++
 
 		if !b.MakeMove(move, false) {
@@ -203,6 +220,9 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		if move == ttMove {
 			ext = singularExt
 		}
+
+		// only follow PV if this specific move is PV move
+		s.PV.FollowPv = followingPV && (b.Ply-1) < s.PV.Length[0] && move == s.PV.Table[0][b.Ply-1]
 
 		// late move reduction
 		score = s.lateMoveReduction(b, move, alpha, beta, depth+ext, movesSearched, inCheck, improving)
@@ -230,6 +250,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 			// record killer moves
 			if !move.IsCapture() {
 				s.updateKiller(b.Ply, move)
+				s.updateCounter(b.Ply, move)
 
 				// record history heuristic
 				bonus := min(depth*depth, 1200)
@@ -306,6 +327,8 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		s.PV.enablePVScoring(ml, 0)
 		s.sortMove(b, ml, s.TT.ProbeMove(b.Key))
 
+		movesSearched := 0 // track legal moves specifically for PVS
+
 		for _, move := range ml.Moves[:ml.Count] {
 			state := b.Preserve()
 
@@ -313,6 +336,9 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 			if s.NN != nil {
 				nnState = s.NN.Preserve()
 			}
+
+			s.stack[b.Ply].currMove = move
+			s.stack[b.Ply].currPiece = b.Mailbox[move.Source()]
 
 			b.Ply++
 			if !b.MakeMove(move, false) {
@@ -325,8 +351,23 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 				s.NN.Update(&state, move)
 			}
 
-			s.PV.FollowPv = bestMove == board.NOMOVE // first legal move only
-			score := -s.AlphaBeta(b, -beta, -a, depth-1)
+			// only follow the PV if the move matches the previous iteration's PV
+			s.PV.FollowPv = s.PV.Length[0] > 0 && move == s.PV.Table[0][0]
+
+			var score int
+			if movesSearched == 0 {
+				// first legal move is searched with the full window
+				score = -s.AlphaBeta(b, -beta, -a, depth-1)
+			} else {
+				// subsequent moves are searched with a null window
+				score = -s.AlphaBeta(b, -a-1, -a, depth-1)
+
+				// if it fails high within the open window, re-search with full window
+				if !s.Stop.Load() && score > a && score < beta {
+					s.PV.FollowPv = true // re-enable PV following for the exact score search
+					score = -s.AlphaBeta(b, -beta, -a, depth-1)
+				}
+			}
 
 			b.Ply--
 			b.Restore(&state)
@@ -334,6 +375,8 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 			if s.NN != nil {
 				s.NN.Restore(nnState)
 			}
+
+			movesSearched++
 
 			if s.Stop.Load() {
 				return bestMove, bestScore
@@ -357,6 +400,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		case bestScore >= beta && beta < INFINITY: // fail high
 			beta = min(beta+delta, INFINITY)
 		default: // inside window, or already full width
+			s.TT.Store(bestScore, depth, 0, FEXACT, b.Key, bestMove)
 			return bestMove, bestScore
 		}
 
@@ -379,6 +423,11 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			r := 1
 			if !improving {
 				r++
+			}
+
+			// countermove is a likely refutation
+			if move == s.counterMove(b.Ply-1) {
+				r--
 			}
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, max(depth-1-r, 0))
 		} else {
@@ -403,13 +452,14 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	if depth < 3 ||
 		inCheck ||
 		b.Ply == 0 ||
+		s.stack[b.Ply-1].nullMove || // no two nulls in a row
 		beta >= MATESCORE-MAX_PLY ||
 		staticeval < beta ||
 		!hasNonPawnMaterial(b) { // zugzwang check
 		return 0, false
 	}
 
-	copy := b.Preserve()
+	state := b.Preserve()
 
 	b.Side ^= 1
 
@@ -420,7 +470,8 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	}
 
 	b.EnPassant = board.NoSquare
-
+	s.stack[b.Ply].nullMove = true
+	s.stack[b.Ply].currMove = board.NOMOVE
 	b.Ply++
 
 	// adaptive depth reduction
@@ -432,8 +483,9 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 
 	nullScore := -s.AlphaBeta(b, -beta, -beta+1, reducedDepth)
 	b.Ply--
+	s.stack[b.Ply].nullMove = false
 
-	b.Restore(&copy)
+	b.Restore(&state)
 
 	if s.Stop.Load() {
 		return 0, false
@@ -479,7 +531,7 @@ func (s *Searcher) reverseFutilityPruning(beta, depth, staticEval int, inCheck, 
 }
 
 // helper function for singular search extension
-func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch bool) int {
+func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth int, isSingularSearch, inCheck bool) int {
 
 	var singularExt int
 
@@ -498,6 +550,10 @@ func (s *Searcher) singularExtensions(b *board.Board, ttMove board.Move, depth i
 
 			singularBeta := ttScore - SINGULAR_MARGIN_MULT*depth
 			singularDepth := (depth - 1) / 2
+
+			if inCheck {
+				singularDepth--
+			}
 
 			// the pv-following flag must not leak into verification search
 			followPv := s.PV.FollowPv
