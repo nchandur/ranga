@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 * fix(search): SEE prune also checks evasions [[#108](https://github.com/nchandur/ranga/pull/108)]
 * fix(search): retain TT between moves [[#109](https://github.com/nchandur/ranga/pull/109)]
-* fix(search): implement root PVS and prevent ScorePV/FollowPv leakage [[#110](https://github.com/nchandur/ranga/pull/110)]
+* fix(search): implement root PVS and prevent leakage [[#110](https://github.com/nchandur/ranga/pull/110)]
 * fix(search): preserve TT moves on fail-low and restrict PV cutoffs [[#111](https://github.com/nchandur/ranga/pull/111)]
 * fix(search): correctness bugs in TT probing, extensions, null move and move ordering [[#112](https://github.com/nchandur/ranga/pull/112)]
 
