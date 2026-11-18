@@ -116,6 +116,8 @@ All notable changes to this project will be documented in this file.
 * fix(search): store checkmate/stalemate scores in transposition table [[#29](https://github.com/nchandur/ranga/pull/29)]
 
 ## [v1.7] - 2026-09-01
+
+### Added
 * feat(search): add late move reduction (LMR) with PVS re-search [[#26](https://github.com/nchandur/ranga/pull/26)]
 
 ## [v1.6] - 2026-08-27 
