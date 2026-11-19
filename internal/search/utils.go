@@ -4,10 +4,18 @@ import (
 	"ranga/internal/board"
 )
 
-// update history heuristic with gravity
+// update main + continuation history with gravity
 func (s *Searcher) updateHistory(b *board.Board, move board.Move, bonus int) {
+	piece, to := b.Mailbox[move.Source()], move.Target()
 	clamped := clamp(bonus, -MAX_HISTORY, MAX_HISTORY)
-	s.History[b.Mailbox[move.Source()]][move.Target()] += (clamped - s.History[b.Mailbox[move.Source()]][move.Target()]*abs(clamped)/MAX_HISTORY)
+
+	h := &s.History[piece][to]
+	*h += clamped - *h*abs(clamped)/MAX_HISTORY
+
+	if ch := s.contEntry(b.Ply, 1); ch != nil {
+		c := &ch[piece][to]
+		*c += int16(clamped - int(*c)*abs(clamped)/MAX_HISTORY)
+	}
 }
 
 // update killer move heuristic
@@ -90,4 +98,16 @@ func (s *Searcher) updateCounter(ply int, m board.Move) {
 		return
 	}
 	s.CounterMoves[prev.currPiece][prev.currMove.Target()] = m
+}
+
+// table slice keyed by the move played `offset` plies ago, nil if none (root or null move)
+func (s *Searcher) contEntry(ply, offset int) *[12][64]int16 {
+	if ply < offset {
+		return nil
+	}
+	n := &s.stack[ply-offset]
+	if n.currMove == board.NOMOVE {
+		return nil
+	}
+	return &s.ContHist[n.currPiece][n.currMove.Target()]
 }

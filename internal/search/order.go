@@ -64,7 +64,12 @@ func (s *Searcher) scoreMove(b *board.Board, move, ttMove, counter board.Move) i
 		} else if move == counter {
 			return ScoreCounter
 		} else {
-			return s.History[b.Mailbox[move.Source()]][move.Target()]
+			piece := b.Mailbox[move.Source()]
+			h := s.History[piece][move.Target()]
+			if ch := s.contEntry(b.Ply, 1); ch != nil {
+				h += int(ch[piece][move.Target()])
+			}
+			return h
 		}
 	}
 }

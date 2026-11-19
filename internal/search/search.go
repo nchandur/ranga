@@ -11,11 +11,12 @@ import (
 type Searcher struct {
 	evaluate.Evaluator // static evaluation to score positions at leaf nodes
 	NN                 *nnue.NNUE
-	PV                 PVTable             // stores and tracks the pv line found during search
-	TT                 *TranspositionTable // caches position evaluations and cutoffs
-	History            [12][64]int         // maintains history heuristic scores [piece][targetSq]
-	CounterMoves       [12][64]board.Move  // [prevPiece][prevTarget] -> refutation
-	Nodes              int                 // nodes visited that search
+	PV                 PVTable               // stores and tracks the pv line found during search
+	TT                 *TranspositionTable   // caches position evaluations and cutoffs
+	History            [12][64]int           // maintains history heuristic scores [piece][targetSq]
+	ContHist           [12][64][12][64]int16 // [prevPiece][prevTo][piece][to]
+	CounterMoves       [12][64]board.Move    // [prevPiece][prevTarget] -> refutation
+	Nodes              int                   // nodes visited that search
 	SoftNodeLimit      int
 	HardNodeLimit      int          // max number of nodes to visit
 	Stop               *atomic.Bool // shared stop flag across all threads
@@ -49,7 +50,7 @@ func (s *Searcher) Reset() {
 	s.PV.Clear()
 	s.stack.reset()
 	s.History = [12][64]int{}
-
+	s.ContHist = [12][64][12][64]int16{}
 	for p := range s.CounterMoves {
 		for sq := range s.CounterMoves[p] {
 			s.CounterMoves[p][sq] = board.NOMOVE
