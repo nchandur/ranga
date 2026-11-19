@@ -430,6 +430,16 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			if move == s.counterMove(b.Ply-1) {
 				r--
 			}
+
+			// good quiets reduce less, bad quiets reduce more
+			ply := b.Ply - 1
+			piece, to := s.stack[ply].currPiece, move.Target()
+			h := s.History[piece][to]
+			if ch := s.contEntry(ply, 1); ch != nil {
+				h += int(ch[piece][to])
+			}
+			r = max(r-h/LMR_HIST_DIV, 1)
+
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, max(depth-1-r, 0))
 		} else {
 			score = -s.AlphaBeta(b, -alpha-1, -alpha, depth-1)
