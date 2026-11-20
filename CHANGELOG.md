@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [v1.23] - *TBD*
 
+### Added
+* feat(search): replace flat LMR with log-based reduction table [[#117](https://github.com/nchandur/ranga/pull/117)]
+
 ## [v1.22] - 2026-11-18
 
 ### Added
