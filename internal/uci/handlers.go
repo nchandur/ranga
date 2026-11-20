@@ -333,7 +333,7 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 			if dur != 0 {
 				nps = int64(e.searcher.Nodes) * 1000 / dur
 			}
-			e.writeLine(fmt.Sprintf("info depth %d seldepth %d score cp %d nodes %d nps %d time %d pv %s", d, e.searcher.Seldepth, score, e.searcher.Nodes, nps, dur, e.searcher.PV))
+			e.writeLine(fmt.Sprintf("info depth %d seldepth %d score cp %d nodes %d nps %d hashfull %d time %d pv %s", d, e.searcher.Seldepth, score, e.searcher.Nodes, nps, e.searcher.TT.Hashfull(), dur, e.searcher.PV))
 
 			// bank unused time once search has settled
 			if bestMove == prevBestMove {
