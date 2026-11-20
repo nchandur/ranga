@@ -328,7 +328,12 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 		if move != board.NOMOVE {
 			bestMove = move
 			dur := time.Since(searchStart).Milliseconds()
-			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d time %d pv %s", d, score, e.searcher.Nodes, dur, e.searcher.PV))
+
+			nps := int64(0)
+			if dur != 0 {
+				nps = int64(e.searcher.Nodes) / dur
+			}
+			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d nps %d time %d pv %s", d, score, e.searcher.Nodes, nps, dur, e.searcher.PV))
 
 			// bank unused time once search has settled
 			if bestMove == prevBestMove {
