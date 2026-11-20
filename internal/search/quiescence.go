@@ -7,6 +7,7 @@ import (
 
 // performs a quiescence search to evaluate quiet positions and avoid horizon effect
 func (s *Searcher) Quiescence(b *board.Board, alpha, beta int) int {
+	s.Seldepth = max(b.Ply, s.Seldepth)
 
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply > MAX_PLY-1 {
