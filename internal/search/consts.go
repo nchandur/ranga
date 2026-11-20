@@ -21,7 +21,7 @@ const (
 
 const (
 	lmrBase float64 = 0.75
-	lmrDiv  float64 = 2.25
+	lmrDiv  float64 = 3.00
 )
 
 var lmrTable [MAX_DEPTH][MAX_DEPTH]int
