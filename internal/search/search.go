@@ -420,7 +420,7 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			!inCheck && !move.IsCapture() && move.Promoted(b.Side) == board.Empty
 
 		if reduced {
-			r := 1
+			r := lmrTable[min(depth, MAX_DEPTH-1)][min(movesSearched, MAX_DEPTH-1)]
 			if !improving {
 				r++
 			}

@@ -19,6 +19,13 @@ const (
 	aspirationMaxDelta = 800 // beyond this, window fully open on that side
 )
 
+const (
+	lmrBase float64 = 0.75
+	lmrDiv  float64 = 2.25
+)
+
+var lmrTable [MAX_DEPTH][MAX_DEPTH]int
+
 // assigns higher priorities to captures where lower-value piece captures higher-value piece,
 var MVVLVA = [12][12]int{
 	{105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},
