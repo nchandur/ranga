@@ -20,7 +20,8 @@ type Searcher struct {
 	SoftNodeLimit      int
 	HardNodeLimit      int          // max number of nodes to visit
 	Stop               *atomic.Bool // shared stop flag across all threads
-	game               []uint64     // positions before the root that can still repeat
+	Seldepth           int
+	game               []uint64 // positions before the root that can still repeat
 	stack              NodeStack
 }
 
@@ -66,6 +67,8 @@ func (s *Searcher) NewGame() {
 
 // executes main alpha-beta minimax search tree traversal
 func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
+	s.Seldepth = max(b.Ply, s.Seldepth)
+
 	// guard against out-of-bounds at maximum search ply
 	if b.Ply >= MAX_PLY-1 {
 		return s.Evaluate(b)
@@ -309,6 +312,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int) {
 	alpha, beta := -INFINITY, INFINITY
 	delta := aspirationDelta
+	s.Seldepth = 0
 
 	s.stack[0].key = b.Key // root of the line
 
@@ -421,7 +425,7 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 			!inCheck && !move.IsCapture() && move.Promoted(b.Side) == board.Empty
 
 		if reduced {
-			r := 1
+			r := lmrTable[min(depth, MAX_DEPTH-1)][min(movesSearched, MAX_DEPTH-1)]
 			if !improving {
 				r++
 			}

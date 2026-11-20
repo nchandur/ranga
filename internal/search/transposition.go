@@ -213,3 +213,15 @@ func (tt *TranspositionTable) ProbeEntry(key uint64, ply int) (move board.Move, 
 
 	return entry.Move(), score, entry.Depth(), entry.Flag(), true
 }
+
+// reports how full the table is in permill
+func (tt *TranspositionTable) Hashfull() int {
+	n := min(1000, tt.Length)
+	used := 0
+	for i := range n {
+		if tt.Entries[i].Load() != 0 {
+			used++
+		}
+	}
+	return used * 1000 / n
+}

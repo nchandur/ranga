@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [v1.23] - *TBD*
 
+### Added
+* feat(search): replace flat LMR with log-based reduction table [[#117](https://github.com/nchandur/ranga/pull/117)]
+* feat(uci): report seldepth, nps, hashfull and time in info lines [[#118](https://github.com/nchandur/ranga/pull/118)]
+
 ## [v1.22] - 2026-11-18
 
 ### Added
