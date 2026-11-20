@@ -331,7 +331,7 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 
 			nps := int64(0)
 			if dur != 0 {
-				nps = int64(e.searcher.Nodes) / dur
+				nps = int64(e.searcher.Nodes) * 1000 / dur
 			}
 			e.writeLine(fmt.Sprintf("info depth %d score cp %d nodes %d nps %d time %d pv %s", d, score, e.searcher.Nodes, nps, dur, e.searcher.PV))
 
