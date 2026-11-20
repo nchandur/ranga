@@ -327,13 +327,7 @@ func (e *Engine) runSearch(stop *atomic.Bool, opts goOptions, timeAllocation Tim
 
 		if move != board.NOMOVE {
 			bestMove = move
-			dur := time.Since(searchStart).Milliseconds()
-
-			nps := int64(0)
-			if dur != 0 {
-				nps = int64(e.searcher.Nodes) * 1000 / dur
-			}
-			e.writeLine(fmt.Sprintf("info depth %d seldepth %d score cp %d nodes %d nps %d hashfull %d time %d pv %s", d, e.searcher.Seldepth, score, e.searcher.Nodes, nps, e.searcher.TT.Hashfull(), dur, e.searcher.PV))
+			e.reportInfo(d, score, searchStart)
 
 			// bank unused time once search has settled
 			if bestMove == prevBestMove {
@@ -407,4 +401,19 @@ func (e *Engine) scorePosition(b *board.Board) int {
 func (e *Engine) pauseSearch() {
 	e.stop.Store(true)
 	e.searchWg.Wait()
+}
+
+// write uci info line for search iteration
+func (e *Engine) reportInfo(depth, score int, start time.Time) {
+	elapsed := time.Since(start).Milliseconds()
+
+	var nps int64
+	if elapsed > 0 {
+		nps = int64(e.searcher.Nodes) * 1000 / elapsed
+	}
+
+	e.writeLine(fmt.Sprintf(
+		"info depth %d seldepth %d score cp %d nodes %d nps %d hashfull %d time %d pv %s",
+		depth, e.searcher.Seldepth, score, e.searcher.Nodes, nps,
+		e.searcher.TT.Hashfull(), elapsed, e.searcher.PV))
 }
