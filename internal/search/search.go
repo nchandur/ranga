@@ -505,6 +505,22 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 
 	// fail-high cutoff from null move
 	if nullScore >= beta {
+		// guard against zugzwang
+		if depth >= 12 {
+			s.stack[b.Ply-1].nullMove = true // re-entered node skips NMP
+			followPv := s.PV.FollowPv
+			s.PV.FollowPv = false
+
+			v := s.AlphaBeta(b, beta-1, beta, depth-R)
+
+			s.PV.FollowPv = followPv
+			s.stack[b.Ply-1].nullMove = false
+
+			if s.Stop.Load() || v < beta {
+				return 0, false
+			}
+		}
+
 		if nullScore >= MATESCORE-MAX_PLY { // mate-range
 			nullScore = beta
 		}
