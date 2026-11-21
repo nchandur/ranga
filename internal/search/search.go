@@ -480,10 +480,7 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	b.Ply++
 
 	// adaptive depth reduction
-	R := 3 + depth/6
-	if staticeval-beta > 200 {
-		R++
-	}
+	R := 3 + depth/3 + min((staticeval-beta)/200, 3)
 	reducedDepth := max(depth-R, 0)
 
 	// disable follow pv for nmp
