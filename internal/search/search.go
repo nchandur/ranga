@@ -149,7 +149,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		}
 
 		// null move pruning (pass turn to attempt early fail-high)
-		if score, prune := s.nullMovePruning(b, beta, depth, staticEval, inCheck); prune {
+		if score, prune := s.nullMovePruning(b, beta, depth, staticEval, inCheck, pvNode); prune {
 			return score
 		}
 	}
@@ -452,9 +452,10 @@ func (s *Searcher) lateMoveReduction(b *board.Board, move board.Move, alpha, bet
 }
 
 // helper function for null move pruning
-func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, inCheck bool) (int, bool) {
+func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, inCheck, pvNode bool) (int, bool) {
 	if depth < 3 ||
 		inCheck ||
+		pvNode ||
 		b.Ply == 0 ||
 		s.stack[b.Ply-1].nullMove || // no two nulls in a row
 		beta >= MATESCORE-MAX_PLY ||
@@ -485,7 +486,14 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	}
 	reducedDepth := max(depth-R, 0)
 
+	// disable follow pv for nmp
+	followPV := s.PV.FollowPv
+	s.PV.FollowPv = false
+
 	nullScore := -s.AlphaBeta(b, -beta, -beta+1, reducedDepth)
+
+	s.PV.FollowPv = followPV
+
 	b.Ply--
 	s.stack[b.Ply].nullMove = false
 
