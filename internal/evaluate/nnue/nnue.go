@@ -1,6 +1,8 @@
 package nnue
 
-import "ranga/internal/board"
+import (
+	"ranga/internal/board"
+)
 
 const (
 	deltaNone    uint8 = iota // null move
