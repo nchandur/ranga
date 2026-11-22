@@ -1,38 +1,26 @@
 package nnue
 
-import (
-	"ranga/internal/board"
-)
-
-type pendingKind uint8
+import "ranga/internal/board"
 
 const (
-	pendNone pendingKind = iota
-	pendQuiet
-	pendCapture
-	pendCastle
+	deltaNone    uint8 = iota // null move
+	deltaQuiet                // 1 add, 1 sub
+	deltaCapture              // 1 add, 2 sub
+	deltaCastle               // 2 add, 2 sub
 )
 
-// feature indices of a delta
-type pending struct {
-	kind       pendingKind
-	wAdd, wSub [2]int
-	bAdd, bSub [2]int
+type entry struct {
+	acc  [2]Accumulator
+	kind uint8
+	add  [2][2]uint16 // [perspective][i] feature indices
+	sub  [2][2]uint16
+	ok   [2]bool // acc[p] is up to date
 }
 
-type perspectives struct {
-	White, Black Accumulator
-}
-
-// opaque copy of accumulator state
-type Snapshot struct {
-	acc  perspectives
-	pend pending
-}
 type NNUE struct {
 	*Network
-	acc  perspectives
-	pend pending
+	stack [StackSize]entry
+	ply   int
 }
 
 func NewRandom() *NNUE {
@@ -41,11 +29,14 @@ func NewRandom() *NNUE {
 	return n
 }
 
-// rebuilds both accumulators from scratch
+// rebuilds root entry from scratch and resets stack
 func (n *NNUE) Reset(b *board.Board) {
-	n.pend = pending{}
-	n.acc.White = n.FeatureBias
-	n.acc.Black = n.FeatureBias
+	n.ply = 0
+	e := &n.stack[0]
+	e.kind = deltaNone
+	e.ok = [2]bool{true, true}
+	e.acc[int(board.White)] = n.FeatureBias
+	e.acc[int(board.Black)] = n.FeatureBias
 
 	wKSq := board.Square(b.PieceBitBoards[board.WK].GetLSB())
 	bKSq := board.Square(b.PieceBitBoards[board.BK].GetLSB())
@@ -55,27 +46,19 @@ func (n *NNUE) Reset(b *board.Board) {
 		if piece == board.Empty {
 			continue
 		}
-		n.addPiece(piece, sq, wKSq, bKSq)
+		isWhite := int(piece) <= 5
+		e.acc[int(board.White)].AddFeature(n.Network, FeatureIndex(true, isWhite, piece, sq, wKSq))
+		e.acc[int(board.Black)].AddFeature(n.Network, FeatureIndex(false, !isWhite, piece, sq, bKSq))
 	}
 }
 
-func (n *NNUE) Preserve() Snapshot {
-	return Snapshot{n.acc, n.pend}
-}
-
-func (n *NNUE) Restore(s Snapshot) {
-	n.acc, n.pend = s.acc, s.pend
-}
-
-// applies incremental accumulator changes using fused loops
+// records the move's delta in a new stack entry
 func (n *NNUE) Update(before *board.Board, move board.Move) {
-	n.flush()
 	source, target := move.Source(), move.Target()
 	movingPiece := before.Mailbox[source]
 
 	wKSq := board.Square(before.PieceBitBoards[board.WK].GetLSB())
 	bKSq := board.Square(before.PieceBitBoards[board.BK].GetLSB())
-
 	newWKSq, newBKSq := wKSq, bKSq
 
 	switch movingPiece {
@@ -85,20 +68,29 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 		newBKSq = target
 	}
 
+	n.ply++
+	e := &n.stack[n.ply]
+	e.ok = [2]bool{}
+
 	subWKSq, subBKSq := wKSq, bKSq
+	refreshW, refreshB := false, false
 	if movingPiece == board.WK && needsRefresh(true, wKSq, newWKSq) {
-		n.refresh(&n.acc.White, true, before, newWKSq)
-		subWKSq = newWKSq
+		n.refresh(&e.acc[int(board.White)], true, before, newWKSq)
+		subWKSq, refreshW = newWKSq, true
 	} else if movingPiece == board.BK && needsRefresh(false, bKSq, newBKSq) {
-		n.refresh(&n.acc.Black, false, before, newBKSq)
-		subBKSq = newBKSq
+		n.refresh(&e.acc[int(board.Black)], false, before, newBKSq)
+		subBKSq, refreshB = newBKSq, true
 	}
 
-	// castling
-	if move.IsCastle() {
+	addPiece := movingPiece
+	if move.IsPromotion() {
+		addPiece = move.Promoted(before.Side)
+	}
+
+	switch {
+	case move.IsCastle():
 		var rSource, rTarget board.Square
 		var rPiece board.Piece
-
 		switch target {
 		case board.G1:
 			rSource, rTarget, rPiece = board.H1, board.F1, board.WR
@@ -109,30 +101,18 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 		case board.C8:
 			rSource, rTarget, rPiece = board.A8, board.D8, board.BR
 		}
-
 		wAdd1, bAdd1 := getIndices(movingPiece, target, newWKSq, newBKSq)
 		wAdd2, bAdd2 := getIndices(rPiece, rTarget, newWKSq, newBKSq)
 		wSub1, bSub1 := getIndices(movingPiece, source, subWKSq, subBKSq)
 		wSub2, bSub2 := getIndices(rPiece, rSource, subWKSq, subBKSq)
 
-		n.pend = pending{
-			kind: pendCastle,
-			wAdd: [2]int{wAdd1, wAdd2}, wSub: [2]int{wSub1, wSub2},
-			bAdd: [2]int{bAdd1, bAdd2}, bSub: [2]int{bSub1, bSub2},
-		}
-		return
-	}
+		e.kind = deltaCastle
+		e.add = [2][2]uint16{{uint16(wAdd1), uint16(wAdd2)}, {uint16(bAdd1), uint16(bAdd2)}}
+		e.sub = [2][2]uint16{{uint16(wSub1), uint16(wSub2)}, {uint16(bSub1), uint16(bSub2)}}
 
-	addPiece := movingPiece
-	if move.IsPromotion() {
-		addPiece = move.Promoted(before.Side)
-	}
-
-	// captures and enpassant
-	if move.IsCapture() || move.IsEnpass() {
+	case move.IsCapture() || move.IsEnpass():
 		var capPiece board.Piece
 		var capTarget board.Square
-
 		if move.IsEnpass() {
 			if before.Side == board.White {
 				capPiece, capTarget = board.BP, target+8
@@ -142,44 +122,81 @@ func (n *NNUE) Update(before *board.Board, move board.Move) {
 		} else {
 			capPiece, capTarget = before.Mailbox[target], target
 		}
-
 		wAdd, bAdd := getIndices(addPiece, target, newWKSq, newBKSq)
 		wSub1, bSub1 := getIndices(movingPiece, source, subWKSq, subBKSq)
 		wSub2, bSub2 := getIndices(capPiece, capTarget, subWKSq, subBKSq)
 
-		n.pend = pending{
-			kind: pendCapture,
-			wAdd: [2]int{wAdd}, wSub: [2]int{wSub1, wSub2},
-			bAdd: [2]int{bAdd}, bSub: [2]int{bSub1, bSub2},
-		}
-		return
+		e.kind = deltaCapture
+		e.add = [2][2]uint16{{uint16(wAdd)}, {uint16(bAdd)}}
+		e.sub = [2][2]uint16{{uint16(wSub1), uint16(wSub2)}, {uint16(bSub1), uint16(bSub2)}}
+
+	default:
+		wAdd, bAdd := getIndices(addPiece, target, newWKSq, newBKSq)
+		wSub, bSub := getIndices(movingPiece, source, subWKSq, subBKSq)
+
+		e.kind = deltaQuiet
+		e.add = [2][2]uint16{{uint16(wAdd)}, {uint16(bAdd)}}
+		e.sub = [2][2]uint16{{uint16(wSub)}, {uint16(bSub)}}
 	}
 
-	// quiet moves
-	wAdd, bAdd := getIndices(addPiece, target, newWKSq, newBKSq)
-	wSub, bSub := getIndices(movingPiece, source, subWKSq, subBKSq)
-	n.pend = pending{
-		kind: pendQuiet,
-		wAdd: [2]int{wAdd}, wSub: [2]int{wSub},
-		bAdd: [2]int{bAdd}, bSub: [2]int{bSub},
+	if refreshW {
+		n.apply(e, int(board.White), &e.acc[int(board.White)])
+		e.ok[int(board.White)] = true
+	}
+	if refreshB {
+		n.apply(e, int(board.Black), &e.acc[int(board.Black)])
+		e.ok[int(board.Black)] = true
 	}
 }
+
+// null move
+func (n *NNUE) PushNull() {
+	n.ply++
+	e := &n.stack[n.ply]
+	e.kind = deltaNone
+	e.ok = [2]bool{}
+}
+
+// undoes last Update or PushNull
+func (n *NNUE) Pop() { n.ply-- }
 
 func (n *NNUE) Evaluate(b *board.Board) int {
-	n.flush()
+	n.materialize(int(board.White))
+	n.materialize(int(board.Black))
+	cur := &n.stack[n.ply]
 	bucket := outputBucket(b)
 	if b.Side == board.White {
-		return int(n.Network.Evaluate(&n.acc.White, &n.acc.Black, bucket))
+		return int(n.Network.Evaluate(&cur.acc[int(board.White)], &cur.acc[int(board.Black)], bucket))
 	}
-	return int(n.Network.Evaluate(&n.acc.Black, &n.acc.White, bucket))
+	return int(n.Network.Evaluate(&cur.acc[int(board.Black)], &cur.acc[int(board.White)], bucket))
 }
 
-func (n *NNUE) addPiece(piece board.Piece, sq board.Square, wKSq, bKSq board.Square) {
-	isWhite := int(piece) <= 5
-	wIdx := FeatureIndex(true, isWhite, piece, sq, wKSq)
-	bIdx := FeatureIndex(false, !isWhite, piece, sq, bKSq)
-	n.acc.White.AddFeature(n.Network, wIdx)
-	n.acc.Black.AddFeature(n.Network, bIdx)
+// brings stack[ply].acc[p] up to date
+func (n *NNUE) materialize(p int) {
+	base := n.ply
+	for base > 0 && !n.stack[base].ok[p] {
+		base--
+	}
+	for i := base + 1; i <= n.ply; i++ {
+		e := &n.stack[i]
+		n.apply(e, p, &n.stack[i-1].acc[p])
+		e.ok[p] = true
+	}
+}
+
+func (n *NNUE) apply(e *entry, p int, src *Accumulator) {
+	dst := &e.acc[p]
+	a, s := &e.add[p], &e.sub[p]
+	switch e.kind {
+	case deltaQuiet:
+		dst.AddSubFrom(src, n.Network, int(a[0]), int(s[0]))
+	case deltaCapture:
+		dst.AddSub2From(src, n.Network, int(a[0]), int(s[0]), int(s[1]))
+	case deltaCastle:
+		dst.Add2Sub2From(src, n.Network, int(a[0]), int(a[1]), int(s[0]), int(s[1]))
+	default:
+		*dst = *src
+	}
 }
 
 // rebuilds one perspective from the given board, indexing every piece with kSq
@@ -193,21 +210,4 @@ func (n *NNUE) refresh(acc *Accumulator, white bool, b *board.Board, kSq board.S
 		isUs := (int(p) <= 5) == white
 		acc.AddFeature(n.Network, FeatureIndex(white, isUs, p, sq, kSq))
 	}
-}
-
-// applies the recorded delta
-func (n *NNUE) flush() {
-	p := &n.pend
-	switch p.kind {
-	case pendQuiet:
-		n.acc.White.AddSub(n.Network, p.wAdd[0], p.wSub[0])
-		n.acc.Black.AddSub(n.Network, p.bAdd[0], p.bSub[0])
-	case pendCapture:
-		n.acc.White.AddSub2(n.Network, p.wAdd[0], p.wSub[0], p.wSub[1])
-		n.acc.Black.AddSub2(n.Network, p.bAdd[0], p.bSub[0], p.bSub[1])
-	case pendCastle:
-		n.acc.White.Add2Sub2(n.Network, p.wAdd[0], p.wAdd[1], p.wSub[0], p.wSub[1])
-		n.acc.Black.Add2Sub2(n.Network, p.bAdd[0], p.bAdd[1], p.bSub[0], p.bSub[1])
-	}
-	p.kind = pendNone
 }

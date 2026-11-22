@@ -197,11 +197,6 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 
 		state := b.Preserve()
 
-		var nnState nnue.Snapshot
-		if s.NN != nil {
-			nnState = s.NN.Preserve()
-		}
-
 		s.stack[b.Ply].currMove = move
 		s.stack[b.Ply].currPiece = b.Mailbox[move.Source()]
 
@@ -234,7 +229,7 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 		b.Restore(&state)
 
 		if s.NN != nil {
-			s.NN.Restore(nnState)
+			s.NN.Pop()
 		}
 
 		movesSearched++
@@ -336,11 +331,6 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 		for _, move := range ml.Moves[:ml.Count] {
 			state := b.Preserve()
 
-			var nnState nnue.Snapshot
-			if s.NN != nil {
-				nnState = s.NN.Preserve()
-			}
-
 			s.stack[b.Ply].currMove = move
 			s.stack[b.Ply].currPiece = b.Mailbox[move.Source()]
 
@@ -377,7 +367,7 @@ func (s *Searcher) Search(b *board.Board, depth, prevScore int) (board.Move, int
 			b.Restore(&state)
 
 			if s.NN != nil {
-				s.NN.Restore(nnState)
+				s.NN.Pop()
 			}
 
 			movesSearched++
@@ -479,6 +469,10 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 	s.stack[b.Ply].currMove = board.NOMOVE
 	b.Ply++
 
+	if s.NN != nil {
+		s.NN.PushNull()
+	}
+
 	// adaptive depth reduction
 	R := 3 + depth/4 + min((staticeval-beta)/200, 3)
 	reducedDepth := max(depth-R, 0)
@@ -493,6 +487,10 @@ func (s *Searcher) nullMovePruning(b *board.Board, beta, depth, staticeval int, 
 
 	b.Ply--
 	s.stack[b.Ply].nullMove = false
+
+	if s.NN != nil {
+		s.NN.Pop()
+	}
 
 	b.Restore(&state)
 

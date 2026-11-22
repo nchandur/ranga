@@ -11,6 +11,8 @@ const (
 	InputSize         int   = InputBuckets * FeaturesPerBucket
 )
 
+const StackSize = 256
+
 var inputBucketLayout = [32]int{
 	0, 0, 0, 0,
 	1, 1, 1, 1,
