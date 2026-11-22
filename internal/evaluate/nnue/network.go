@@ -7,15 +7,17 @@ import (
 type Network struct {
 	FeatureWeights [InputSize]Accumulator
 	FeatureBias    Accumulator
-	OutputWeights  [OutputBuckets][2 * HiddenSize]int16
+	OutputWeights  [OutputBuckets][2][HiddenSize]int16
 	OutputBias     [OutputBuckets]int16
 }
 
 // fills the network with small random weights: purely for wiring up search
 func (net *Network) Randomize() {
 	for b := range OutputBuckets {
-		for i := range net.OutputWeights[b] {
-			net.OutputWeights[b][i] = int16(rand.Intn(201) - 100)
+		for h := range net.OutputWeights[b] {
+			for i := range net.OutputWeights[b][h] {
+				net.OutputWeights[b][h][i] = int16(rand.Intn(201) - 100)
+			}
 		}
 		net.OutputBias[b] = int16(rand.Intn(201) - 100)
 	}
@@ -23,8 +25,8 @@ func (net *Network) Randomize() {
 
 func (net *Network) Evaluate(us, them *Accumulator, bucket int) int32 {
 	w := &net.OutputWeights[bucket]
-	output := lizardDot(us.Values[:], w[:HiddenSize])
-	output += lizardDot(them.Values[:], w[HiddenSize:])
+	output := lizardDot(&us.Values, &w[0])
+	output += lizardDot(&them.Values, &w[1])
 
 	// reduce quantization
 	output /= int32(QA)

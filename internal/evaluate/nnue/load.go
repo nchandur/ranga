@@ -40,7 +40,7 @@ func parseNetwork(data []byte) (*Network, error) {
 
 	for i := range 2 * HiddenSize {
 		for b := range OutputBuckets {
-			net.OutputWeights[b][i] = int16(binary.LittleEndian.Uint16(r.next(2)))
+			net.OutputWeights[b][i/HiddenSize][i%HiddenSize] = int16(binary.LittleEndian.Uint16(r.next(2)))
 		}
 	}
 
