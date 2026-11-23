@@ -8,50 +8,49 @@
 
 ### STC: 8+0.08
 
-**RC Engine:** ranga-1.22 | **Base Engine:** ranga-1.21
+**RC Engine:** ranga-1.23 | **Base Engine:** ranga-1.22
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
-**SPRT:** elo0=0, elo1=10, $\alpha$=0.05, $\beta$=0.05
+**SPRT:** elo0=0, elo1=5, $\alpha$=0.05, $\beta$=0.05
 
 
 | Metric        | Value                                |
 | :------------ | -----------------------------------: |
 | Result        | **H1 accepted** (pass)               |
-| Elo           | 78.90 +/- 28.51                      |
-| nElo          | 94.27 +/- 32.84                      |
+| Elo           | 48.12 +/- 15.61                      |
+| nElo          | 58.81 +/- 18.83                      |
 | LOS           | 100.0%                               |
-| Games         | 430 (W: 200, L: 104, D: 126)         |
-| Score         | 263 / 430 (61.16%)                   |
-| Draw ratio    | 32.56%                               |
+| Games         | 1308 (W: 560, L: 380, D: 368)        |
+| Score         | 744 / 1308 (56.88%)                  |
+| Draw ratio    | 35.93%                               |
 | LLR           | 2.95 (100.3%) — bounds (-2.94, 2.94) |
-| Ptnml(0-2)    | [14, 28, 70, 54, 49]                 |
+| Ptnml(0-2)    | [53, 96, 235, 158, 112]              |
 
-Total time: 00:15:55 (h:m:s)
+Total time: 01:09:10 (h:m:s)
 
 ### LTC: 40+0.04
 
-**RC Engine:** ranga-1.22 | **Base Engine:** ranga-1.21
+**RC Engine:** ranga-1.23 | **Base Engine:** ranga-1.22
 
 **Rounds:** 10000 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
-**SPRT:** elo0=0, elo1=10, $\alpha$=0.05, $\beta$=0.05
+**SPRT:** elo0=0, elo1=5, $\alpha$=0.05, $\beta$=0.05
 
 
 | Metric        | Value                                |
 | :------------ | -----------------------------------: |
 | Result        | **H1 accepted** (pass)               |
-| Elo           | 140.51 +/- 33.63                     |
-| nElo          | 197.95 +/- 42.39                     |
+| Elo           | 65.92 +/- 17.41                      |
+| nElo          | 89.94 +/- 23.17                      |
 | LOS           | 100.0%                               |
-| Games         | 258 (W: 147, L: 48, D: 63)           |
-| Score         | 178.5 / 258 (69.19%)                 |
-| Draw ratio    | 29.46%                               | 
-| LLR           | 2.97 (100.9%) — bounds (-2.94, 2.94) |
-| Ptnml(0-2)    | [3, 7, 38, 50, 31]                   |
+| Games         | 864 (W: 373, L: 211, D: 280)         |
+| Score         | 513 / 864 (59.38%)                   |
+| Draw ratio    | 37.27%                               | 
+| LLR           | 2.97 (100.8%) — bounds (-2.94, 2.94) |
+| Ptnml(0-2)    | [13, 69, 161, 121, 68]               |
 
-Total time: 00:31:05 (h:m:s)
-
+Total time: 02:28:11 (h:m:s)
 
 ## Progression Test vs *ranga-1.20*
 **Rounds:** 500 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
