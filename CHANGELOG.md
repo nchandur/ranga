@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 * refactor(evaluate): replace snapshot/restore with per-ply accumulator stack [[#122](https://github.com/nchandur/ranga/pull/122)]
+* refactor(board): deduplicate move generation [[#123](https://github.com/nchandur/ranga/pull/123)]
 
 ## [v1.23] - 2026-11-24
 
