@@ -65,7 +65,7 @@ func checkOutputLayer(t *testing.T, net *Network) {
 	for b := range OutputBuckets {
 		// first weight, first weight of the "them" half, and last weight of the bucket
 		for _, i := range []int{0, HiddenSize, 2*HiddenSize - 1} {
-			if got, want := net.OutputWeights[b][i], mockOutputWeight(b, i); got != want {
+			if got, want := net.OutputWeights[b][i/HiddenSize][i%HiddenSize], mockOutputWeight(b, i); got != want {
 				t.Errorf("OutputWeights[%d][%d] = %d; want %d", b, i, got, want)
 			}
 		}

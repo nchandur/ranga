@@ -9,31 +9,52 @@ func NewAccumulator(net *Network) Accumulator {
 	return net.FeatureBias
 }
 
-// add feature to accumulator
 func (acc *Accumulator) AddFeature(net *Network, featureIdx int) {
+	a := &net.FeatureWeights[featureIdx].Values
 	for i := range acc.Values {
-		d := net.FeatureWeights[featureIdx].Values[i]
-		acc.Values[i] += d
+		acc.Values[i] += a[i]
 	}
 }
 
-// handles 1 addition and 1 subtraction (quiet moves)
+// dst = src + add - sub (quiet moves)
+func (dst *Accumulator) AddSubFrom(src *Accumulator, net *Network, addIdx, subIdx int) {
+	a := &net.FeatureWeights[addIdx].Values
+	s := &net.FeatureWeights[subIdx].Values
+	for i := range dst.Values {
+		dst.Values[i] = src.Values[i] + a[i] - s[i]
+	}
+}
+
+// dst = src + add - sub1 - sub2 (captures, en passant)
+func (dst *Accumulator) AddSub2From(src *Accumulator, net *Network, addIdx, sub1Idx, sub2Idx int) {
+	a := &net.FeatureWeights[addIdx].Values
+	s1 := &net.FeatureWeights[sub1Idx].Values
+	s2 := &net.FeatureWeights[sub2Idx].Values
+	for i := range dst.Values {
+		dst.Values[i] = src.Values[i] + a[i] - s1[i] - s2[i]
+	}
+}
+
+// dst = src + add1 + add2 - sub1 - sub2 (castling)
+func (dst *Accumulator) Add2Sub2From(src *Accumulator, net *Network, add1Idx, add2Idx, sub1Idx, sub2Idx int) {
+	a1 := &net.FeatureWeights[add1Idx].Values
+	a2 := &net.FeatureWeights[add2Idx].Values
+	s1 := &net.FeatureWeights[sub1Idx].Values
+	s2 := &net.FeatureWeights[sub2Idx].Values
+	for i := range dst.Values {
+		dst.Values[i] = src.Values[i] + a1[i] + a2[i] - s1[i] - s2[i]
+	}
+}
+
+// in-place variants
 func (acc *Accumulator) AddSub(net *Network, addIdx, subIdx int) {
-	for i := range acc.Values {
-		acc.Values[i] += net.FeatureWeights[addIdx].Values[i] - net.FeatureWeights[subIdx].Values[i]
-	}
+	acc.AddSubFrom(acc, net, addIdx, subIdx)
 }
 
-// handles 1 addition and 2 subtractions (captures and enpassant)
 func (acc *Accumulator) AddSub2(net *Network, addIdx, sub1Idx, sub2Idx int) {
-	for i := range acc.Values {
-		acc.Values[i] += net.FeatureWeights[addIdx].Values[i] - net.FeatureWeights[sub1Idx].Values[i] - net.FeatureWeights[sub2Idx].Values[i]
-	}
+	acc.AddSub2From(acc, net, addIdx, sub1Idx, sub2Idx)
 }
 
-// handles 2 additions and 2 subtractions (castling)
 func (acc *Accumulator) Add2Sub2(net *Network, add1Idx, add2Idx, sub1Idx, sub2Idx int) {
-	for i := range acc.Values {
-		acc.Values[i] += net.FeatureWeights[add1Idx].Values[i] + net.FeatureWeights[add2Idx].Values[i] - net.FeatureWeights[sub1Idx].Values[i] - net.FeatureWeights[sub2Idx].Values[i]
-	}
+	acc.Add2Sub2From(acc, net, add1Idx, add2Idx, sub1Idx, sub2Idx)
 }

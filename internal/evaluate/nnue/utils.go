@@ -23,14 +23,15 @@ func clamp(n, low, high int16) int16 {
 	return n
 }
 
-func lizardDot(v, w []int16) int32 {
-	var sum int32
-	for i := range v {
-		c := clamp(v[i], 0, QA)
-		t := c * w[i]
-		sum += int32(t) * int32(c)
+func lizardDot(v, w *[HiddenSize]int16) int32 {
+	var s0, s1 int32
+	for i := 0; i < HiddenSize; i += 2 {
+		c0 := min(max(v[i], 0), QA)
+		c1 := min(max(v[i+1], 0), QA)
+		s0 += int32(c0*w[i]) * int32(c0)
+		s1 += int32(c1*w[i+1]) * int32(c1)
 	}
-	return sum
+	return s0 + s1
 }
 
 func outputBucket(b *board.Board) int {

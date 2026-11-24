@@ -24,8 +24,8 @@ func TestNetwork(t *testing.T) {
 		for bucket := range OutputBuckets {
 			net := &Network{}
 			net.OutputBias[bucket] = 0
-			net.OutputWeights[bucket][0] = 10
-			net.OutputWeights[bucket][HiddenSize] = 20
+			net.OutputWeights[bucket][0][0] = 10
+			net.OutputWeights[bucket][1][0] = 20
 
 			us := &Accumulator{}
 			them := &Accumulator{}
@@ -48,8 +48,8 @@ func TestNetwork(t *testing.T) {
 			net := &Network{}
 			net.OutputBias[bucket] = 0
 
-			net.OutputWeights[bucket][0] = 100
-			net.OutputWeights[bucket][HiddenSize] = -100
+			net.OutputWeights[bucket][0][0] = 100
+			net.OutputWeights[bucket][1][0] = -100
 
 			accA := &Accumulator{}
 			accB := &Accumulator{}
@@ -90,8 +90,8 @@ func TestNetwork(t *testing.T) {
 		net := &Network{}
 		// only bucket 3 has non-zero output weights
 		const active = 3
-		net.OutputWeights[active][0] = 100
-		net.OutputWeights[active][HiddenSize] = 100
+		net.OutputWeights[active][0][0] = 100
+		net.OutputWeights[active][1][0] = 100
 
 		us := &Accumulator{}
 		them := &Accumulator{}
