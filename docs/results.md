@@ -1,8 +1,13 @@
 # Results
 
 ## Contents
+- [Ratings](#ratings)
 - [SPRT](#sequential-probability-ratio-test)
 - [Progression Test](#progression-test)
+
+## Ratings
+1. `ranga-1.20`: [Link](https://cope-chess.live/engines/ranga/versions/1-20)
+2. `ranga-1.22`: [Link](https://cope-chess.live/engines/ranga/versions/1-22)
 
 ## Sequential Probability Ratio Test
 
@@ -52,12 +57,11 @@ Total time: 01:09:10 (h:m:s)
 
 Total time: 02:28:11 (h:m:s)
 
-## Progression Test vs *ranga-1.20*
+## Progression Test vs *ranga-1.22*
 **Rounds:** 500 (games=2) | **Book:** `UHO_Lichess_4852_v1.epd`
 
 **TC:** 60+0.6 | **Threads:** 1 | **Hash:** 16 MB
 
 | Version   | Elo               | nElo              | Wins | Losses | Draws | Score  |
 |-----------|-------------------|-------------------|------|--------|-------|--------|
-| v1.22     | 571.11 +/- 44.64  | 1142.56 +/- 21.53 | 936  |  8     |  56   |  964.0 |
-| v1.21     | 502.57 +/- 38.80  | 879.69 +/- 21.53  | 914  |  19    |  67   |  947.5 |
+| v1.23     | 87.26 +/- 16.30   | 120.28 +/- 21.53  | 449  |  203   |  348  |  623.0 |
