@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [v1.24] - *TBD*
 
+### Added
+* refactor(evaluate): replace snapshot/restore with per-ply accumulator stack [[#122](https://github.com/nchandur/ranga/pull/122)]
+
 ## [v1.23] - 2026-11-24
 
 ### Added
