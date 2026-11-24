@@ -10,11 +10,3 @@ func SqToFR(square Square) (int, int) {
 	tr, tf := int(square)/8, int(square)%8
 	return tr, tf
 }
-
-// moves every bit by d squares
-func shiftPawns(bb BitBoard, d int) BitBoard {
-	if d < 0 {
-		return bb >> uint(-d)
-	}
-	return bb << uint(d)
-}

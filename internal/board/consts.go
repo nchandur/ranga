@@ -9,10 +9,7 @@ const (
 	NotHFile  BitBoard = 0x7f7f7f7f7f7f7f7f // masks out file H
 	NotABFile BitBoard = 0xfcfcfcfcfcfcfcfc // masks out files A and B
 	NotGHFile BitBoard = 0x3f3f3f3f3f3f3f3f // masks out files G and H
-	EigthRank BitBoard = 0x00000000000000ff // masks out all ranks except 8th
-	SixthRank BitBoard = 0x0000000000ff0000 // masks out all ranks except 6th
-	ThirdRank BitBoard = 0x0000ff0000000000 // masks out all ranks except 3rd
-	FirstRank BitBoard = 0xff00000000000000 // masks out all ranks except 1st
+
 )
 
 // precomputed non-sliding piece attack tables
