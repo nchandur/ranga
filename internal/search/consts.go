@@ -24,6 +24,11 @@ const (
 	lmrDiv  float64 = 3.00
 )
 
+const (
+	iir_min_depth int = 4 // minimum depth to apply IIR
+	iir_reduction int = 1 // plies to reduce by
+)
+
 var lmrTable [MAX_DEPTH][MAX_DEPTH]int
 
 // assigns higher priorities to captures where lower-value piece captures higher-value piece,
