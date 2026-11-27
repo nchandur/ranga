@@ -25,7 +25,7 @@ const (
 )
 
 const (
-	iir_min_depth int = 4 // minimum depth to apply IIR
+	iir_min_depth int = 5 // minimum depth to apply IIR
 	iir_reduction int = 1 // plies to reduce by
 )
 
