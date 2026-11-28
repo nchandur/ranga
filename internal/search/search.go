@@ -164,6 +164,11 @@ func (s *Searcher) AlphaBeta(b *board.Board, alpha, beta, depth int) int {
 	// look for move in transposition table
 	ttMove := s.TT.ProbeMove(b.Key)
 
+	// internal iterative reduction
+	if ttMove == board.NOMOVE && !isSingularSearch && depth >= iir_min_depth {
+		depth -= iir_reduction
+	}
+
 	followingPV := s.PV.FollowPv
 
 	if s.PV.FollowPv {
